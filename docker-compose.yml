@@ -1,0 +1,101 @@
+version: "3"
+
+services:
+  decentragri-site:
+    image: decentragri-site
+    container_name: decentragri-site
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - decentragri-network
+
+  decentragri-ai-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: decentragri-ai-agent
+    
+      
+    container_name: decentragri-ai-agent
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    networks:
+      - decentragri-network
+
+  decentragri-memgraph:
+    image: memgraph/memgraph-platform
+    container_name: decentragri-memgraph
+    restart: unless-stopped
+    ports:
+      - "7444:7444"
+      - "7688:7687"
+    environment:
+      - MEMGRAPH_USER=decentragri
+      - MEMGRAPH_PASSWORD=UXxTPCxxOpC7Y2JcFgsrgfs5635irhmmwqXqph38994Al/gbhY4gl8ecradYw5StjbwK32323h0pdy/DadfdfB9gQZDgVbePoXJgLA==
+    networks:
+      - decentragri-network
+
+  decentragri-engine:
+    image: thirdweb/engine:latest
+    container_name: decentragri-engine
+    environment:
+      - ENCRYPTION_PASSWORD=${ENGINE_ENCRYPTION_PASSWORD}
+      - THIRDWEB_API_SECRET_KEY=${SECRET_KEY}
+      - ADMIN_WALLET_ADDRESS=${ENGINE_ADMIN_WALLET_ADDRESS}
+      - POSTGRES_CONNECTION_URL=postgresql://postgres:${POSTGRES_PASSWORD}@decentragri-postgres:5432/postgres?sslmode=disable
+      - REDIS_URL=redis://decentragri-valkey:6379/0
+      - ENABLE_HTTPS=false
+      - TRUST_PROXY=true
+    ports:
+      - "127.0.0.1:3005:3005"
+    cpus: "1"
+    restart: always
+    networks:
+      - decentragri-network
+
+  decentragri-valkey:
+    image: valkey/valkey:latest
+    container_name: decentragri-valkey
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - decentragri-network
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+      timeout: 2s
+
+  decentragri-postgres:
+    image: postgres
+    container_name: decentragri-postgres
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    command: postgres -c 'max_connections=250'
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - decentragri-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
+      timeout: 10s
+
+volumes:
+  valkey-data:
+  postgres-data:
+
+networks:
+  decentragri-network:
+    driver: bridge
