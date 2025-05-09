@@ -98,33 +98,47 @@ class SensorData {
         const driver: Driver = getDriver();
         const session: Session | undefined = driver?.session();
         const tokenService: TokenService = new TokenService();
-        const username: string = await tokenService.verifyAccessToken(token);
-
-
+    
+        const isServiceToken = token === process.env.SENSOR_FEED_SERVICE_JWT;
+        let query: string;
+        let params: Record<string, unknown> = {};
+    
         if (!session) {
             throw new Error("Unable to create database session.");
         }
     
         try {
-            const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-                tx.run(
-                    `
+            // Use appropriate Cypher based on token
+            if (isServiceToken) {
+                query = `
+                    MATCH (u:User)-[:OWNS]->(s:Sensor)
+                    MATCH (s)-[:HAS_READING]->(r:Reading)
+                    OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
+                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation
+                    ORDER BY r.createdAt DESC
+                `;
+            } else {
+                const username = await tokenService.verifyAccessToken(token);
+                query = `
                     MATCH (u:User {username: $username})-[:OWNS]->(s:Sensor)
                     MATCH (s)-[:HAS_READING]->(r:Reading)
                     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
                     RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation
                     ORDER BY r.createdAt DESC
-                    `,
-                    { username }
-                )
+                `;
+                params.username = username;
+            }
+    
+            const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+                tx.run(query, params)
             );
     
             return result.records.map((record) => {
-                const readingNode = record.get('reading');
-                const sensorId = record.get('sensorId');
-                const interpretation = record.get('interpretation');
+                const readingNode = record.get("reading");
+                const sensorId = record.get("sensorId");
+                const interpretation = record.get("interpretation");
     
-                const reading: SensorReadingsWithInterpretation  = readingNode.properties;
+                const reading: SensorReadingsWithInterpretation = readingNode.properties;
     
                 const readingWithInterpretation: SensorReadingsWithInterpretation = {
                     fertility: reading.fertility,
@@ -137,7 +151,8 @@ class SensorData {
                     username: reading.username,
                     createdAt: reading.createdAt,
                     sensorId: sensorId,
-                    interpretation: interpretation ?? "No interpretation"
+                    interpretation: interpretation ?? "No interpretation",
+         
                 };
     
                 return readingWithInterpretation;
@@ -149,6 +164,7 @@ class SensorData {
             await session.close();
         }
     }
+    
     
 
     /**
