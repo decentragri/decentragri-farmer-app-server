@@ -28,7 +28,7 @@ export interface RSWETHToEthRate {
 class OnChainService {
 	public async getETHandSWETHPrice(token: string): Promise<ETHAndRSWETHPrice> {
 		const tokenService = new TokenService();
-		const insightService = new InsightService(SECRET_KEY);
+		const insightService = new InsightService();
 		try {
 			await tokenService.verifyRefreshToken(token);
 			const ETHPrice: number = await insightService.getTokenPriceUSD(1);
