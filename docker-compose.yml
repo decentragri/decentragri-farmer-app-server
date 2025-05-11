@@ -39,7 +39,7 @@ services:
       - "7688:7687"
     environment:
       - MEMGRAPH_USER=decentragri
-      - MEMGRAPH_PASSWORD=UXxTPCxxOpC7Y2JcFgsrgfs5635irhmmwqXqph38994Al/gbhY4gl8ecradYw5StjbwK32323h0pdy/DadfdfB9gQZDgVbePoXJgLA==
+      - MEMGRAPH_PASSWORD=UXxTPCxxOpC7Y2JcFgsrgfs5635irhmmwqXwedwdddadaYw5StjbwK32323h0pdy/DadfdfB9gQZDgVbePoXJgLA==
     networks:
       - decentragri-network
 
