@@ -9,7 +9,7 @@ import { currentWeatherSchema } from '../weather.services/weather.schema';
 
 
 const Weather = (app: Elysia) => {
-    app.post('api/weather/current/:location', async ({ headers, params }) => {
+    app.get('api/weather/current/:location', async ({ headers, params }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
