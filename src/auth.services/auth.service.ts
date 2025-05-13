@@ -18,7 +18,6 @@ import TokenService from '../security.services/token.service';
 
 //** CONFIG IMPORT */
 import { SALT_ROUNDS } from '../utils/constants';
-import type { WalletData } from '../wallet.services/wallet.interface';
 
 
 class AuthService {
@@ -39,7 +38,7 @@ class AuthService {
         const walletService = new WalletService(this.driver);
         const tokenService = new TokenService();
 
-        const userId = nanoid();
+        const userId: string = nanoid();
         const session = this.driver?.session();
     
         if (!session) throw new Error("Database session not available");
@@ -50,6 +49,8 @@ class AuthService {
                 hash(password, parseInt(SALT_ROUNDS)),
                 walletService.createWallet(username),
             ]);
+
+            
     
             await session.executeWrite((tx: ManagedTransaction) =>
                 tx.run(

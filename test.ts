@@ -22,4 +22,17 @@ const fetchRSWETHPrice = async () => {
 
 };
 
-fetchRSWETHPrice();
+const getCurrentWeather = async () => {
+	const url = `http://api.weatherapi.com/v1/current.json?key=113ae7ff8ff84939bc2171746251205&q=Manila`
+		const res = await fetch(url, {
+
+	});
+
+	const json = await res.json();
+
+    console.log("Response:", json);
+
+}
+
+
+await getCurrentWeather()
