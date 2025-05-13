@@ -50,7 +50,7 @@ const Auth = (app: Elysia) => {
       }, loginSchema
     )
 
-    .post('/api/validate-session/decentra', async ({ headers, body }): Promise<userLoginResponse> => {
+    .post('/api/validate-session/decentra', async ({ headers }): Promise<userLoginResponse> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
