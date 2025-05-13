@@ -38,7 +38,7 @@ const app = new Elysia({
 
 
 
-routes(app)
+routes
 
 initDriver(NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD);
 

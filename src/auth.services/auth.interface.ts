@@ -1,7 +1,6 @@
 import type { WalletData } from "../wallet.services/wallet.interface";
 
 
-
 export interface userRegistration {
     username: string;
     password: string;

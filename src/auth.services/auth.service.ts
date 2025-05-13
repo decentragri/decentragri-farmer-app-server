@@ -49,8 +49,6 @@ class AuthService {
                 hash(password, parseInt(SALT_ROUNDS)),
                 walletService.createWallet(username),
             ]);
-
-            
     
             await session.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
