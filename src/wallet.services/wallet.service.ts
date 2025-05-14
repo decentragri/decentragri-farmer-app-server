@@ -47,23 +47,32 @@ class WalletService {
   public async getWalletBalance(walletAddress: string): Promise<WalletData> {
     const insightService = new InsightService();
 
+    // Helper function to get token price safely
+    const safeGetPrice = async (chainId: number, address?: string): Promise<number> => {
+      try {
+        return await insightService.getTokenPriceUSD(chainId, address);
+      } catch {
+        return 0;
+      }
+    };
+
     try {
       const [
-        ethToken,        // ETH balance on chainId 1
-        swellToken,      // native token on your custom chain
-        dagriToken,      // DAGRI token balance
-        rsWETH,          // rsWETH token balance
-        dagriPrice,      // DAGRI token price (USD)
-        ethPrice,        // ETH price (USD)
-        swellPrice       // SWELL token price (USD)
+        ethToken,
+        swellToken,
+        dagriToken,
+        rsWETH,
+        dagriPrice,
+        ethPrice,
+        swellPrice
       ] = await Promise.all([
         engine.backendWallet.getBalance("1", walletAddress),
         engine.backendWallet.getBalance(CHAIN, walletAddress),
         engine.erc20.balanceOf(walletAddress, CHAIN, DECENTRAGRI_TOKEN),
         engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),
-        insightService.getTokenPriceUSD(parseInt(CHAIN), DECENTRAGRI_TOKEN),
-        insightService.getTokenPriceUSD(1),
-        insightService.getTokenPriceUSD(1, "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676")
+        safeGetPrice(parseInt(CHAIN), DECENTRAGRI_TOKEN), // may fallback to 0
+        safeGetPrice(1), // ETH
+        safeGetPrice(1, "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676") // SWELL
       ]);
 
       return {
@@ -86,7 +95,6 @@ class WalletService {
       throw new Error("Failed to fetch wallet balance data.");
     }
   }
-
 
 
   public async getSmartWalletAddress(userName: string): Promise<string> {
