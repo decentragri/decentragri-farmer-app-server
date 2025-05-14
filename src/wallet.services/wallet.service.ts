@@ -44,17 +44,21 @@ class WalletService {
 
   public async getWalletBalance(walletAddress: string) {
     try {
-      const [ethToken, dagriToken, rsWETH] = await Promise.all([
+      const [ethToken, swellToken, dagriToken, rsWETH] = await Promise.all([
         engine.backendWallet.getBalance("1", walletAddress),
+        engine.backendWallet.getBalance(CHAIN, walletAddress),
         engine.erc20.balanceOf(walletAddress, CHAIN, DECENTRAGRI_TOKEN),
-        engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS)
+        engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),
+
       ]);
 
       return {
         smartWalletAddress: walletAddress,
-        dagriBalance: dagriToken.result.displayValue,
-        nativeBalance: ethToken.result.displayValue,
+        ethBalance: ethToken.result.displayValue,
+        swellBalance: swellToken.result.displayValue,
         rsWETHBalance: rsWETH.result.displayValue,
+        dagriBalance: dagriToken.result.displayValue,
+
       } as WalletData;
     } catch (error: any) {
       throw error;

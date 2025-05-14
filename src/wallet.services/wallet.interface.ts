@@ -11,6 +11,7 @@
     smartWalletAddress: string;
     dagriBalance: string;
     rsWETHBalance: string;
-
+    ethBalance: string;
+    swellBalance: string;
     nativeBalance: string;
   }
