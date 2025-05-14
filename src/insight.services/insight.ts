@@ -1,17 +1,19 @@
 // src/utils/pricing.ts
-import { SECRET_KEY } from "./constants";
+import { SECRET_KEY } from "../utils/constants";
+
+const headers = {
+	"X-Secret-Key": SECRET_KEY,
+};
 
 export class InsightService {
 
 
 	public async getTokenPriceUSD(chainId: number, tokenAddress: string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"): Promise<number> {
-		const url = `https://${chainId}.insight.thirdweb.com/v1/tokens/price?address=${tokenAddress}`;
+		const url: string = `https://${chainId}.insight.thirdweb.com/v1/tokens/price?address=${tokenAddress}`;
 
 		try {
 			const res = await fetch(url, {
-				headers: {
-					'X-Secret-Key': SECRET_KEY
-				},
+				headers
 			});
 
 			const json = await res.json();
@@ -25,4 +27,10 @@ export class InsightService {
             throw new Error("Failed to fetch token price");
 		}
 	}
+
+
+
+
+	
+
 }

@@ -10,6 +10,7 @@ import { type WalletData } from "./wallet.interface";
 //** MEMGRAPH IMPORTS
 import type { QueryResult } from "neo4j-driver";
 import { Driver, Session } from "neo4j-driver-core";
+import { InsightService } from "../insight.services/insight";
 
 
 
@@ -40,30 +41,52 @@ class WalletService {
          console.error("Error creating player wallet:", error);
          throw error;
      }
-   }
+  }
 
-  public async getWalletBalance(walletAddress: string) {
+
+  public async getWalletBalance(walletAddress: string): Promise<WalletData> {
+    const insightService = new InsightService();
+
     try {
-      const [ethToken, swellToken, dagriToken, rsWETH] = await Promise.all([
+      const [
+        ethToken,        // ETH balance on chainId 1
+        swellToken,      // native token on your custom chain
+        dagriToken,      // DAGRI token balance
+        rsWETH,          // rsWETH token balance
+        dagriPrice,      // DAGRI token price (USD)
+        ethPrice,        // ETH price (USD)
+        swellPrice       // SWELL token price (USD)
+      ] = await Promise.all([
         engine.backendWallet.getBalance("1", walletAddress),
         engine.backendWallet.getBalance(CHAIN, walletAddress),
         engine.erc20.balanceOf(walletAddress, CHAIN, DECENTRAGRI_TOKEN),
         engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),
-
+        insightService.getTokenPriceUSD(parseInt(CHAIN), DECENTRAGRI_TOKEN),
+        insightService.getTokenPriceUSD(1),
+        insightService.getTokenPriceUSD(1, "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676")
       ]);
 
       return {
         smartWalletAddress: walletAddress,
+
+        // Balances
         ethBalance: ethToken.result.displayValue,
         swellBalance: swellToken.result.displayValue,
         rsWETHBalance: rsWETH.result.displayValue,
         dagriBalance: dagriToken.result.displayValue,
+        nativeBalance: swellToken.result.displayValue,
 
-      } as WalletData;
+        // Prices
+        dagriPriceUSD: dagriPrice,
+        ethPriceUSD: ethPrice,
+        swellPriceUSD: swellPrice
+      };
     } catch (error: any) {
-      throw error;
+      console.error("Error fetching wallet balance and prices:", error);
+      throw new Error("Failed to fetch wallet balance data.");
     }
   }
+
 
 
   public async getSmartWalletAddress(userName: string): Promise<string> {

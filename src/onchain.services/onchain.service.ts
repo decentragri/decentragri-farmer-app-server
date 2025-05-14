@@ -1,5 +1,5 @@
 //** SERVICE IMPORT */
-import { InsightService } from "../utils/insight";
+import { InsightService } from "../insight.services/insight";
 
 //** TYPE IMPORTS */
 import type { ETHAndRSWETHPrice, SuccessMessage } from "./onchain.interface";
