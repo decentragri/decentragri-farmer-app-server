@@ -80,7 +80,7 @@ class AuthService {
             ) {
                 throw new Error(`An account already exists with the username "${username}"`);
             }
-            throw new Error("Failed to register user");
+            throw error
         } finally {
             await session.close();
         }
@@ -134,7 +134,7 @@ class AuthService {
             return { username,walletAddress, accessToken, refreshToken, loginType: 'decentragri', walletData};
         } catch (error: any) {
             console.error("Error logging in:", error);
-            throw new Error("Failed to log in");
+            throw error
         } finally {
             await session.close();
         }
@@ -197,7 +197,7 @@ class AuthService {
             return tokens;
         } catch (error: any) {
             console.error("Error refreshing session:", error);
-            throw new Error("Invalid session");
+            throw new error
         }
     }
 
