@@ -34,22 +34,22 @@ class AuthService {
      */
     public async register(user: userRegistration): Promise<userLoginResponse> {
         const { username, password, deviceId } = user;
-    
+
         const walletService = new WalletService(this.driver);
         const tokenService = new TokenService();
 
         const userId: string = nanoid();
         const session = this.driver?.session();
-    
-        if (!session) throw new Error("Database session not available");
-    
+
+        if (!session) throw { error: "Database session not available" };
+
         try {
             // Parallelize password hashing and wallet creation
             const [encryptedPassword, walletAddress] = await Promise.all([
                 hash(password, parseInt(SALT_ROUNDS)),
                 walletService.createWallet(username),
             ]);
-    
+
             await session.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
                     `
@@ -64,27 +64,43 @@ class AuthService {
                     { userId, username, encryptedPassword, deviceId, walletAddress }
                 )
             );
+
             // Generate tokens after user creation
             const [tokens, walletData] = await Promise.all([
                 tokenService.generateTokens(username),
                 walletService.getWalletBalance(walletAddress)
             ]);
-            
-            const { accessToken, refreshToken } = tokens
-            return { username,walletAddress, accessToken, refreshToken, loginType: 'decentragri', walletData};
+
+            const { accessToken, refreshToken } = tokens;
+            return {
+                username,
+                walletAddress,
+                accessToken,
+                refreshToken,
+                loginType: "decentragri",
+                walletData
+            };
+
         } catch (error: any) {
             console.error("Error registering user:", error);
+            
             if (
                 error.code === "Neo.ClientError.Schema.ConstraintValidationFailed" &&
                 error.message.includes("username")
             ) {
-                throw new Error(`An account already exists with the username "${username}"`);
+                throw { error: `An account already exists with the username "${username}"` };
             }
-            throw error
+
+            if (typeof error === "string") {
+                throw { error };
+            }
+
+            throw { error: "Failed to register user." };
         } finally {
             await session.close();
         }
     }
+
 
 
     /**
@@ -97,9 +113,9 @@ class AuthService {
         const session = this.driver?.session();
         const tokenService = new TokenService();
         const walletService = new WalletService(this.driver);
-    
-        if (!session) throw new Error("Database session not available");
-    
+
+        if (!session) throw { error: "Database session not available" };
+
         try {
             const result = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(
@@ -110,35 +126,43 @@ class AuthService {
                     { username }
                 )
             );
-    
+
             if (result.records.length === 0) {
-                throw new Error("Invalid username or password");
+                throw { error: "Invalid username or password" };
             }
-    
+
             const storedPassword = result.records[0].get("password");
             const walletAddress = result.records[0].get("walletAddress");
-    
+
             const isPasswordValid = await compare(password, storedPassword);
-    
             if (!isPasswordValid) {
-                throw new Error("Invalid username or password");
+                throw { error: "Invalid username or password" };
             }
-    
-            // Run token generation and wallet data fetch in parallel
+
             const [tokens, walletData] = await Promise.all([
                 tokenService.generateTokens(username),
                 walletService.getWalletBalance(walletAddress)
             ]);
-            
-            const { accessToken, refreshToken } = tokens
-            return { username,walletAddress, accessToken, refreshToken, loginType: 'decentragri', walletData};
+
+            const { accessToken, refreshToken } = tokens;
+            return {
+                username,
+                walletAddress,
+                accessToken,
+                refreshToken,
+                loginType: "decentragri",
+                walletData
+            };
         } catch (error: any) {
             console.error("Error logging in:", error);
-            throw error
+            // Pass error as-is if already formatted
+            if (typeof error === "object" && error.error) throw error;
+            throw { error: "Login failed" };
         } finally {
             await session.close();
         }
     }
+
     
 
 
@@ -152,10 +176,11 @@ class AuthService {
         const session = this.driver?.session();
         const walletService = new WalletService(this.driver);
 
-        if (!session) throw new Error("Database session not available");
+        if (!session) throw { error: "Database session not available" };
 
         try {
             const tokens: TokenScheme = await tokenService.verifyRefreshToken(token);
+            
             const result = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(
                     `
@@ -165,25 +190,44 @@ class AuthService {
                     { userName: tokens.userName }
                 )
             );
+
             if (result.records.length === 0) {
-                throw new Error("User not found");
+                throw { error: "User not found" };
             }
+
             const user = result.records[0].get("u").properties;
             const walletAddress: string = user.walletAddress;
 
-            const [ walletData] = await Promise.all([
+            const [walletData] = await Promise.all([
                 walletService.getWalletBalance(walletAddress)
             ]);
-            
-            const { accessToken, refreshToken } = tokens
-            return { username: tokens.userName, walletAddress, accessToken, refreshToken, loginType: 'decentragri', walletData};
+
+            const { accessToken, refreshToken } = tokens;
+            return {
+                username: tokens.userName,
+                walletAddress,
+                accessToken,
+                refreshToken,
+                loginType: "decentragri",
+                walletData
+            };
         } catch (error: any) {
             console.error("Error validating session:", error);
-            throw new Error("Invalid session");
+
+            if (error?.error) {
+                throw error;
+            }
+
+            if (typeof error === "string") {
+                throw { error };
+            }
+
+            throw { error: "Invalid session" };
         } finally {
             await session.close();
         }
     }
+
 
     /**
      * Refreshes the session by verifying the refresh token and generating new tokens.
