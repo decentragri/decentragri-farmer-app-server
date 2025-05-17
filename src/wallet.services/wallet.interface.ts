@@ -30,3 +30,16 @@
     ethPriceUSD: number;
     swellPriceUSD: number;
   }
+
+  /**
+   * Represents data related to a token transfer.
+   *
+   * @interface TokenTransferData
+   * @property {string} receiver - The address of the receiver.
+   * @property {string} tokenName - The name of the token.
+   */
+  export interface TokenTransferData {
+    receiver: string;
+    tokenName: string;
+    amount: string;
+  }

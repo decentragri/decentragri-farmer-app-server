@@ -2,15 +2,16 @@
 import { Engine } from "@thirdweb-dev/engine";
 
 //** CONFIG IMPORT
-import { ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, DECENTRAGRI_TOKEN, RSWETH_ADDRESS } from "../utils/constants";
+import { ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, DECENTRAGRI_TOKEN, RSWETH_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS } from "../utils/constants";
 
 //**  TYPE INTERFACE
-import { type WalletData } from "./wallet.interface";
+import { type TokenTransferData, type WalletData } from "./wallet.interface";
 
 //** MEMGRAPH IMPORTS
 import type { QueryResult } from "neo4j-driver";
 import { Driver, Session } from "neo4j-driver-core";
 import { InsightService } from "../insight.services/insight";
+import TokenService from "../security.services/token.service";
 
 
 
@@ -123,7 +124,226 @@ class WalletService {
     }
   }
 
-}
 
+  public async transferToken(token: string, tokenTransferData: TokenTransferData): Promise<{ success: string }> {
+    const tokenService = new TokenService();
+    const username: string = await tokenService.verifyAccessToken(token);
+    const smartWalletAddress: string = await this.getSmartWalletAddress(username);
+    const { receiver, tokenName, amount } = tokenTransferData;
+    const { chainId, contractAddress } = await this.getTokenChainAndAddress(tokenName);
+
+    try {
+      // Case: Native ETH transfer (no allowance needed)
+      if (
+        contractAddress.toLowerCase() === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      ) {
+        const nativeTransferTx = await engine.erc20.transferFrom(
+          chainId,
+          contractAddress,
+          smartWalletAddress,
+          {
+            fromAddress: smartWalletAddress,
+            toAddress: receiver,
+            amount: "0", // Set to 0 for native ETH transfer
+            // Use txOverrides to specify native ETH transfer
+            txOverrides: {
+              value: amount // Send native ETH value
+            }
+          }
+        );
+        await this.ensureTransactionMined(nativeTransferTx.result.queueId);
+        console.log("Native ETH transaction mined:", nativeTransferTx.result.queueId);
+      } else {
+        // Case: ERC-20 token transfer (with allowance)
+        const allowanceTx = await engine.erc20.setAllowance(
+          chainId,
+          contractAddress,
+          smartWalletAddress,
+          {
+            spenderAddress: smartWalletAddress,
+            amount
+          }
+        );
+        await this.ensureTransactionMined(allowanceTx.result.queueId);
+        console.log("Allowance transaction mined:", allowanceTx.result.queueId);
+
+        const transferTx = await engine.erc20.transferFrom(
+          chainId,
+          contractAddress,
+          smartWalletAddress,
+          {
+            fromAddress: smartWalletAddress,
+            toAddress: receiver,
+            amount
+          }
+        );
+        await this.ensureTransactionMined(transferTx.result.queueId);
+        console.log("ERC20 transfer transaction mined:", transferTx.result.queueId);
+      }
+
+      return { success: "Token transferred successfully." };
+    } catch (error: any) {
+      console.error("Error transferring token:", error);
+      throw new Error("Failed to transfer token.");
+    }
+  }
+
+
+	public async getTokenChainAndAddress(tokenName: string): Promise<{ chainId: string; contractAddress: string }> {
+		try {
+			let chainId: string;
+			let contractAddress: string;
+
+			switch (tokenName.toUpperCase()) {
+				case "ETH":
+					chainId = "1";
+					contractAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"; // Native ETH representation
+					break;
+
+				case "SWELL":
+					chainId = "1";
+					contractAddress = "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676"; // Replace with correct SWELL address if different
+					break;
+
+				case "RSWETH":
+					chainId = "1";
+					contractAddress = RSWETH_ADDRESS;
+					break;
+
+				case "DAGRI":
+					chainId = CHAIN;
+					contractAddress = DECENTRAGRI_TOKEN;
+					break;
+
+				default:
+					throw new Error(`Unrecognized token name: ${tokenName}`);
+			}
+
+			return { chainId, contractAddress };
+		} catch (error: any) {
+			console.error("Error getting token chain and address:", error);
+			throw new Error("Failed to get token chain and address.");
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+  public async ensureTransactionMined(queueId: string): Promise<void> {
+		const maxRetries = 3; // Number of immediate retries before background retry
+		const maxErrorRetries = 3; // Max retries for errored transactions
+		const retryInterval = 5000; // 3 seconds delay between retries
+		const logEvery = 3; // Log every N retries
+	
+		let retries = 0;
+		let errorRetries = 0;
+		let lastStatus = "";
+	
+		while (retries < maxRetries) {
+			try {
+				const status = await engine.transaction.status(queueId);
+	
+				// ✅ Log status changes only
+				if (status.result.status !== lastStatus) {
+					console.log(`🔄 Transaction ${queueId} status: ${status.result.status}`);
+					lastStatus = status.result.status;
+				}
+	
+				if (status.result.status === "mined") {
+					console.log(`✅ Transaction ${queueId} successfully mined.`);
+					return;
+				}
+	
+				if (status.result.status === "errored") {
+					if (errorRetries >= maxErrorRetries) {
+						console.error(`🚨 Transaction ${queueId} failed after ${maxErrorRetries} attempts.`);
+						break; // Stop retries and move to background mode
+					}
+	
+					console.warn(`⚠️ Transaction ${queueId} errored. Retrying... (${errorRetries + 1}/${maxErrorRetries})`);
+					await engine.transaction.retryFailed({ queueId });
+					await engine.transaction.syncRetry({ queueId }); // 🔄 Ensures retry is synchronous
+					errorRetries++;
+				}
+	
+				if (status.result.status === "cancelled") {
+					console.error(`🚨 Transaction ${queueId} was cancelled.`);
+					return;
+				}
+	
+				// ✅ Log every N retries
+				if (retries % logEvery === 0) {
+					console.log(`⏳ Still waiting for transaction ${queueId} to be mined...`);
+				}
+	
+				// Wait before checking status again
+				await new Promise((resolve) => setTimeout(resolve, retryInterval));
+			} catch (networkError) {
+				console.warn(`⚠️ Network error while checking transaction ${queueId}, retrying...`, networkError);
+			}
+	
+			retries++;
+		}
+	
+		// 🚀 Start background retries after maxRetries is reached
+		console.warn(`⚠️ Moving transaction ${queueId} to background monitoring...`);
+		this.retryInBackground(queueId);
+	}
+
+
+  private retryInBackground(queueId: string) {
+		const retryInterval = 5000; // Retry every 5 seconds
+		const maxBackgroundRetries = 100; // Give up after 100 background retries
+	
+		let retries = 0;
+	
+		const retryLoop = async () => {
+			while (retries < maxBackgroundRetries) {
+				try {
+					const status = await engine.transaction.status(queueId);
+	
+					if (status.result.status === "mined") {
+						console.log(`✅ (Background) Transaction ${queueId} successfully mined.`);
+						return;
+					}
+	
+					if (status.result.status === "errored") {
+						console.warn(`⚠️ (Background) Retrying errored transaction ${queueId}... (${retries + 1}/${maxBackgroundRetries})`);
+						await engine.transaction.retryFailed({ queueId });
+						await engine.transaction.syncRetry({ queueId });
+					}
+	
+					if (status.result.status === "cancelled") {
+						console.error(`🚨 (Background) Transaction ${queueId} was cancelled.`);
+						return;
+					}
+	
+					// Wait before the next retry
+					await new Promise((resolve) => setTimeout(resolve, retryInterval));
+				} catch (networkError) {
+					console.warn(`⚠️ (Background) Network error for transaction ${queueId}, retrying...`, networkError);
+				}
+	
+				retries++;
+			}
+	
+			console.error(`🚨 (Background) Transaction ${queueId} did not succeed after ${maxBackgroundRetries} retries.`);
+		};
+	
+		// Run the retry loop in the background
+		retryLoop();
+	}
+
+
+}
 export default WalletService;
 
