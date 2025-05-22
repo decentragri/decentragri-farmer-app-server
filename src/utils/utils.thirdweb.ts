@@ -59,6 +59,29 @@ export const uploadPicIPFS = async (filePath: string): Promise<string> => {
 	}
 };
 
+export const uploadPicBuffer = async (buffer: Buffer, fileName: string): Promise<string> => {
+	try {
+
+
+		const file = new File([buffer], fileName, {
+			type: 'image/png'
+		});
+
+		const uri = await upload({
+			client,
+			files: [file],
+		});
+
+    console.log(uri)
+
+		return uri;
+	} catch (error) {
+		console.error("Error uploading to IPFS:", error);
+		throw new Error("Failed to upload to IPFS");
+	}
+};
+
+
 
 
 

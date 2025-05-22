@@ -151,6 +151,7 @@ class SensorData {
                     username: reading.username,
                     createdAt: reading.createdAt,
                     sensorId: sensorId,
+                    id: reading.id,
                     interpretation: interpretation ?? "No interpretation",
          
                 };

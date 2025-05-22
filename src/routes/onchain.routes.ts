@@ -1,11 +1,13 @@
-//
-
-import type Elysia from "elysia";
+//**SERVICE IMPORTS */
+import WalletService from "../wallet.services/wallet.service";
 import OnChainService, { type RSWETHToEthRate } from "../onchain.services/onchain.service";
+
+//** SCHEMA & INTERFACE IMPORTS */
+import type Elysia from "elysia";
 import { authBearerSchema } from "../auth.services/auth.schema";
 import { stakeETHSchema } from "../onchain.services/onchain.schema";
+import { tokenTransferSchema } from "../wallet.services/wallet.schema";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-
 
 
 
@@ -89,6 +91,25 @@ const OnChain = (app: Elysia) => {
 
       }, stakeETHSchema
    )
+
+   .post('/api/onchain/token/transfer', async ({ headers, body }) => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+
+            const walletService = new WalletService();
+            const output: SuccessMessage = await walletService.transferToken(jwtToken, body);
+            return output;
+        } catch (error: any) {
+            console.error(error);
+            throw error;
+        }
+
+      }, tokenTransferSchema
+    )
 
 
 }

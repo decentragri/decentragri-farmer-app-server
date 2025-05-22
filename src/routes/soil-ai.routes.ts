@@ -4,7 +4,7 @@ import Elysia from 'elysia';
 //** SERVICE IMPORTS */
 import SoilSensorRunner from '../ai.services/soil.ai.team.service/soil.main';
 import { sensorSessionSchema } from '../ai.services/soil.ai.team.service/soil.schema';
-import SensorData from '../data.services/sensor.data';
+import SensorData from '../data.services/soilsensor.data';
 import { authBearerSchema } from '../auth.services/auth.schema';
 import type { SensorReadingsWithInterpretation } from '../ai.services/soil.ai.team.service/soil.types';
 

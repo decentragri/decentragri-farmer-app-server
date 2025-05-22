@@ -1,5 +1,6 @@
 //**CLASS IMPORT */
-import SensorData from '../../data.services/sensor.data';
+import SensorData from '../../data.services/soilsensor.data';
+import type { SuccessMessage } from '../../onchain.services/onchain.interface';
 import TokenService from '../../security.services/token.service';
 import SoilSensorTeam from './soil.ai.team';
 
@@ -89,37 +90,43 @@ class SoilSensorRunner {
 	 * Analyzes sensor data from API.
 	 * @param token - The access token for authentication.
 	 * @param params - The parameters for the analysis session.
-	 * @returns The result of the analysis.
+	 * @returns the client generated id
 	 */
-	public static async analyzeFromApi(token: string, params: SensorSessionParams): Promise<void> {
+	public static async analyzeFromApi(token: string, params: SensorSessionParams): Promise<SuccessMessage> {
 		const tokenService: TokenService = new TokenService();
 		const soilSensorTeam = new SoilSensorTeam();
-		const sensorData = new SensorData(); 
-		const username: string = await tokenService.verifyAccessToken(token);
-	
-		console.log('🌱 API Request: Analyzing provided sensor data...');
-	
-		const output = await soilSensorTeam.start(params);
-	
-		if (output.status !== 'FINISHED') {
-			console.warn('⚠️ Workflow blocked.');
-			throw new Error('Workflow blocked during processing.');
-		}
-	
-		const parsedInterpretation = parseAdviceToObject(output.result as string);
-	
-		const dataSensor: SensorReadingsWithInterpretation = {
-			...params.sensorData,
-			interpretation: parsedInterpretation,
-			createdAt: new Date().toISOString()
-		};
-		
+		const sensorData = new SensorData();
 
-		
-		await sensorData.saveSensorData(dataSensor, username);
-	
-		console.log('✅ Analysis complete.');
+		try {
+			const username: string = await tokenService.verifyAccessToken(token);
+			console.log('🌱 API Request: Analyzing provided sensor data...');
+
+			const output = await soilSensorTeam.start(params);
+
+			if (output.status !== 'FINISHED') {
+				console.warn('⚠️ Workflow blocked.');
+				throw new Error('Workflow blocked during processing.');
+			}
+
+			const parsedInterpretation: ParsedAdvice = parseAdviceToObject(output.result as string);
+
+			const dataSensor: SensorReadingsWithInterpretation = {
+				...params.sensorData,
+				interpretation: parsedInterpretation,
+				createdAt: new Date().toISOString()
+			};
+
+			await sensorData.saveSensorData(dataSensor, username);
+			console.log('✅ Analysis complete.');
+			
+
+			return { success: params.sensorData.id }
+		} catch (error: any) {
+			console.error("❌ Error analyzing sensor data:", error);
+			throw new Error("Failed to process sensor analysis.");
+		}
 	}
+
 	
 }
 

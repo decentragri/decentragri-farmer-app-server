@@ -15,6 +15,7 @@ export const sensorSessionSchema = {
 			username: t.String(),
 			sensorId: t.String(),
 			cropType: t.String(),
+			id: t.String()
 		}),
 
 	})

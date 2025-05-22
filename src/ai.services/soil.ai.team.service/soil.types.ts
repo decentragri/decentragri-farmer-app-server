@@ -8,6 +8,7 @@ export interface SensorReadings  {
 	cropType?: string;
 	username: string;
 	sensorId: string;
+	id: string;
 
 };
 
