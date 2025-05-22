@@ -1,17 +1,14 @@
 //**SERVICE IMPORTS */
-import WalletService from "../wallet.services/wallet.service";
-import OnChainService, { type RSWETHToEthRate } from "../onchain.services/onchain.service";
+import PlantImageRunner from "../ai.services/plant.ai.team.service/plant.main";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
-import { authBearerSchema } from "../auth.services/auth.schema";
-import { stakeETHSchema } from "../onchain.services/onchain.schema";
-import { tokenTransferSchema } from "../wallet.services/wallet.schema";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
+import { plantImageSessionSchema } from "../data.services/plant.schema";
 
 
 const PlantAI = (app: Elysia) => {
-        app.post('/api/onchain/stake/eth', async ({ headers, body }) => {
+        app.post('api/save-plant-readings', async ({ headers, body }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -19,18 +16,15 @@ const PlantAI = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
 
-            const onChainService = new PlantSer
+            const output: SuccessMessage  = await PlantImageRunner.analyzeFromApi(jwtToken, body);
             
-
-
-            const output: SuccessMessage = await onChainService.stakeETH(jwtToken, body);
             return output;
         } catch (error: any) {
             console.error(error);
             throw error;
         }
 
-      }, stakeETHSchema
+      }, plantImageSessionSchema
    )
 
 }
