@@ -1,4 +1,3 @@
-import { getContract } from "thirdweb";
 import { SECRET_KEY } from "./src/utils/constants";
 
 const fetchRSWETHPrice = async () => {
@@ -11,6 +10,7 @@ const fetchRSWETHPrice = async () => {
             'x-secret-key': SECRET_KEY,
 		}
 	});
+	console.log("Response:", res);
     const json = await res.json();
 
     console.log("Response:", json.data);

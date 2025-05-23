@@ -29,25 +29,32 @@ class OnChainService {
 	public async getETHandSWETHPrice(token: string): Promise<ETHAndRSWETHPrice> {
 		const tokenService = new TokenService();
 		const insightService = new InsightService();
+
 		try {
 			await tokenService.verifyRefreshToken(token);
 			const ETHPrice: number = await insightService.getTokenPriceUSD(1);
 
-			console.log("ETH Price:", ETHPrice);
-			const rswETHPrice: number = await insightService.getTokenPriceUSD(1, RSWETH_ADDRESS);
+			console.log("✅ ETH Price:", ETHPrice);
 
-			if (!ETHPrice || !rswETHPrice) {
-				throw new Error("Invalid token price data");
+			let rswETHPrice = 0;
+
+			try {
+				rswETHPrice = await insightService.getTokenPriceUSD(1, RSWETH_ADDRESS);
+				console.log("✅ rswETH Price:", rswETHPrice);
+			} catch (innerErr) {
+				console.warn("⚠️ rswETH price not available, defaulting to 0");
+				rswETHPrice = 0;
 			}
 
-			const exchangeRate = ETHPrice / rswETHPrice; // 1 ETH = X RSWETH
+			const exchangeRate = rswETHPrice > 0 ? ETHPrice / rswETHPrice : 0;
 
 			return { ETHPrice, rswETHPrice, exchangeRate };
 		} catch (err) {
-			console.error(`Failed to fetch ETH or RSWETH price:`, err);
+			console.error("❌ Failed to fetch ETH or RSWETH price:", err);
 			throw new Error("Failed to fetch ETH and RSWETH prices");
 		}
 	}
+
 
 	public async ethToRswETHRate(token: string): Promise<ETHAndRSWETHRate> {
 		const tokenService = new TokenService();
