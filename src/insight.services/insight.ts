@@ -4,14 +4,14 @@ import { SECRET_KEY } from "../utils/constants";
 import type { WalletTransactionResponse } from "./insight.interface";
 
 const headers = {
-	"X-Secret-Key": SECRET_KEY,
+	"x-secret-key": SECRET_KEY,
 };
 
 export class InsightService {
 
 
 	public async getTokenPriceUSD(chainId: number, tokenAddress: string = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"): Promise<number> {
-		const url: string = `https://${chainId}.insight.thirdweb.com/v1/tokens/price?address=${tokenAddress}`;
+		const url: string = `https://${chainId.toString()}.insight.thirdweb.com/v1/tokens/price?address=${tokenAddress}`;
 
 		try {
 			const res = await fetch(url, {

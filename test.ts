@@ -3,15 +3,14 @@ import { SECRET_KEY } from "./src/utils/constants";
 
 const fetchRSWETHPrice = async () => {
 
-	const url = 'https://1.insight.thirdweb.com/v1/tokens/price?address=0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0';
+	const url = 'https://1.insight.thirdweb.com/v1/tokens/price?address=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 	const res = await fetch(url, {
 		headers: {
 
-            'X-Secret-Key': SECRET_KEY,
+            'x-secret-key': SECRET_KEY,
 		}
 	});
-
     const json = await res.json();
 
     console.log("Response:", json.data);
@@ -35,4 +34,4 @@ const getCurrentWeather = async () => {
 }
 
 
-await getCurrentWeather()
+	await fetchRSWETHPrice();
