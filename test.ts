@@ -3,7 +3,7 @@ import { SECRET_KEY } from "./src/utils/constants";
 
 const fetchRSWETHPrice = async () => {
 
-	const url = 'https://1.insight.thirdweb.com/v1/tokens/price?address=0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+	const url = 'https://1.insight.thirdweb.com/v1/tokens/price?address=0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0';
 
 	const res = await fetch(url, {
 		headers: {

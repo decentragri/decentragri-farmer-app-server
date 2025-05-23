@@ -32,6 +32,8 @@ class OnChainService {
 		try {
 			await tokenService.verifyRefreshToken(token);
 			const ETHPrice: number = await insightService.getTokenPriceUSD(1);
+
+			console.log("ETH Price:", ETHPrice);
 			const rswETHPrice: number = await insightService.getTokenPriceUSD(1, RSWETH_ADDRESS);
 
 			if (!ETHPrice || !rswETHPrice) {
