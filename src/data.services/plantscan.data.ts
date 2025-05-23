@@ -41,7 +41,7 @@ class PlantData {
 					{
 						username: username,
 						cropType: data.cropType ?? null,
-						date: data.date,
+						date: new Date().toISOString(),
 						note: data.note ?? null,
 						lat: data.location?.lat ?? null,
 						lng: data.location?.lng ?? null,
@@ -114,7 +114,7 @@ class PlantData {
 						properties: {
                             image: imageUri,
 							cropType: data.cropType,
-							timestamp: data.date,
+							timestamp: new Date().toISOString(),
 							username: username,
 							location: data.location,
 							note: data.note ?? null,

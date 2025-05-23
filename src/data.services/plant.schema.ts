@@ -5,7 +5,6 @@ export const plantImageSessionSchema = {
 	body: t.Object({
 		imageBytes: t.String(), // Stringified PackedByteArray
 		cropType: t.String(),
-		date: t.String(), // ISO 8601 format
 		location: t.Optional(
 			t.Object({
 				lat: t.Number(),
