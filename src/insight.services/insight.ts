@@ -19,6 +19,7 @@ export class InsightService {
 			});
 
 			const json = await res.json();
+			console.log("Response:", json.data);
 			const price = json?.data?.[0]?.price_usd;
             
 
