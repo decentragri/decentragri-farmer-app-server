@@ -3,7 +3,7 @@ import { Agent, Task, Team } from 'kaibanjs';
 
 // ** TYPE IMPORTS */
 export interface PlantImageSessionParams {
-	imageBytes: string;       // Stringified PackedByteArray from Godot (e.g., "[137,80,78,...]")
+	imageBytes: string; // Stringified PackedByteArray from Godot
 	cropType: string;
 	location?: {
 		lat: number;
@@ -18,9 +18,9 @@ class PlantImageTeam {
 	constructor() {
 		this.imageAnalyzer = new Agent({
 			name: 'Carmen',
-			role: 'Plant Image Health Analyst',
-			goal: 'Analyze a plant image and determine if it is healthy or infested. If infested, provide actionable advice.',
-			background: 'Expert in crop diseases, pest detection, and visual diagnosis of plant health.',
+			role: 'Plant Health AI',
+			goal: 'Diagnose plant health from image input.',
+			background: 'Skilled in visual symptoms of crop pests and diseases.',
 			tools: [],
 			llmConfig: {
 				provider: 'openai',
@@ -44,9 +44,8 @@ class PlantImageTeam {
 		}
 	}
 
-	// Rough Base64 token estimator: ~4 chars per token
 	private estimateBase64Tokens(base64: string): number {
-		return Math.ceil(base64.length / 4);
+		return Math.ceil(base64.length / 4); // Rough estimate: 4 chars/token
 	}
 
 	public async start(params: PlantImageSessionParams) {
@@ -58,37 +57,27 @@ class PlantImageTeam {
 				throw new Error("Invalid image byte data.");
 			}
 
-			// ✅ Check token estimate before proceeding
 			const estimatedTokens = this.estimateBase64Tokens(base64);
-			console.log(`Estimated tokens for image: ${estimatedTokens}`);
+			console.log(`🧮 Estimated base64 tokens: ${estimatedTokens}`);
 			const tokenLimit = 65000;
-			const safetyBuffer = 5000;
+			const reservedForContext = 15000;
 
-			if (estimatedTokens + safetyBuffer > tokenLimit) {
-				throw new Error(
-					`Base64 image too large: estimated ${estimatedTokens} tokens. Must stay under ${tokenLimit - safetyBuffer}.`
-				);
+			if (estimatedTokens + reservedForContext > tokenLimit) {
+				throw new Error(`Base64 image too large (${estimatedTokens} tokens). Limit: ${tokenLimit - reservedForContext}`);
 			}
 
 			const task = new Task({
-				description: `You are shown an image of a ${cropType}. Determine whether it appears:
-				- Healthy
-				- Infested (by pests or disease)
+				description: `Below is a base64-encoded image of a ${cropType}.
+Is it healthy or infested?
+Explain why and give suggestions.
 
-				Then provide:
-				1. Diagnosis (Healthy / Infested + reason)
-				2. Evidence you noticed in the image (e.g., spots, wilting)
-				3. Recommendations to improve or treat the plant.
-
-				Analyze the image below:
-
-				[data:image/png;base64,${base64}]`,
-				expectedOutput: `A brief diagnosis, evidence, and 2-3 recommendations.`,
+[data:image/png;base64,${base64}]`,
+				expectedOutput: `Diagnosis (healthy or infested), short explanation, and 1–2 recommendations.`,
 				agent: this.imageAnalyzer
 			});
 
 			const team = new Team({
-				name: 'Plant Image Evaluation Team',
+				name: 'Plant Analysis',
 				agents: [this.imageAnalyzer],
 				tasks: [task],
 				inputs: {},
