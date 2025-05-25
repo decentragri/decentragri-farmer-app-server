@@ -93,16 +93,32 @@ class PlantData {
 	/**
 	 * Mint NFT representing the plant image analysis.
 	 */
-	private async savePlantScanToNFT(data: PlantImageSessionParams & { interpretation: string }, image: string, username: string): Promise<void> {
+	private async savePlantScanToNFT(
+		data: PlantImageSessionParams & { interpretation: string },
+		image: string,
+		username: string
+	): Promise<void> {
 		const driver: Driver = getDriver();
 		const walletService = new WalletService(driver);
 		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
 
-        const byteImage: number[] = JSON.parse(image);
-        const buffer: Buffer = Buffer.from(byteImage);
-        const imageUri = await uploadPicBuffer(buffer, data.cropType)
+		const byteImage: number[] = JSON.parse(image);
+		const buffer: Buffer = Buffer.from(byteImage);
+		const imageUri = await uploadPicBuffer(buffer, data.cropType);
 
 		try {
+			// Optionally summarize interpretation for traits
+			const attributes = [
+				{
+					trait_type: "AI Evaluation",
+					value: data.interpretation.slice(0, 100) // Limit to safe size
+				},
+				{
+					trait_type: "Crop Type",
+					value: data.cropType
+				}
+			];
+
 			const metadata = {
 				receiver: smartWalletAddress,
 				metadataWithSupply: {
@@ -112,14 +128,15 @@ class PlantData {
 						image: "https://d391b93f5f62d9c15f67142e43841acc.ipfscdn.io/ipfs/QmdRtWRHQwEkKA7nciqRQmgW7y6yygT589aogfUYaoc3Ea/ChatGPT%20Image%20Apr%2021%2C%202025%2C%2012_14_42%20PM.png",
 						external_url: "https://decentragri.com/plant-scans",
 						properties: {
-                            image: imageUri,
+							image: imageUri,
 							cropType: data.cropType,
 							timestamp: new Date().toISOString(),
-							username: username,
+							username,
 							location: data.location,
 							note: data.note ?? null,
 							interpretation: data.interpretation
 						},
+						attributes,
 						background_color: "#E0FFE0"
 					},
 					supply: "1"
@@ -132,6 +149,7 @@ class PlantData {
 			throw new Error("Failed to mint plant scan NFT");
 		}
 	}
+
 }
 
 export default PlantData;
