@@ -29,7 +29,7 @@ export const CHAIN: string  = process.env.CHAIN || "1923"; // SWELL CHAIN
 // Contract Addresses
 export const DECENTRAGRI_TOKEN: string = '0x10fB9F8c0D73140b8Ec250ec3B0eE5B79A4457e6';
 export const SCAN_EDITION_ADDRESS: string = '0x3Ac943b9509b7d9C9E0010a407c81dDC6011597c';
-export const PLANT_SCAN_EDITION_ADDRESS: string = '0xA0ecCB7bE8472dc3f087D8D87DA88Bf237705201'
+export const PLANT_SCAN_EDITION_ADDRESS: string = '0xc2500A85296D23dC7EEF599EcEEE5F626A423cB7'
 export const RSWETH_ADDRESS: string = "0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0"
 
 export const ENGINE_ACCESS_TOKEN: string = process.env.ENGINE_ACCESS_TOKEN || ""

@@ -111,7 +111,7 @@ class PlantData {
 			const attributes = [
 				{
 					trait_type: "AI Evaluation",
-					value: data.interpretation.slice(0, 100) // Limit to safe size
+					value: data.interpretation
 				},
 				{
 					trait_type: "Crop Type",
@@ -133,7 +133,7 @@ class PlantData {
 							timestamp: new Date().toISOString(),
 							username,
 							location: data.location,
-							note: data.note ?? null,
+							note: data.note ?? "No additional notes",
 							interpretation: data.interpretation
 						},
 						attributes,
