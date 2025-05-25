@@ -15,6 +15,7 @@ import routes from "./routes/index";
 // Initialize Elysia app
 const app = new Elysia({
   serve: {
+    maxRequestBodySize: 1024 * 1024 * 10,  // 256MB
     idleTimeout: 60
   }
 })
