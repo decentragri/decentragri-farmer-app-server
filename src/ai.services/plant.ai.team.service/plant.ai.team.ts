@@ -60,6 +60,7 @@ class PlantImageTeam {
 
 			// ✅ Check token estimate before proceeding
 			const estimatedTokens = this.estimateBase64Tokens(base64);
+			console.log(`Estimated tokens for image: ${estimatedTokens}`);
 			const tokenLimit = 65000;
 			const safetyBuffer = 5000;
 
