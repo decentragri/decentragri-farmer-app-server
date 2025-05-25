@@ -49,7 +49,7 @@ class PlantData {
 					}
 				)
 			),
-			this.savePlantScanToNFT(data, data.imageBytes, username)
+			await this.savePlantScanToNFT(data, data.imageBytes, username)
 			]);
 		} catch (err) {
 			console.error("Error saving plant scan:", err);

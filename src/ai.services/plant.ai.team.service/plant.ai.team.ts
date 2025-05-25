@@ -1,10 +1,10 @@
-//** KAIBANJS IMPORTS */
+// ** KAIBANJS IMPORTS */
 import { Agent, Task, Team } from 'kaibanjs';
 
-//**TYPE IMPORTS */
+// ** TYPE IMPORTS */
 export interface PlantImageSessionParams {
 	imageBytes: string;       // Stringified PackedByteArray from Godot (e.g., "[137,80,78,...]")
-	cropType: string;        // ISO 8601
+	cropType: string;
 	location?: {
 		lat: number;
 		lng: number;
@@ -44,6 +44,11 @@ class PlantImageTeam {
 		}
 	}
 
+	// Rough Base64 token estimator: ~4 chars per token
+	private estimateBase64Tokens(base64: string): number {
+		return Math.ceil(base64.length / 4);
+	}
+
 	public async start(params: PlantImageSessionParams) {
 		try {
 			const { imageBytes, cropType = 'plant' } = params;
@@ -51,6 +56,17 @@ class PlantImageTeam {
 
 			if (!base64) {
 				throw new Error("Invalid image byte data.");
+			}
+
+			// ✅ Check token estimate before proceeding
+			const estimatedTokens = this.estimateBase64Tokens(base64);
+			const tokenLimit = 65000;
+			const safetyBuffer = 5000;
+
+			if (estimatedTokens + safetyBuffer > tokenLimit) {
+				throw new Error(
+					`Base64 image too large: estimated ${estimatedTokens} tokens. Must stay under ${tokenLimit - safetyBuffer}.`
+				);
 			}
 
 			const task = new Task({
@@ -83,10 +99,9 @@ class PlantImageTeam {
 			return await team.start();
 		} catch (error) {
 			console.error("❌ Failed to start PlantImageSession:", error);
-			throw error; // Optional: wrap with custom error if needed
+			throw error;
 		}
 	}
-
 }
 
 export default PlantImageTeam;
