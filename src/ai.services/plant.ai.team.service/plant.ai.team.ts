@@ -45,42 +45,48 @@ class PlantImageTeam {
 	}
 
 	public async start(params: PlantImageSessionParams) {
-		const { imageBytes, cropType = 'plant' } = params;
-		const base64 = this.convertPackedBytesToBase64(imageBytes);
+		try {
+			const { imageBytes, cropType = 'plant' } = params;
+			const base64 = this.convertPackedBytesToBase64(imageBytes);
 
-		if (!base64) {
-			throw new Error("Invalid image byte data.");
-		}
-
-		const task = new Task({
-			description: `You are shown an image of a ${cropType}. Determine whether it appears:
-            - Healthy
-            - Infested (by pests or disease)
-
-            Then provide:
-            1. Diagnosis (Healthy / Infested + reason)
-            2. Evidence you noticed in the image (e.g., spots, wilting)
-            3. Recommendations to improve or treat the plant.
-
-            Analyze the image below:
-
-            [data:image/png;base64,${base64}]`,
-			expectedOutput: `A brief diagnosis, evidence, and 2-3 recommendations.`,
-			agent: this.imageAnalyzer
-		});
-
-		const team = new Team({
-			name: 'Plant Image Evaluation Team',
-			agents: [this.imageAnalyzer],
-			tasks: [task],
-			inputs: {},
-			env: {
-				OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
+			if (!base64) {
+				throw new Error("Invalid image byte data.");
 			}
-		});
 
-		return await team.start();
+			const task = new Task({
+				description: `You are shown an image of a ${cropType}. Determine whether it appears:
+				- Healthy
+				- Infested (by pests or disease)
+
+				Then provide:
+				1. Diagnosis (Healthy / Infested + reason)
+				2. Evidence you noticed in the image (e.g., spots, wilting)
+				3. Recommendations to improve or treat the plant.
+
+				Analyze the image below:
+
+				[data:image/png;base64,${base64}]`,
+				expectedOutput: `A brief diagnosis, evidence, and 2-3 recommendations.`,
+				agent: this.imageAnalyzer
+			});
+
+			const team = new Team({
+				name: 'Plant Image Evaluation Team',
+				agents: [this.imageAnalyzer],
+				tasks: [task],
+				inputs: {},
+				env: {
+					OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
+				}
+			});
+
+			return await team.start();
+		} catch (error) {
+			console.error("❌ Failed to start PlantImageSession:", error);
+			throw error; // Optional: wrap with custom error if needed
+		}
 	}
+
 }
 
 export default PlantImageTeam;

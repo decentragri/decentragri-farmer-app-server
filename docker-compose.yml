@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   decentragri-site:
     image: decentragri-site
