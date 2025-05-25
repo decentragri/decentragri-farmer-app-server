@@ -24,10 +24,10 @@ class PlantImageTeam {
 			tools: [],
 			llmConfig: {
 				provider: 'openai',
-				model: 'gpt-4.1-mini', // or 'gpt-4-turbo' if using text-only analysis
-				apiKey: import.meta.env.OPENAI_API_KEY,
-                //@ts-ignore
-				apiBaseUrl: 'https://api.openai.com/v1',
+				model: 'deepseek-chat',
+				apiKey: import.meta.env.DEEPSEEK_API_KEY,
+				//@ts-ignore
+				apiBaseUrl: 'https://api.deepseek.com/v1',
 				maxRetries: 3
 			}
 		});
