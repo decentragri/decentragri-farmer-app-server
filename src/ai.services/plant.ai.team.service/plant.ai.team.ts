@@ -24,7 +24,7 @@ class PlantImageTeam {
 			tools: [],
 			llmConfig: {
 				provider: 'openai',
-				model: 'deepseek-chat',
+				model: 'gpt-4o-mini',
 				apiKey: import.meta.env.OPENAI_API_KEY,
 				//@ts-ignore
 				apiBaseUrl: 'https://api.openai.com/v1',
