@@ -32,7 +32,7 @@ class PlantImageRunner {
 
 			const interpretation = output.result as unknown as string;
 
-			// 🛑 Stop if result indicates invalid image or crop type
+			// Stop if result indicates invalid image or crop type
 			if (
 				interpretation.includes("Invalid cropType: not a plant") ||
 				interpretation.includes("This image does not appear to contain a plant")
