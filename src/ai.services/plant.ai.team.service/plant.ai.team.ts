@@ -19,7 +19,6 @@ class PlantImageTeam {
 		this.imageAnalyzer = new Agent({
 			name: 'Carmen',
 			role: 'Plant Image Health Analyst',
-			
 			goal: 'Analyze a plant image and determine if it is healthy or infested. If infested, provide actionable advice.',
 			background: 'Expert in crop diseases, pest detection, and visual diagnosis of plant health.',
 			tools: [],
@@ -92,7 +91,13 @@ public async start(params: PlantImageSessionParams) {
                     agent: this.imageAnalyzer
                 });
 
-        task.inputs = {
+   
+
+        const team = new Team({
+            name: 'Plant Image Evaluation Team',
+            agents: [this.imageAnalyzer],
+            tasks: [task],
+            inputs: {
             role: "user",
             content: [
                 { type: "input_text", text: "Analyze the image based on the provided instructions." },
@@ -101,13 +106,7 @@ public async start(params: PlantImageSessionParams) {
                     image_url: base64, // Corrected: directly pass the base64 string
                 },
             ],
-        }
-
-        const team = new Team({
-            name: 'Plant Image Evaluation Team',
-            agents: [this.imageAnalyzer],
-            tasks: [task],
-            inputs: {},
+        },
             env: {
                 OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
             }
