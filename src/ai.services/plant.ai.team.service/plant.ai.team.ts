@@ -89,8 +89,8 @@ class PlantImageTeam {
 
 
 			task.inputs = {
-				cropType: cropType,
-				image: base64 // with data:image/png;base64,...
+				type: "input_image",
+				image_url: base64 // with data:image/png;base64,...
 			};
 
 
