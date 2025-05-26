@@ -47,77 +47,75 @@ class PlantImageTeam {
 		}
 	}
 
-	public async start(params: PlantImageSessionParams) {
-		try {
-			const { imageBytes, cropType = 'plant' } = params;
-			const base64: string = this.convertPackedBytesToBase64(imageBytes);
+public async start(params: PlantImageSessionParams) {
+    try {
+        const { imageBytes, cropType = 'plant' } = params;
+        const base64: string = this.convertPackedBytesToBase64(imageBytes);
 
+        if (!base64) {
+            throw new Error("Invalid image byte data.");
+        }
 
-			if (!base64) {
-				throw new Error("Invalid image byte data.");
-			}
-			
-			const task = new Task({
-				title: "Plant Image Health Analysis",
-				description: `You are shown an image and given a claimed crop type: ${cropType}.
+                const task = new Task({
+                    title: "Plant Image Health Analysis",
+                    description: `You are shown an image and given a claimed crop type: ${cropType}.
+        
+                    Your responsibilities are to follow these steps strictly:
+        
+                    1.  **Analyze the image content:** First, determine what is *actually* shown in the image. Be specific. Is it a plant (and if so, what kind)? A computer? A person? An animal?
+                    2.  **Validate the claimed cropType:** Check if the provided \`cropType\` ("${cropType}") is a valid and real plant type.
+                        -   If the \`cropType\` is clearly **not a valid or real plant** (e.g., "chair", "banana", or a generic "plant" when you expect a specific crop name), your *sole* output should be: "Invalid cropType: not a plant."
+                        -   **Stop here if cropType is invalid.**
+        
+                    3.  **Compare image to claimed cropType (if cropType is valid):**
+                        -   If the image **does not depict a plant at all** (e.g., it shows a computer, a person, or an animal), your *sole* output should be: "This image does not appear to contain a plant. It appears to show: [your guess of what's in the image]."
+                        -   If the image **does depict a plant, but it does not match the claimed crop type** (e.g., \`cropType\` says 'corn' but the image is a sunflower), your *sole* output should be: "You claimed the crop is ${cropType}, but the image appears to show: [your guess of the actual plant in the image]."
+                        -   **Stop here if the image does not match the claim or is not a plant.**
+        
+                    4.  **If the cropType is valid AND the image matches the claim AND shows a plant, then assess its health:**
+                        -   **Diagnosis:** Healthy or Infested (and the reason why).
+                        -   **Evidence:** Describe visible signs in the image (e.g., yellowing, holes, spots).
+                        -   **Recommendations:** Give 2–3 helpful suggestions to treat or care for the plant.
+        
+                    Remember: Your output should be precise and follow the instructions for each scenario.`,
+                    expectedOutput: `One of the following:
+        - "Invalid cropType: not a plant."
+        - "This image does not appear to contain a plant. It appears to show: [your guess]."
+        - "You claimed the crop is ${cropType}, but the image appears to show: [your guess]."
+        OR, if valid:
+        1. Diagnosis: ...
+        2. Evidence: ...
+        3. Recommendations: ...`,
+                    agent: this.imageAnalyzer
+                });
 
-			Your responsibilities are:
-
-			1. First, determine what is actually shown in the image. Be specific. Is it a plant? A computer? A person? A cat?
-			2. Then compare this to the claimed cropType: ${cropType}.
-			- If the cropType is clearly **not a valid or real plant**, say: "Invalid cropType: not a plant."
-			- If the image does **not** depict a plant, say: "This image does not appear to contain a plant. It appears to show [your guess of what's in the image]."
-			- If the image **does not match the claimed crop type** (e.g., cropType says 'corn' but the image is a laptop), call it out clearly.
-
-			If the cropType is valid and the image matches the claim and shows a plant, assess its health:
-
-			1. Diagnosis: Healthy or Infested (and the reason why).
-			2. Evidence: Describe visible signs in the image (e.g., yellowing, holes, spots).
-			3. Recommendations: Give 2–3 helpful suggestions to treat or care for the plant.
-
-			🛑 If the cropType is invalid or the image does not depict a plant, DO NOT continue with diagnosis or recommendations.`,
-				expectedOutput: `One of the following:
-			- "Invalid cropType: not a plant."
-			- "This image does not appear to contain a plant. It appears to show: [your guess]."
-			- "You claimed the crop is {{cropType}}, but the image appears to show: [your guess]."
-			OR, if valid:
-			1. Diagnosis: ...
-			2. Evidence: ...
-			3. Recommendations: ...`,
-				agent: this.imageAnalyzer
-			});
-
-
-			task.inputs = {
+        task.inputs = {
             role: "user",
-				content: [
-					{ type: "input_text", text: "what's in this image?" },
-					{
-						type: "input_image",
-						image_url: {base64},
-					},
-				],
-			}
-		
+            content: [
+                { type: "input_text", text: "Analyze the image based on the provided instructions." },
+                {
+                    type: "input_image",
+                    image_url: base64, // Corrected: directly pass the base64 string
+                },
+            ],
+        }
 
+        const team = new Team({
+            name: 'Plant Image Evaluation Team',
+            agents: [this.imageAnalyzer],
+            tasks: [task],
+            inputs: {},
+            env: {
+                OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
+            }
+        });
 
-
-			const team = new Team({
-				name: 'Plant Image Evaluation Team',
-				agents: [this.imageAnalyzer],
-				tasks: [task],
-				inputs: {},
-				env: {
-					OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
-				}
-			});
-
-			return await team.start();
-		} catch (error) {
-			console.error("❌ Failed to start PlantImageSession:", error);
-			throw error;
-		}
-	}
+        return await team.start();
+    } catch (error) {
+        console.error("❌ Failed to start PlantImageSession:", error);
+        throw error;
+    }
+}
 }
 
 
