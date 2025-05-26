@@ -56,12 +56,10 @@ class PlantImageTeam {
 			if (!base64) {
 				throw new Error("Invalid image byte data.");
 			}
-
+			
 			const task = new Task({
-				description: `You are shown an image and given a claimed crop type: "${cropType}". Your responsibilities are:
-
-			Analyze the image below:
-			${base64}
+				title: "Plant Image Health Analysis",
+				description: `You are shown an image and given a claimed crop type: "{{cropType}}". Your responsibilities are:
 
 			1. Determine whether the provided cropType refers to a real, valid plant species or crop. If it is not a real plant, stop and say: "Invalid cropType: not a plant."
 			2. Examine the image and decide if it actually shows a plant. If not, say: "This image does not appear to contain a plant."
@@ -74,18 +72,25 @@ class PlantImageTeam {
 			2. Visual evidence you noticed in the image (e.g. wilting, spots, color issues)
 			3. 2–3 recommendations to improve or treat the plant
 
-			If either the cropType is not a valid plant OR the image does not depict a plant, do not continue analysis.`,
+			If either the cropType is not a valid plant OR the image does not depict a plant, do not continue analysis.
+
+			Image and cropType are provided via input.`,
 				expectedOutput: `One of the following:
 			- "Invalid cropType: not a plant."
 			- "This image does not appear to contain a plant."
-			OR
-
-			If valid:
+			OR, if valid:
 			1. Diagnosis: ...
 			2. Evidence: ...
 			3. Recommendations: ...`,
 				agent: this.imageAnalyzer
 			});
+
+			task.inputs = {
+				cropType: cropType,
+				image: base64 // with data:image/png;base64,...
+			};
+
+
 
 			const team = new Team({
 				name: 'Plant Image Evaluation Team',
