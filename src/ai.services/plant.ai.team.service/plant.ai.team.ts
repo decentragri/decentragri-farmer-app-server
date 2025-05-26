@@ -25,9 +25,9 @@ class PlantImageTeam {
 			llmConfig: {
 				provider: 'openai',
 				model: 'deepseek-chat',
-				apiKey: import.meta.env.DEEPSEEK_API_KEY,
+				apiKey: import.meta.env.OPENAI_API_KEY,
 				//@ts-ignore
-				apiBaseUrl: 'https://api.deepseek.com/v1',
+				apiBaseUrl: 'https://api.openai.com/v1',
 				maxRetries: 3
 			}
 		});

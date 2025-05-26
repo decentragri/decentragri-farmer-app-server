@@ -112,6 +112,7 @@ class PlantData {
 				{
 					trait_type: "AI Evaluation",
 					value: data.interpretation
+					
 				},
 				{
 					trait_type: "Crop Type",

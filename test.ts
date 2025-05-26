@@ -35,3 +35,6 @@ const getCurrentWeather = async () => {
 
 
 	await fetchRSWETHPrice();
+
+
+	

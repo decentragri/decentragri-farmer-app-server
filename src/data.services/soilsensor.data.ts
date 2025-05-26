@@ -201,7 +201,8 @@ class SensorData {
                             { trait_type: "Temperature", value: sensorReadings.interpretation?.temperature },
                             { trait_type: "Sunlight", value: sensorReadings.interpretation?.sunlight },
                             { trait_type: "Humidity", value: sensorReadings.interpretation?.humidity },
-                            { trait_type: "Evaluation", value: sensorReadings.interpretation?.evaluation ?? "Unknown" }
+                            { trait_type: "Evaluation", value: sensorReadings.interpretation?.evaluation ?? "Unknown" },
+                            { trait_type: "Interpretation", value: sensorReadings.interpretation }
                         ],
                         background_color: "#F0F0F0"
                     },
