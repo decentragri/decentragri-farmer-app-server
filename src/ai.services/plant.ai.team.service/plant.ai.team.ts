@@ -44,15 +44,12 @@ class PlantImageTeam {
 		}
 	}
 
-	// Rough Base64 token estimator: ~4 chars per token
-	private estimateBase64Tokens(base64: string): number {
-		return Math.ceil(base64.length / 4);
-	}
-
 	public async start(params: PlantImageSessionParams) {
 		try {
 			const { imageBytes, cropType = 'plant' } = params;
 			const base64 = this.convertPackedBytesToBase64(imageBytes);
+
+			console.log(base64)
 
 			if (!base64) {
 				throw new Error("Invalid image byte data.");
@@ -102,5 +99,6 @@ class PlantImageTeam {
 		}
 	}
 }
+
 
 export default PlantImageTeam;
