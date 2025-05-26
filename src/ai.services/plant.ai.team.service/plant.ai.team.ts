@@ -59,31 +59,34 @@ class PlantImageTeam {
 			
 			const task = new Task({
 				title: "Plant Image Health Analysis",
-				description: `You are shown an image and given a claimed crop type: "{{cropType}}". Your responsibilities are:
+				description: `You are shown an image and given a claimed crop type: "{{cropType}}".
 
-			1. Determine whether the provided cropType refers to a real, valid plant species or crop. If it is not a real plant, stop and say: "Invalid cropType: not a plant."
-			2. Examine the image and decide if it actually shows a plant. If not, say: "This image does not appear to contain a plant."
-			3. If the cropType is valid and the image does appear to be a plant, assess the plant's health as one of:
-			- Healthy
-			- Infested (due to pests or disease)
+			Your responsibilities are:
 
-			Then provide:
-			1. Diagnosis (Healthy or Infested, and the reason)
-			2. Visual evidence you noticed in the image (e.g. wilting, spots, color issues)
-			3. 2–3 recommendations to improve or treat the plant
+			1. First, determine what is actually shown in the image. Be specific. Is it a plant? A computer? A person? A cat?
+			2. Then compare this to the claimed cropType: "{{cropType}}".
+			- If the cropType is clearly **not a valid or real plant**, say: "Invalid cropType: not a plant."
+			- If the image does **not** depict a plant, say: "This image does not appear to contain a plant. It appears to show [your guess of what's in the image]."
+			- If the image **does not match the claimed crop type** (e.g., cropType says 'corn' but the image is a laptop), call it out clearly.
 
-			If either the cropType is not a valid plant OR the image does not depict a plant, do not continue analysis.
+			If the cropType is valid and the image matches the claim and shows a plant, assess its health:
 
-			Image and cropType are provided via input.`,
+			1. Diagnosis: Healthy or Infested (and the reason why).
+			2. Evidence: Describe visible signs in the image (e.g., yellowing, holes, spots).
+			3. Recommendations: Give 2–3 helpful suggestions to treat or care for the plant.
+
+			🛑 If the cropType is invalid or the image does not depict a plant, DO NOT continue with diagnosis or recommendations.`,
 				expectedOutput: `One of the following:
 			- "Invalid cropType: not a plant."
-			- "This image does not appear to contain a plant."
+			- "This image does not appear to contain a plant. It appears to show: [your guess]."
+			- "You claimed the crop is {{cropType}}, but the image appears to show: [your guess]."
 			OR, if valid:
 			1. Diagnosis: ...
 			2. Evidence: ...
 			3. Recommendations: ...`,
 				agent: this.imageAnalyzer
 			});
+
 
 			task.inputs = {
 				cropType: cropType,
