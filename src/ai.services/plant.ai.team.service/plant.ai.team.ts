@@ -71,19 +71,29 @@ class PlantImageTeam {
 			}
 
 			const task = new Task({
-				description: `You are shown an image of a ${cropType}. Determine whether it appears:
-				- Healthy
-				- Infested (by pests or disease)
+				description: `You are shown an image and given a claimed crop type: "${cropType}". Your responsibilities are:
 
-				Then provide:
-				1. Diagnosis (Healthy / Infested + reason)
-				2. Evidence you noticed in the image (e.g., spots, wilting)
-				3. Recommendations to improve or treat the plant.
+			1. Determine whether the provided cropType refers to a real, valid plant species or crop. If it is not a real plant, stop and say: "Invalid cropType: not a plant."
+			2. Examine the image and decide if it actually shows a plant. If not, say: "This image does not appear to contain a plant."
+			3. If the cropType is valid and the image does appear to be a plant, assess the plant's health as one of:
+			- Healthy
+			- Infested (due to pests or disease)
 
-				Analyze the image below:
+			Then provide:
+			1. Diagnosis (Healthy or Infested, and the reason)
+			2. Visual evidence you noticed in the image (e.g. wilting, spots, color issues)
+			3. 2–3 recommendations to improve or treat the plant
 
-				[data:image/png;base64,${base64}]`,
-				expectedOutput: `A brief diagnosis, evidence, and 2-3 recommendations.`,
+			If either the cropType is not a valid plant OR the image does not depict a plant, do not continue analysis.`,
+				expectedOutput: `One of the following:
+			- "Invalid cropType: not a plant."
+			- "This image does not appear to contain a plant."
+			OR
+
+			If valid:
+			1. Diagnosis: ...
+			2. Evidence: ...
+			3. Recommendations: ...`,
 				agent: this.imageAnalyzer
 			});
 
