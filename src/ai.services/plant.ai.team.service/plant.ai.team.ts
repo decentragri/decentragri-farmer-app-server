@@ -19,6 +19,7 @@ class PlantImageTeam {
 		this.imageAnalyzer = new Agent({
 			name: 'Carmen',
 			role: 'Plant Image Health Analyst',
+			
 			goal: 'Analyze a plant image and determine if it is healthy or infested. If infested, provide actionable advice.',
 			background: 'Expert in crop diseases, pest detection, and visual diagnosis of plant health.',
 			tools: [],
@@ -39,7 +40,6 @@ class PlantImageTeam {
 			const buffer = Buffer.from(bytes);
 			const base64 = buffer.toString("base64");
 
-			console.log(base64)
 			return `data:image/png;base64,${base64}`;
 		} catch (error) {
 			console.error("Failed to parse image bytes:", error);
@@ -50,7 +50,7 @@ class PlantImageTeam {
 	public async start(params: PlantImageSessionParams) {
 		try {
 			const { imageBytes, cropType = 'plant' } = params;
-			const base64 = this.convertPackedBytesToBase64(imageBytes);
+			const base64: string = this.convertPackedBytesToBase64(imageBytes);
 
 
 			if (!base64) {
@@ -59,6 +59,9 @@ class PlantImageTeam {
 
 			const task = new Task({
 				description: `You are shown an image and given a claimed crop type: "${cropType}". Your responsibilities are:
+
+			Analyze the image below:
+			${base64}
 
 			1. Determine whether the provided cropType refers to a real, valid plant species or crop. If it is not a real plant, stop and say: "Invalid cropType: not a plant."
 			2. Examine the image and decide if it actually shows a plant. If not, say: "This image does not appear to contain a plant."
