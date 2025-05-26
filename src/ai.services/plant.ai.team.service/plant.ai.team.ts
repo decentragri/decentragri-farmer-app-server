@@ -59,12 +59,12 @@ class PlantImageTeam {
 			
 			const task = new Task({
 				title: "Plant Image Health Analysis",
-				description: `You are shown an image and given a claimed crop type: "{{cropType}}".
+				description: `You are shown an image and given a claimed crop type: ${cropType}.
 
 			Your responsibilities are:
 
 			1. First, determine what is actually shown in the image. Be specific. Is it a plant? A computer? A person? A cat?
-			2. Then compare this to the claimed cropType: "{{cropType}}".
+			2. Then compare this to the claimed cropType: ${cropType}.
 			- If the cropType is clearly **not a valid or real plant**, say: "Invalid cropType: not a plant."
 			- If the image does **not** depict a plant, say: "This image does not appear to contain a plant. It appears to show [your guess of what's in the image]."
 			- If the image **does not match the claimed crop type** (e.g., cropType says 'corn' but the image is a laptop), call it out clearly.
@@ -89,9 +89,15 @@ class PlantImageTeam {
 
 
 			task.inputs = {
-				type: "input_image",
-				image_url: base64 // with data:image/png;base64,...
-			};
+            role: "user",
+				content: [
+					{ type: "input_text", text: "what's in this image?" },
+					{
+						type: "input_image",
+						image_url: {base64},
+					},
+				],
+			},
 
 
 
