@@ -49,7 +49,10 @@ class PlantImageTeam {
 
 public async start(params: PlantImageSessionParams) {
     try {
-        const { imageBytes, cropType = 'plant' } = params;
+        const { imageBytes, cropType } = params;
+        console.log("type: ", cropType)
+
+
         const base64: string = this.convertPackedBytesToBase64(imageBytes);
 
         if (!base64) {
