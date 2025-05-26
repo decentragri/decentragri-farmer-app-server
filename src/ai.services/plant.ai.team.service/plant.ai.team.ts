@@ -91,42 +91,54 @@ class PlantImageTeam {
     }
 
 
-	public async start(params: PlantImageSessionParams) {
-		try {
-			const { imageBytes, cropType } = params;
-			const base64 = this.convertPackedBytesToBase64(imageBytes);
-			if (!base64) throw new Error("Invalid image byte data.");
+    public async start(params: PlantImageSessionParams) {
+        try {
+            const { imageBytes, cropType } = params;
+            const base64 = this.convertPackedBytesToBase64(imageBytes);
+            if (!base64) throw new Error("Invalid image byte data.");
 
-			// Step 1: Identify what's in the image using OpenAI
-			const visualClassification = await this.classifyImageWithOpenAI(base64, cropType);
-			console.log("🖼️ Image classified as:", visualClassification);
+            // Step 1: Use OpenAI to analyze image
+            const visualClassification = await this.classifyImageWithOpenAI(base64, cropType);
+            console.log("🖼️ Image classified as:", visualClassification);
 
-			// Step 2: Kaiban task for reasoning and recommendation
-			const task = new Task({
-				title: "Plant Health Recommendations",
-				description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". Based on this visual classification and claimed crop type, offer a diagnosis and actionable recommendations if it is indeed a plant and the cropType is valid.`,
-				expectedOutput: `- Diagnosis: [Healthy / Infested / Not a plant]
-                    - Reason: Explanation based on the description
-                    - Recommendations: 2–3 specific steps`,
-				agent: this.imageAnalyzer
-			});
+            // Step 2: Early exit if it's clearly not a plant
+            if (
+                visualClassification.includes("Invalid cropType: not a plant") ||
+                visualClassification.includes("This image does not appear to contain a plant")
+            ) {
+                return {
+                    status: 'FINISHED',
+                    result: visualClassification
+                };
+            }
 
-			const team = new Team({
-				name: "Hybrid Plant Analysis Team",
-				agents: [this.imageAnalyzer],
-				tasks: [task],
-				inputs: {},
-				env: {
-					OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
-				}
-			});
+            // Step 3: Continue with KaibanJS reasoning
+            const task = new Task({
+                title: "Plant Health Recommendations",
+                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". Based on this visual classification and claimed crop type, offer a diagnosis and actionable recommendations if it is indeed a plant and the cropType is valid.`,
+                expectedOutput: `- Diagnosis: [Healthy / Infested / Not a plant]
+    - Reason: Explanation based on the description
+    - Recommendations: 2–3 specific steps`,
+                agent: this.imageAnalyzer
+            });
 
-			return await team.start();
-		} catch (error) {
-			console.error("❌ Failed to process hybrid plant image analysis:", error);
-			throw error;
-		}
-	}
+            const team = new Team({
+                name: "Hybrid Plant Analysis Team",
+                agents: [this.imageAnalyzer],
+                tasks: [task],
+                inputs: {},
+                env: {
+                    OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
+                }
+            });
+
+            return await team.start();
+        } catch (error) {
+            console.error("❌ Failed to process hybrid plant image analysis:", error);
+            throw error;
+        }
+    }
+
 }
 
 export default PlantImageTeam;

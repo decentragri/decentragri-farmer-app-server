@@ -7,5 +7,6 @@ export interface ETHAndRSWETHPrice {
 }
 
 export interface SuccessMessage {
-    success: string;
+    success?: string;
+    error?: string;
 }

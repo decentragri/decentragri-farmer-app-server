@@ -21,7 +21,7 @@ class PlantImageRunner {
 
 		try {
 			const username = await tokenService.verifyAccessToken(token);
-			console.log('🪴 API Request: Analyzing uploaded plant image...');
+			console.log('API Request: Analyzing uploaded plant image...');
 
 			const output = await plantImageTeam.start(params);
 
@@ -32,6 +32,16 @@ class PlantImageRunner {
 
 			const interpretation = output.result as unknown as string;
 
+			// 🛑 Stop if result indicates invalid image or crop type
+			if (
+				interpretation.includes("Invalid cropType: not a plant") ||
+				interpretation.includes("This image does not appear to contain a plant")
+			) {
+				console.warn("Not a valid plant scan. Skipping save.");
+				return { error: interpretation }; // Just return message, no DB or NFT
+			}
+
+			// ✅ Only save if valid
 			const imageRecord = {
 				...params,
 				interpretation,
@@ -39,11 +49,12 @@ class PlantImageRunner {
 			};
 
 			await plantData.savePlantScan(imageRecord, username);
-			console.log('✅ Plant image analysis complete.');
+			console.log('Plant image analysis complete.');
 
-			return { success: params.imageBytes.slice(0, 20) + '...' }; // Optional success reference
+			return { success: params.imageBytes.slice(0, 20) + '...' };
+
 		} catch (error: any) {
-			console.error('❌ Error analyzing plant image:', error);
+			console.error('Error analyzing plant image:', error);
 			throw new Error('Failed to process plant image analysis.');
 		}
 	}
