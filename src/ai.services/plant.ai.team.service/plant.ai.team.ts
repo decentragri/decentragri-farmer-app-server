@@ -97,7 +97,8 @@ class PlantImageTeam {
 						image_url: {base64},
 					},
 				],
-			},
+			}
+		
 
 
 
