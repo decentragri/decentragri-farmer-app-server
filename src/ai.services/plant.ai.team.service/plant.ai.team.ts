@@ -58,18 +58,6 @@ class PlantImageTeam {
 				throw new Error("Invalid image byte data.");
 			}
 
-			// ✅ Check token estimate before proceeding
-			const estimatedTokens = this.estimateBase64Tokens(base64);
-			console.log(`Estimated tokens for image: ${estimatedTokens}`);
-			const tokenLimit = 65000;
-			const safetyBuffer = 5000;
-
-			if (estimatedTokens + safetyBuffer > tokenLimit) {
-				throw new Error(
-					`Base64 image too large: estimated ${estimatedTokens} tokens. Must stay under ${tokenLimit - safetyBuffer}.`
-				);
-			}
-
 			const task = new Task({
 				description: `You are shown an image and given a claimed crop type: "${cropType}". Your responsibilities are:
 
