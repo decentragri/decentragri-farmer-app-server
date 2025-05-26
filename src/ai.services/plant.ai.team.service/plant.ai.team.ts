@@ -45,49 +45,48 @@ class PlantImageTeam {
 		}
 	}
 
-
 	public async start(params: PlantImageSessionParams) {
 		try {
 			const { imageBytes, cropType = 'plant' } = params;
 			const base64 = this.convertPackedBytesToBase64(imageBytes);
 
+			console.log(base64)
+
 			if (!base64) {
 				throw new Error("Invalid image byte data.");
 			}
 
+			const task = new Task({
+				description: `You are shown an image and given a claimed crop type: "${cropType}". Your responsibilities are:
 
-			// Task 1: Validate cropType
-			const cropCheckTask = new Task({
-				description: `Is "${cropType}" a real plant species, crop, or commonly known vegetation? If not, reply with: "Invalid cropType: not a plant."`,
-				expectedOutput: `"Invalid cropType: not a plant." or confirmation it's a real plant.`,
-				agent: this.imageAnalyzer
-			});
+			1. Determine whether the provided cropType refers to a real, valid plant species or crop. If it is not a real plant, stop and say: "Invalid cropType: not a plant."
+			2. Examine the image and decide if it actually shows a plant. If not, say: "This image does not appear to contain a plant."
+			3. If the cropType is valid and the image does appear to be a plant, assess the plant's health as one of:
+			- Healthy
+			- Infested (due to pests or disease)
 
-			// Task 2: Analyze image only if cropType is valid
-			const imageCheckTask = new Task({
-				description: `You are shown an image and the valid cropType: "${cropType}". Your responsibilities:
+			Then provide:
+			1. Diagnosis (Healthy or Infested, and the reason)
+			2. Visual evidence you noticed in the image (e.g. wilting, spots, color issues)
+			3. 2–3 recommendations to improve or treat the plant
 
-				1. Confirm if the image actually shows a plant. If not, reply: "This image does not appear to contain a plant."
+			If either the cropType is not a valid plant OR the image does not depict a plant, do not continue analysis.`,
+				expectedOutput: `One of the following:
+			- "Invalid cropType: not a plant."
+			- "This image does not appear to contain a plant."
+			OR
 
-				2. If yes, assess:
-				- Diagnosis (Healthy / Infested)
-				- Visual Evidence (e.g. spots, wilting, color)
-				- 2–3 actionable Recommendations
-
-				Important: Do not hallucinate plant evidence from light glares, keyboards, or desk patterns.`,
-								expectedOutput: `Either:
-				- "This image does not appear to contain a plant."
-				OR
-				1. Diagnosis: ...
-				2. Evidence: ...
-				3. Recommendations: ...`,
+			If valid:
+			1. Diagnosis: ...
+			2. Evidence: ...
+			3. Recommendations: ...`,
 				agent: this.imageAnalyzer
 			});
 
 			const team = new Team({
 				name: 'Plant Image Evaluation Team',
 				agents: [this.imageAnalyzer],
-				tasks: [cropCheckTask, imageCheckTask],
+				tasks: [task],
 				inputs: {},
 				env: {
 					OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
@@ -101,5 +100,6 @@ class PlantImageTeam {
 		}
 	}
 }
+
 
 export default PlantImageTeam;
