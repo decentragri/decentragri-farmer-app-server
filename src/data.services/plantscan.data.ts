@@ -11,6 +11,11 @@ import WalletService, { engine } from "../wallet.services/wallet.service";
 //** CONSTANTS */
 import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
 import { uploadPicBuffer, uploadPicIPFS } from "../utils/utils.thirdweb";
+import type { PlantScanResult, ParsedInterpretation } from "./data.interface";
+
+
+
+
 
 class PlantData {
 	/**
@@ -62,12 +67,10 @@ class PlantData {
 	/**
 	 * Retrieve all plant scans for the given user.
 	 */
-	public async getPlantScans(token: string): Promise<any[]> {
+	public async getPlantScans(token: string): Promise<PlantScanResult[]> {
 		const driver: Driver = getDriver();
 		const session: Session | undefined = driver?.session();
 		const tokenService: TokenService = new TokenService();
-
-		if (!session) throw new Error("Unable to create database session.");
 
 		try {
 			const username: string = await tokenService.verifyAccessToken(token);
@@ -81,7 +84,26 @@ class PlantData {
 				tx.run(query, { username })
 			);
 
-			return result.records.map((record) => record.get("p").properties);
+			return result.records.map((record) => {
+				const raw = record.get("p").properties;
+
+				// Parse interpretation string into object
+				let parsedInterpretation: ParsedInterpretation;
+				try {
+					parsedInterpretation = JSON.parse(raw.interpretation);
+				} catch (_) {
+					parsedInterpretation = raw.interpretation;
+				}
+
+				return {
+					cropType: raw.cropType,
+					note: raw.note,
+					lat: raw.lat,
+					lng: raw.lng,
+					createdAt: raw.date,
+					interpretation: parsedInterpretation
+				} as PlantScanResult;
+			});
 		} catch (error) {
 			console.error("Error fetching plant scans:", error);
 			throw new Error("Failed to fetch plant scans");
@@ -89,6 +111,7 @@ class PlantData {
 			await session.close();
 		}
 	}
+
 
 	/**
 	 * Mint NFT representing the plant image analysis.

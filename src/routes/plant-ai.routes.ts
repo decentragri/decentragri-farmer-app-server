@@ -5,6 +5,9 @@ import PlantImageRunner from "../ai.services/plant.ai.team.service/plant.main";
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import { plantImageSessionSchema } from "../data.services/plant.schema";
+import { auth } from "neo4j-driver";
+import { authBearerSchema } from "../auth.services/auth.schema";
+import PlantData from "../data.services/plantscan.data";
 
 
 const PlantAI = (app: Elysia) => {
@@ -26,6 +29,24 @@ const PlantAI = (app: Elysia) => {
 
       }, plantImageSessionSchema
    )
+
+       .get('api/get-scan-readings', async ({ headers }) => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const plantData = new PlantData();
+            const output = await plantData.getPlantScans(jwtToken);
+    
+            return output;
+        } catch (error: any) {
+            console.error(error);
+            throw error;
+        }
+    }, authBearerSchema
+    )
 
 }
 
