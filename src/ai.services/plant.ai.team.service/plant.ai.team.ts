@@ -38,6 +38,8 @@ class PlantImageTeam {
 			const bytes = JSON.parse(byteString) as number[];
 			const buffer = Buffer.from(bytes);
 			const base64 = buffer.toString("base64");
+
+			console.log(base64)
 			return `data:image/png;base64,${base64}`;
 		} catch (error) {
 			console.error("Failed to parse image bytes:", error);
