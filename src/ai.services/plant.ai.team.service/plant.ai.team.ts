@@ -50,7 +50,6 @@ class PlantImageTeam {
 			const { imageBytes, cropType = 'plant' } = params;
 			const base64 = this.convertPackedBytesToBase64(imageBytes);
 
-			console.log(base64)
 
 			if (!base64) {
 				throw new Error("Invalid image byte data.");
