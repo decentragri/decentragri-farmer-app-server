@@ -1,13 +1,16 @@
 //**SERVICE IMPORTS */
 import PlantImageRunner from "../ai.services/plant.ai.team.service/plant.main";
+import PlantData from "../data.services/plantscan.data";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
+import type { PlantScanResult } from "../data.services/data.interface";
+
 import { plantImageSessionSchema } from "../data.services/plant.schema";
-import { auth } from "neo4j-driver";
 import { authBearerSchema } from "../auth.services/auth.schema";
-import PlantData from "../data.services/plantscan.data";
+
+
 
 
 const PlantAI = (app: Elysia) => {
@@ -38,7 +41,7 @@ const PlantAI = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const plantData = new PlantData();
-            const output = await plantData.getPlantScans(jwtToken);
+            const output: PlantScanResult[] = await plantData.getPlantScans(jwtToken);
     
             return output;
         } catch (error: any) {
