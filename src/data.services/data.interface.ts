@@ -1,7 +1,7 @@
 
 
 
-
+// This file defines the interfaces for the data services used in the application.
 export interface PlantScanResult {
 	cropType: string;
 	note: string | null;
@@ -11,7 +11,7 @@ export interface PlantScanResult {
 	interpretation: string | ParsedInterpretation
 }
 
-
+// This interface represents the parsed interpretation of a plant scan result.
 export interface ParsedInterpretation {
 	Diagnosis: string;
 	Reason: string;
