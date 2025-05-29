@@ -51,7 +51,7 @@ class PlantImageRunner {
 			await plantData.savePlantScan(imageRecord, username);
 			console.log('Plant image analysis complete.');
 
-			return { success: params.imageBytes.slice(0, 20) + '...' };
+			return { success: "Plant image analysis complete" };
 
 		} catch (error: any) {
 			console.error('Error analyzing plant image:', error);
