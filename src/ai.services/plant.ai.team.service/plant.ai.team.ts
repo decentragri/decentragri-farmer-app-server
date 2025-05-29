@@ -115,12 +115,22 @@ class PlantImageTeam {
             // Step 3: Continue with KaibanJS reasoning
             const task = new Task({
                 title: "Plant Health Recommendations",
-                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". Based on this visual classification and claimed crop type, offer a diagnosis and actionable recommendations if it is indeed a plant and the cropType is valid.`,
-                expectedOutput: `- Diagnosis: [Healthy / Infested / Not a plant]
-    - Reason: Explanation based on the description
-    - Recommendations: 2–3 specific steps`,
+                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". Based on this, your job is to:
+
+            1. Diagnose the plant.
+            2. Justify your diagnosis.
+            3. Provide 2–3 actionable recommendations.
+
+            Return the result as a strict JSON object with this exact structure:
+            {
+                "Diagnosis": "Healthy or Infested",
+                "Reason": "Brief explanation of the visual diagnosis.",
+                "Recommendations": ["Step 1", "Step 2", "Step 3"]
+            }`,
+                expectedOutput: `A valid JSON object with keys: Diagnosis, Reason, Recommendations`,
                 agent: this.imageAnalyzer
             });
+
 
             const team = new Team({
                 name: "Hybrid Plant Analysis Team",
