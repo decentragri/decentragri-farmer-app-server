@@ -97,11 +97,10 @@ class PlantImageTeam {
             const base64 = this.convertPackedBytesToBase64(imageBytes);
             if (!base64) throw new Error("Invalid image byte data.");
 
-            // Step 1: Use OpenAI to analyze image
+
             const visualClassification = await this.classifyImageWithOpenAI(base64, cropType);
             console.log("🖼️ Image classified as:", visualClassification);
 
-            // Step 2: Early exit if it's clearly not a plant
             if (
                 visualClassification.includes("Invalid cropType: not a plant") ||
                 visualClassification.includes("This image does not appear to contain a plant")
@@ -112,7 +111,7 @@ class PlantImageTeam {
                 };
             }
 
-            // Step 3: Continue with KaibanJS reasoning
+
             const task = new Task({
                 title: "Plant Health Recommendations",
                 description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". Based on this, your job is to:

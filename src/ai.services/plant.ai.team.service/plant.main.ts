@@ -30,6 +30,9 @@ class PlantImageRunner {
 				throw new Error('Workflow blocked during image analysis.');
 			}
 
+			// Log the result for debugging
+			console.log(output.result);
+
 			const interpretation = output.result as unknown as string;
 
 			// Stop if result indicates invalid image or crop type
