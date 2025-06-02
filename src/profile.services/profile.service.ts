@@ -10,7 +10,7 @@ import type { SuccessMessage } from '../onchain.services/onchain.interface';
 
 //**SERVICE IMPORT
 import TokenService from '../security.services/token.service';
-import type { UserLoginResponse } from '../auth.services/auth.interface';
+import type { BufferData, UserLoginResponse } from '../auth.services/auth.interface';
 import type { LevelUpResult } from './profile.interface';
 
 //** CONFIG IMPORT */
@@ -22,7 +22,11 @@ class ProfileService {
       this.driver = driver
     };
 
-    
+    /**
+     * Retrieves the profile of a user based on the provided access token.
+     * @param token - The access token of the user.
+     * @returns A promise that resolves to the user's profile information.
+     */
     public async getProfile(token: string): Promise<UserLoginResponse> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -140,6 +144,7 @@ class ProfileService {
         }
     }
 
+
     //Saves the details of a user, including player statistics, in the database.
     private async saveUserDetails(username: string, playerStats: LevelUpResult): Promise<void> {
         const session: Session | undefined = this.driver?.session();
@@ -169,6 +174,66 @@ class ProfileService {
             await session?.close();
         }
     }
+
+
+
+
+
+    public async uploadProfilePic(imageBuffer: BufferData, token: string): Promise<SuccessMessage> {
+      const tokenService = new TokenService();
+      const session = this.driver?.session();
+      try {
+        const userName: string = await tokenService.verifyAccessToken(token);
+
+        const uploadedAt: number = Date.now();
+        const fileFormat: string = "png";
+        const fileSize: number = 100;
+
+        // Check if user already has 5 profile pictures
+        const countResult = await session?.executeRead((tx: ManagedTransaction) =>
+          tx.run(
+            `
+            MATCH (u:User {username: $userName})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
+            RETURN count(p) as picCount
+            `,
+            { userName }
+          )
+        );
+        const picCount = countResult?.records[0].get('picCount').toNumber?.() ?? 0;
+        if (picCount >= 5) {
+          throw new Error("You already have 5 profile pictures.");
+        }
+
+        // Create a new ProfilePic node and connect to the user
+        await session?.executeWrite((tx: ManagedTransaction) =>
+          tx.run(
+            `
+            MATCH (u:User {username: $userName})
+            CREATE (p:ProfilePic {
+              id: $id,
+              image: $image,
+              uploadedAt: $uploadedAt,
+              fileFormat: $fileFormat,
+              fileSize: $fileSize,
+              likes: []
+            })
+            CREATE (u)-[:HAS_PROFILE_PIC]->(p)
+            `,
+            { userName, id: nanoid(), image: imageBuffer.bufferData, uploadedAt, fileFormat, fileSize}
+          )
+        );
+
+        return { success: "Profile picture upload successful" };
+      } catch (error: any) {
+        console.error("Error updating profile picture:", error);
+        throw error;
+      } finally {
+        await session?.close();
+      }
+    }
+
+
+
 
 
 

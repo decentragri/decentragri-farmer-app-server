@@ -27,3 +27,8 @@ export interface UserLoginResponse {
     createdAt?: string;
     rank?: number; 
 }
+
+
+export interface BufferData {
+    bufferData: string;
+  }
