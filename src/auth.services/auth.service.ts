@@ -9,7 +9,7 @@ import { hash, compare } from 'bcrypt-ts'
 import { nanoid } from "nanoid"
 
 //**TYPE IMPORTS */
-import type { userLogin, userLoginResponse, userRegistration } from './auth.interface';
+import type { userLogin, UserLoginResponse, UserRegistration } from './auth.interface';
 import type { TokenScheme } from '../security.services/security.service.interface';
 
 //**SERVICE IMPORT
@@ -32,7 +32,7 @@ class AuthService {
      * @param user - The user registration data containing username, password, and deviceId.
      * @returns An object containing the username, wallet address, access token, and refresh token.
      */
-    public async register(user: userRegistration): Promise<userLoginResponse> {
+    public async register(user: UserRegistration): Promise<UserLoginResponse> {
         const { username, password, deviceId } = user;
 
         const walletService = new WalletService(this.driver);
@@ -58,7 +58,12 @@ class AuthService {
                         username: $username,
                         password: $encryptedPassword,
                         deviceId: $deviceId,
-                        walletAddress: $walletAddress
+                        walletAddress: $walletAddress,
+                        level: 1,
+                        experience: 0,
+                        userExperience: 0,
+                        createdAt: datetime(),
+                        rank: 1,
                     })
                     `,
                     { userId, username, encryptedPassword, deviceId, walletAddress }
@@ -78,7 +83,10 @@ class AuthService {
                 accessToken,
                 refreshToken,
                 loginType: "decentragri",
-                walletData
+                walletData,
+                level: 1,
+                experience: 0,
+
             };
 
         } catch (error: any) {
@@ -108,7 +116,7 @@ class AuthService {
      * @param loginData - The login data containing username and password.
      * @returns An object containing the username, wallet address, access token, and refresh token.
      */
-    public async login(loginData: userLogin): Promise<userLoginResponse> {
+    public async login(loginData: userLogin): Promise<UserLoginResponse> {
         const { username, password } = loginData;
         const session = this.driver?.session();
         const tokenService = new TokenService();
@@ -121,7 +129,7 @@ class AuthService {
                 tx.run(
                     `
                     MATCH (u:User {username: $username})
-                    RETURN u.password AS password, u.walletAddress AS walletAddress
+                    RETURN u.password AS password, u.walletAddress AS walletAddress, u.level AS level, u.experience AS experience, u.userExperience AS userExperience
                     `,
                     { username }
                 )
@@ -133,6 +141,8 @@ class AuthService {
 
             const storedPassword = result.records[0].get("password");
             const walletAddress = result.records[0].get("walletAddress");
+            const level = result.records[0].get("level");
+            const experience = result.records[0].get("experience");
 
             const isPasswordValid = await compare(password, storedPassword);
             if (!isPasswordValid) {
@@ -151,7 +161,10 @@ class AuthService {
                 accessToken,
                 refreshToken,
                 loginType: "decentragri",
-                walletData
+                walletData,
+                level,
+                experience,
+
             };
         } catch (error: any) {
             console.error("Error logging in:", error);
@@ -171,7 +184,7 @@ class AuthService {
      * @param token - The refresh token to validate.
      * @returns An object containing the username, wallet address, access token, and refresh token.
      */
-    public async validateSession(token: string): Promise<userLoginResponse> {
+    public async validateSession(token: string): Promise<UserLoginResponse> {
         const tokenService = new TokenService();
         const session = this.driver?.session();
         const walletService = new WalletService(this.driver);
@@ -197,6 +210,9 @@ class AuthService {
 
             const user = result.records[0].get("u").properties;
             const walletAddress: string = user.walletAddress;
+            const level = user.level;
+            const experience = user.experience;
+
 
             const [walletData] = await Promise.all([
                 walletService.getWalletBalance(walletAddress)
@@ -209,7 +225,9 @@ class AuthService {
                 accessToken,
                 refreshToken,
                 loginType: "decentragri",
-                walletData
+                walletData,
+                level,
+                experience,
             };
         } catch (error: any) {
             console.error("Error validating session:", error);
