@@ -14,7 +14,7 @@ import { getDriver } from "../db/memgraph";
 
 //** SCHEMA IMPORTS */
 import { authBearerSchema, loginSchema, registerSchema } from "../auth.services/auth.schema";
-import type { UserLoginResponse } from "../auth.services/auth.interface";
+import type { BufferData, UserLoginResponse } from "../auth.services/auth.interface";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import { uploadProfilePictureSchema } from "../profile.services/profile.schema";
 
@@ -41,8 +41,8 @@ const Profile = (app: Elysia) => {
         }
         }, authBearerSchema 
     )
-    
-    .post('/api/profile/picture', async ({ headers, body }): Promise<SuccessMessage> => {
+
+    .post('/api/profile/picture/upload', async ({ headers, body }): Promise<SuccessMessage> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -61,6 +61,29 @@ const Profile = (app: Elysia) => {
         }
         }, uploadProfilePictureSchema
     )
+
+    .get('/api/profile/picture', async ({ headers }): Promise<BufferData | null> => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const driver = getDriver();
+            const profileService = new ProfileService(driver);
+
+            const output = await profileService.getProfilePicture(jwtToken);
+            return output;
+
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+        }, authBearerSchema
+    )
+
+
+    
     
 
 

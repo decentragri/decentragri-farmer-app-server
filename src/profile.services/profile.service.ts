@@ -218,7 +218,7 @@ class ProfileService {
 
 
 
-    public async getProfilePicture(userName: string): Promise<BufferData | null> {
+    public async getProfilePicture(userName: string): Promise<BufferData> {
       const session = this.driver?.session();
       try {
         const result = await session?.executeRead((tx: ManagedTransaction) =>
@@ -234,7 +234,7 @@ class ProfileService {
         if (result && result.records.length > 0) {
           return { bufferData: result.records[0].get('image') };
         } else {
-          return null; // No profile picture found
+          return { bufferData: "" }; // No profile picture found
         }
       } catch (error: any) {
         console.error("Error retrieving profile picture:", error);
