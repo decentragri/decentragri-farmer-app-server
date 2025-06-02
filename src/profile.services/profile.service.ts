@@ -12,6 +12,7 @@ import type { SuccessMessage } from '../onchain.services/onchain.interface';
 import TokenService from '../security.services/token.service';
 import type { BufferData, UserLoginResponse } from '../auth.services/auth.interface';
 import type { LevelUpResult } from './profile.interface';
+import { profilePictureCypher } from './profile.cypher';
 
 //** CONFIG IMPORT */
 
@@ -177,8 +178,6 @@ class ProfileService {
 
 
 
-
-
     public async uploadProfilePic(imageBuffer: BufferData, token: string): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -189,37 +188,22 @@ class ProfileService {
         const fileFormat: string = "png";
         const fileSize: number = 100;
 
-        // Check if user already has 5 profile pictures
-        const countResult = await session?.executeRead((tx: ManagedTransaction) =>
+        // Remove existing profile picture if it exists
+        await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
             `
             MATCH (u:User {username: $userName})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
-            RETURN count(p) as picCount
+            DETACH DELETE p
             `,
             { userName }
           )
         );
-        const picCount = countResult?.records[0].get('picCount').toNumber?.() ?? 0;
-        if (picCount >= 5) {
-          throw new Error("You already have 5 profile pictures.");
-        }
 
         // Create a new ProfilePic node and connect to the user
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
-            `
-            MATCH (u:User {username: $userName})
-            CREATE (p:ProfilePic {
-              id: $id,
-              image: $image,
-              uploadedAt: $uploadedAt,
-              fileFormat: $fileFormat,
-              fileSize: $fileSize,
-              likes: []
-            })
-            CREATE (u)-[:HAS_PROFILE_PIC]->(p)
-            `,
-            { userName, id: nanoid(), image: imageBuffer.bufferData, uploadedAt, fileFormat, fileSize}
+            profilePictureCypher,
+            { userName, id: nanoid(), image: imageBuffer.bufferData, uploadedAt, fileFormat, fileSize }
           )
         );
 
@@ -233,12 +217,32 @@ class ProfileService {
     }
 
 
+    
+    public async getProfilePicture(userName: string): Promise<BufferData | null> {
+      const session = this.driver?.session();
+      try {
+        const result = await session?.executeRead((tx: ManagedTransaction) =>
+          tx.run(
+            `
+            MATCH (u:User {username: $userName})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
+            RETURN p.image AS image
+            `,
+            { userName }
+          )
+        );
 
-
-
-
-
-
+        if (result && result.records.length > 0) {
+          return { bufferData: result.records[0].get('image') };
+        } else {
+          return null; // No profile picture found
+        }
+      } catch (error: any) {
+        console.error("Error retrieving profile picture:", error);
+        throw error;
+      } finally {
+        await session?.close();
+      }
+    }
 
 
 
