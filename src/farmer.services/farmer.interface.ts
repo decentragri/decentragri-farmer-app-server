@@ -3,7 +3,7 @@
 
 export interface FarmData {
   farmName: string;
-  crop: string; // List of crop types planted in the farm
+  cropType: string; // List of crop types planted in the farm
   description?: string; // Optional description of the farm
 
 }
@@ -12,6 +12,6 @@ export interface CreatedFarm extends FarmData {
   id: string; // Unique identifier for the farm
   createdAt?: Date; // Timestamp of farm creation
   updatedAt?: Date; // Timestamp of last update
-  owner: string; // Username of the farm owner
+  owner?: string; // Username of the farm owner
 
 }

@@ -5,7 +5,7 @@ import Insight from "./insight.routes";
 import OnChain from "./onchain.routes";
 import Weather from "./weather.routes";
 import PlantAI from "./plant-ai.routes";
-
+import Farmer from "./farmer.routes";
 
 const routes = (app: any): void => {
     [
@@ -14,7 +14,8 @@ const routes = (app: any): void => {
         PlantAI,
         Insight,
         OnChain,
-        Weather
+        Weather,
+        Farmer
     ].forEach(route => route(app));
 }
 

@@ -34,8 +34,9 @@ class FarmerService {
           username,
           farmId,
           farmName: farmData.farmName,
-          crop: farmData.crop,
+          cropType: farmData.cropType,
           description: farmData.description ?? null,
+          owner: username,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
         };
@@ -109,7 +110,7 @@ class FarmerService {
     }
 
 
-    public async updateFarm(token: string, farmId: string, farmData: FarmData): Promise<SuccessMessage> {
+    public async updateFarm(token: string, farmData: CreatedFarm): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
@@ -117,9 +118,9 @@ class FarmerService {
         const updatedAt: Date = new Date();
         const params = {
           username,
-          farmId,
+          id: farmData.id,
           farmName: farmData.farmName,
-          crop: farmData.crop,
+          cropType: farmData.cropType,
           description: farmData.description ?? null,
           updatedAt: updatedAt.toISOString(),
         };
