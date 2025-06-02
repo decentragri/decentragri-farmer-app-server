@@ -21,7 +21,5 @@ export const farmerUpdateFarmSchema = {
         farmName: t.String(),
         cropType: t.String(), // List of crop types planted in the farm
         description: t.Optional(t.String()),
-
-
     })
 };
