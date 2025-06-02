@@ -9,7 +9,7 @@ import AuthService from "../auth.services/auth.service";
 import { getDriver } from "../db/memgraph";
 
 //** TYPE IMPORTS */
-import type { userLoginResponse } from "../auth.services/auth.interface";
+import type { UserLoginResponse } from "../auth.services/auth.interface";
 
 //** SCHEMA IMPORTS */
 import { authBearerSchema, loginSchema, registerSchema } from "../auth.services/auth.schema";
@@ -21,7 +21,7 @@ const Auth = (app: Elysia) => {
 
 
 
-    app.post('/api/register/decentra', async ({ body }): Promise<userLoginResponse> => {
+    app.post('/api/register/decentra', async ({ body }): Promise<UserLoginResponse> => {
         try {
             const driver = getDriver();
             const authService = new AuthService(driver);
@@ -35,7 +35,7 @@ const Auth = (app: Elysia) => {
         }
       }, registerSchema
     )
-    .post('/api/login/decentra', async ({ body }): Promise<userLoginResponse> => {
+    .post('/api/login/decentra', async ({ body }): Promise<UserLoginResponse> => {
         try {
             const driver = getDriver();
             const authService = new AuthService(driver);
@@ -50,7 +50,7 @@ const Auth = (app: Elysia) => {
       }, loginSchema
     )
 
-    .post('/api/validate-session/decentra', async ({ headers }): Promise<userLoginResponse> => {
+    .post('/api/validate-session/decentra', async ({ headers }): Promise<UserLoginResponse> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {

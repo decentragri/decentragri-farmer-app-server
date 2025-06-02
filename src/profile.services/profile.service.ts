@@ -178,7 +178,7 @@ class ProfileService {
 
 
 
-    public async uploadProfilePic(imageBuffer: BufferData, token: string): Promise<SuccessMessage> {
+    public async uploadProfilePic(token: string, imageBuffer: BufferData,): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
@@ -217,7 +217,7 @@ class ProfileService {
     }
 
 
-    
+
     public async getProfilePicture(userName: string): Promise<BufferData | null> {
       const session = this.driver?.session();
       try {
