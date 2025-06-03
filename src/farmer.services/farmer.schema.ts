@@ -6,7 +6,8 @@ export const farmerCreateFarmSchema = {
     body: t.Object({
         farmName: t.String(),
         cropType: t.String(), // List of crop types planted in the farm
-        description: t.Optional(t.String())
+        description: t.Optional(t.String()),
+        image: t.Optional(t.String()) // Optional image URL for the farm
     })
 };
 

@@ -5,7 +5,7 @@ export interface FarmData {
   farmName: string;
   cropType: string; // List of crop types planted in the farm
   description?: string; // Optional description of the farm
-  image: string;
+  image?: string;
 
 }
 
