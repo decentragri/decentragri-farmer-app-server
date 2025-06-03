@@ -9,14 +9,12 @@ import ProfileService from "../profile.services/profile.service";
 import { getDriver } from "../db/memgraph";
 
 //** TYPE IMPORTS */
-
-
-//** SCHEMA IMPORTS & INTERFACE */
-import { authBearerSchema, } from "../auth.services/auth.schema";
 import type { BufferData, UserLoginResponse } from "../auth.services/auth.interface";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import { uploadProfilePictureSchema } from "../profile.services/profile.schema";
 
+//** SCHEMA IMPORTS  */
+import { uploadProfilePictureSchema } from "../profile.services/profile.schema";
+import { authBearerSchema, } from "../auth.services/auth.schema";
 
 
 
