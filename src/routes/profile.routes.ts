@@ -3,7 +3,6 @@
 import type Elysia from "elysia";
 
 //** SERVICE IMPORTS */
-import AuthService from "../auth.services/auth.service";
 import ProfileService from "../profile.services/profile.service";
 
 //** MEMGRAPH IMPORt */
@@ -12,8 +11,8 @@ import { getDriver } from "../db/memgraph";
 //** TYPE IMPORTS */
 
 
-//** SCHEMA IMPORTS */
-import { authBearerSchema, loginSchema, registerSchema } from "../auth.services/auth.schema";
+//** SCHEMA IMPORTS & INTERFACE */
+import { authBearerSchema, } from "../auth.services/auth.schema";
 import type { BufferData, UserLoginResponse } from "../auth.services/auth.interface";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import { uploadProfilePictureSchema } from "../profile.services/profile.schema";
@@ -83,7 +82,7 @@ const Profile = (app: Elysia) => {
     )
 
 
-    
+
     
 
 
