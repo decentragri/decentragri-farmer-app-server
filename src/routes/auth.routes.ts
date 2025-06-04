@@ -18,9 +18,6 @@ import { authBearerSchema, loginSchema, registerSchema } from "../auth.services/
 
 
 const Auth = (app: Elysia) => {
-
-
-
     app.post('/api/register/decentra', async ({ body }): Promise<UserLoginResponse> => {
         try {
             const driver = getDriver();

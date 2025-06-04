@@ -71,6 +71,7 @@ class AuthService {
                 )
             );
 
+
             // Generate tokens after user creation
             const [tokens, walletData] = await Promise.all([
                 tokenService.generateTokens(username),
