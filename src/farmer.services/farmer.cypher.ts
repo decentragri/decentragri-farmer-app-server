@@ -7,8 +7,8 @@ export const createFarmCypher: string = `
       farmName: $farmName,
       crop: $crop,
       description: $description,
-      createdAt: datetime($createdAt),
-      updatedAt: datetime($updatedAt),
+      createdAt: $createdAt,
+      updatedAt: $updatedAt,
       image: $image,
       location: $location
     })
