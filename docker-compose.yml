@@ -10,7 +10,7 @@ services:
       - "8085:8085"
     env_file:
       - .env
-    environment:6
+    environment:
       - NODE_ENV=production
     networks:
       - decentragri-network
