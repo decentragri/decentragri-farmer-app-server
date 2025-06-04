@@ -53,7 +53,7 @@ services:
       - ENABLE_HTTPS=false
       - TRUST_PROXY=true
     ports:
-      - "127.0.0.1:3005:3005"
+      - "127.0.0.1:3006:3005"
     cpus: "1"
     restart: always
     networks:
