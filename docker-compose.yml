@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
     ports:
       - "7444:7444"
-      - "7688:7687"
+      - "7689:7687"
     environment:
       - MEMGRAPH_USER=decentragri
       - MEMGRAPH_PASSWORD=UXxTPCxxOpC7Y2JcFgsrgfs5635irhmmwqXwedwdddadaYw5StjbwK32323h0pdy/DadfdfB9gQZDgVbePoXJgLA==
