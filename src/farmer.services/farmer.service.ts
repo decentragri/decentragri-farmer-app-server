@@ -39,7 +39,8 @@ class FarmerService {
           owner: username,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
-          location: farmData.location,
+          lat: farmData.location?.lat,
+          lng: farmData.location?.lng,
           image: farmData.image
         };
 

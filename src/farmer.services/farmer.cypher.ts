@@ -5,12 +5,13 @@ export const createFarmCypher: string = `
     CREATE (f:Farm {
       id: $farmId,
       farmName: $farmName,
-      crop: $crop,
+      cropType: $cropType,
       description: $description,
       createdAt: $createdAt,
       updatedAt: $updatedAt,
       image: $image,
-      location: $location
+      lat: $lat,
+      lng: $lng,
     })
     MERGE (u)-[:OWNS]->(f)
     RETURN f
