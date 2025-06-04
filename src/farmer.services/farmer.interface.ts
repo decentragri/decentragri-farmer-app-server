@@ -6,6 +6,10 @@ export interface FarmData {
   cropType: string; // List of crop types planted in the farm
   description?: string; // Optional description of the farm
   image?: string;
+  location?: {
+  lat: number;
+  lng: number;
+};
 
 }
 

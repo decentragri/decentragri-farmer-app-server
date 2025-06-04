@@ -39,6 +39,7 @@ class FarmerService {
           owner: username,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
+          location: farmData.location
         };
 
         await session?.executeWrite((tx: ManagedTransaction) =>
