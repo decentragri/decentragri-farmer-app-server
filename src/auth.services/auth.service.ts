@@ -63,7 +63,7 @@ class AuthService {
                         level: 1,
                         experience: 0,
                         userExperience: 0,
-                        createdAt: createdAt,
+                        createdAt: $createdAt,
                         rank: 1
                     })
                     `,
