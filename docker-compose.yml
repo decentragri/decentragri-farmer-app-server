@@ -16,7 +16,7 @@ services:
       - decentragri-network
 
   decentragri-memgraph:
-    image: memgraph/memgraph-platform
+    image: memgraph/memgraph-mage:latest
     container_name: decentragri-memgraph
     restart: unless-stopped
     ports:
