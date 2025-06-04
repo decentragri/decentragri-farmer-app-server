@@ -51,6 +51,18 @@ class AuthService {
             ]);
             const createdAt = new Date().toISOString();
 
+            const cypherParams = {
+                userId,
+                username,
+                encryptedPassword,
+                deviceId,
+                walletAddress,
+                createdAt
+            };
+
+            // 👇 Log the variables passed to the Cypher query
+            console.log("Cypher Parameters:", cypherParams);
+
             await session.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
                     `
@@ -67,10 +79,9 @@ class AuthService {
                         rank: 1
                     })
                     `,
-                    { userId, username, encryptedPassword, deviceId, walletAddress, createdAt }
+                    cypherParams
                 )
             );
-
 
             // Generate tokens after user creation
             const [tokens, walletData] = await Promise.all([
@@ -79,6 +90,7 @@ class AuthService {
             ]);
 
             const { accessToken, refreshToken } = tokens;
+
             return {
                 username,
                 walletAddress,
@@ -87,13 +99,12 @@ class AuthService {
                 loginType: "decentragri",
                 walletData,
                 level: 1,
-                experience: 0,
-
+                experience: 0
             };
 
         } catch (error: any) {
             console.error("Error registering user:", error);
-            
+
             if (
                 error.code === "Neo.ClientError.Schema.ConstraintValidationFailed" &&
                 error.message.includes("username")
@@ -110,6 +121,7 @@ class AuthService {
             await session.close();
         }
     }
+
 
 
 
