@@ -63,7 +63,7 @@ class AuthService {
                         experience: 0,
                         userExperience: 0,
                         createdAt: datetime(),
-                        rank: 1,
+                        rank: 1
                     })
                     `,
                     { userId, username, encryptedPassword, deviceId, walletAddress }
