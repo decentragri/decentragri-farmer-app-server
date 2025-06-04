@@ -1,5 +1,20 @@
 services:
+  # decentragri-site:
+  #   image: decentragri-site
+  #   container_name: decentragri-site
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - decentragri-network
 
+  # decentragri-ai-agent:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   image: decentragri-ai-agent
     
       
     container_name: decentragri-ai-agent
