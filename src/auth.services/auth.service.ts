@@ -49,6 +49,7 @@ class AuthService {
                 hash(password, parseInt(SALT_ROUNDS)),
                 walletService.createWallet(username),
             ]);
+            const createdAt = new Date().toISOString();
 
             await session.executeWrite((tx: ManagedTransaction) =>
                 tx.run(
@@ -62,11 +63,11 @@ class AuthService {
                         level: 1,
                         experience: 0,
                         userExperience: 0,
-                        createdAt: datetime(),
+                        createdAt: createdAt,
                         rank: 1
                     })
                     `,
-                    { userId, username, encryptedPassword, deviceId, walletAddress }
+                    { userId, username, encryptedPassword, deviceId, walletAddress, createdAt }
                 )
             );
 
