@@ -57,6 +57,7 @@ class FarmerService {
       }
     }
 
+
     public async getFarmList(token: string): Promise<FarmList[]> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -171,14 +172,6 @@ class FarmerService {
         await session?.close();
       }
     }
-
-
-
-
-    
-
-
-
 
 }
 
