@@ -57,30 +57,33 @@ class FarmerService {
       }
     }
 
-
-    public async getFarmList(token: string): Promise<string[]> {
+    public async getFarmList(token: string): Promise<{ farmName: string, id: string, cropType: string }[]> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
-        const username: string = await tokenService.verifyAccessToken(token);
-        const result = await session?.executeRead((tx: ManagedTransaction) =>
-          tx.run(
-            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-             RETURN f.farmName AS farmName`,
-            { username }
-          )
-        );
+      const username: string = await tokenService.verifyAccessToken(token);
+      const result = await session?.executeRead((tx: ManagedTransaction) =>
+        tx.run(
+        `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
+         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType`,
+        { username }
+        )
+      );
 
-        if (!result || result.records.length === 0) {
-          return [];
-        }
+      if (!result || result.records.length === 0) {
+        return [];
+      }
 
-        return result.records.map(record => record.get('f').properties) as string[];
+      return result.records.map(record => ({
+        farmName: record.get('farmName'),
+        id: record.get('id'),
+        cropType: record.get('cropType')
+      }));
       } catch (error) {
-        console.error("Error fetching farm list:", error);
-        throw error;
+      console.error("Error fetching farm list:", error);
+      throw error;
       } finally {
-        await session?.close();
+      await session?.close();
       }
     }
 

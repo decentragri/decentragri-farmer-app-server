@@ -20,3 +20,9 @@ export interface CreatedFarm extends FarmData {
   owner?: string; // Username of the farm owner
 
 }
+
+export interface FarmList {
+  farmName: string,
+
+
+}
