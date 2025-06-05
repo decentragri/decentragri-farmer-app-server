@@ -3,7 +3,7 @@
 export const createFarmCypher: string = `
     MATCH (u:User {username: $username})
     CREATE (f:Farm {
-      id: $farmId,
+      id: $id,
       farmName: $farmName,
       cropType: $cropType,
       description: $description,

@@ -27,12 +27,12 @@ class FarmerService {
       const session = this.driver?.session();
       try {
         const username: string = await tokenService.verifyAccessToken(token);
-        const farmId: string = nanoid();
+        const id: string = nanoid();
         const createdAt: Date = new Date();
         const updatedAt: Date = createdAt;
         const params = {
           username,
-          farmId,
+          id,
           farmName: farmData.farmName,
           cropType: farmData.cropType,
           description: farmData.description ?? null,
@@ -66,7 +66,7 @@ class FarmerService {
       const result = await session?.executeRead((tx: ManagedTransaction) =>
         tx.run(
         `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-         RETURN f.farmName AS farmName, f.farmId AS farmId, f.cropType as cropType`,
+         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType`,
         { username }
         )
       );
@@ -77,7 +77,7 @@ class FarmerService {
 
       return result.records.map(record => ({
         farmName: record.get('farmName'),
-        farmId: record.get('farmId'),
+        id: record.get('id'),
         cropType: record.get('cropType')
       }));
       } catch (error) {
@@ -89,16 +89,16 @@ class FarmerService {
     }
 
 
-    public async getFarmData(token: string, farmId: string): Promise<CreatedFarm> {
+    public async getFarmData(token: string, id: string): Promise<CreatedFarm> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
         const username: string = await tokenService.verifyAccessToken(token);
         const result = await session?.executeRead((tx: ManagedTransaction) =>
           tx.run(
-            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $farmId})
+            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
              RETURN f`,
-            { username, farmId }
+            { username, id }
           )
         );
 
@@ -134,7 +134,7 @@ class FarmerService {
 
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
-            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $farmId})
+            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
              SET f.farmName = $farmName, f.crop = $crop, f.description = $description, f.updatedAt = $updatedAt
              RETURN f`,
             params
@@ -151,16 +151,16 @@ class FarmerService {
     }
 
 
-    public async deleteFarm(token: string, farmId: string): Promise<SuccessMessage> {
+    public async deleteFarm(token: string, id: string): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
         const username: string = await tokenService.verifyAccessToken(token);
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
-            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $farmId})
+            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
              DETACH DELETE f`,
-            { username, farmId }
+            { username, id }
           )
         );
 

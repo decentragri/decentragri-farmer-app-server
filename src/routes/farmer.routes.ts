@@ -52,7 +52,6 @@ const Farmer = (app: Elysia) => {
 
             const output: FarmList[] = await farmerService.getFarmList(jwtToken);
             return output;
-
         } catch (error: any) {
             console.error(error);
             throw error;
@@ -61,7 +60,7 @@ const Farmer = (app: Elysia) => {
     )
 
 
-    .get('api/data/farm/:farmId', async ({ headers, params }) => {
+    .get('api/data/farm/:id', async ({ headers, params }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -71,7 +70,7 @@ const Farmer = (app: Elysia) => {
             const driver = getDriver();
             const farmerService = new FarmerService(driver);
 
-            const output: CreatedFarm = await farmerService.getFarmData(jwtToken, params.farmId);
+            const output: CreatedFarm = await farmerService.getFarmData(jwtToken, params.id);
             return output;
 
         }
@@ -83,7 +82,7 @@ const Farmer = (app: Elysia) => {
     )
 
 
-    .post('api/update/farm/:farmId', async ({ headers, body }) => {
+    .post('api/update/farm/', async ({ headers, body }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -104,7 +103,7 @@ const Farmer = (app: Elysia) => {
     )
 
 
-    .post('api/delete/farm/:farmId', async ({ headers, params }) => {
+    .post('api/delete/farm/:id', async ({ headers, params }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -114,7 +113,7 @@ const Farmer = (app: Elysia) => {
             const driver = getDriver();
             const farmerService = new FarmerService(driver);
 
-            const output: SuccessMessage = await farmerService.deleteFarm(jwtToken, params.farmId);
+            const output: SuccessMessage = await farmerService.deleteFarm(jwtToken, params.id);
             return output;
 
         } catch (error: any) {
