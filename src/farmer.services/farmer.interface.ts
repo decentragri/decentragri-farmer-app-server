@@ -23,7 +23,7 @@ export interface CreatedFarm extends FarmData {
 
 export interface FarmList {
   farmName: string,
-  id: string,
+  farmId: string,
   cropType: string,
   
   

@@ -4,11 +4,12 @@ import FarmerService from "../farmer.services/farmer.service";
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import { farmerCreateFarmSchema, farmerGetFarmListSchema, farmerUpdateFarmSchema } from "../farmer.services/farmer.schema";
+import { farmerCreateFarmSchema, farmerUpdateFarmSchema } from "../farmer.services/farmer.schema";
 import type { CreatedFarm, FarmList } from "../farmer.services/farmer.interface";
 
 //** MEMGRAPH IMPORTS */
 import { getDriver } from "../db/memgraph";
+import { authBearerSchema } from "../auth.services/auth.schema";
 
 
 
@@ -56,7 +57,7 @@ const Farmer = (app: Elysia) => {
             console.error(error);
             throw error;
         }
-      }, farmerGetFarmListSchema
+      }, authBearerSchema
     )
 
 
@@ -78,7 +79,7 @@ const Farmer = (app: Elysia) => {
             console.error(error);
             throw error;
         }
-    }, farmerGetFarmListSchema
+    }, authBearerSchema
     )
 
 
@@ -120,7 +121,7 @@ const Farmer = (app: Elysia) => {
             console.error(error);
             throw error;
         }
-    }, farmerGetFarmListSchema
+    }, authBearerSchema
     )
 
 }

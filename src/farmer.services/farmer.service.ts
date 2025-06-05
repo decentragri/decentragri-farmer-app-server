@@ -65,7 +65,7 @@ class FarmerService {
       const result = await session?.executeRead((tx: ManagedTransaction) =>
         tx.run(
         `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType`,
+         RETURN f.farmName AS farmName, f.farmId AS farmId, f.cropType as cropType`,
         { username }
         )
       );
@@ -76,7 +76,7 @@ class FarmerService {
 
       return result.records.map(record => ({
         farmName: record.get('farmName'),
-        id: record.get('id'),
+        farmId: record.get('farmId'),
         cropType: record.get('cropType')
       }));
       } catch (error) {

@@ -15,9 +15,7 @@ export const farmerCreateFarmSchema = {
     })
 };
 
-export const farmerGetFarmListSchema = {
-    headers: t.Object({ authorization: t.String() })
-};
+
 
 export const farmerUpdateFarmSchema = {
     headers: t.Object({ authorization: t.String() }),
