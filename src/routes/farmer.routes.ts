@@ -5,10 +5,11 @@ import FarmerService from "../farmer.services/farmer.service";
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import { farmerCreateFarmSchema, farmerGetFarmListSchema, farmerUpdateFarmSchema } from "../farmer.services/farmer.schema";
+import type { CreatedFarm, FarmList } from "../farmer.services/farmer.interface";
 
 //** MEMGRAPH IMPORTS */
 import { getDriver } from "../db/memgraph";
-import type { CreatedFarm } from "../farmer.services/farmer.interface";
+
 
 
 
@@ -38,7 +39,7 @@ const Farmer = (app: Elysia) => {
     )
 
 
-    .get('api/list/farm', async ({ headers }) => {
+    .get('api/list/farm', async ({ headers }): Promise<FarmList[]> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -48,7 +49,7 @@ const Farmer = (app: Elysia) => {
             const driver = getDriver();
             const farmerService = new FarmerService(driver);
 
-            const output: string[] = await farmerService.getFarmList(jwtToken);
+            const output: FarmList[] = await farmerService.getFarmList(jwtToken);
             return output;
 
         } catch (error: any) {

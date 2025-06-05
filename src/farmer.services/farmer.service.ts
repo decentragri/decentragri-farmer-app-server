@@ -6,7 +6,7 @@ import { Driver, ManagedTransaction } from 'neo4j-driver-core'
 import { nanoid } from "nanoid"
 
 //**TYPE IMPORTS */
-import type { CreatedFarm, FarmData } from './farmer.interface';
+import type { CreatedFarm, FarmData, FarmList } from './farmer.interface';
 import type { SuccessMessage } from '../onchain.services/onchain.interface';
 
 //**SERVICE IMPORT
@@ -57,7 +57,7 @@ class FarmerService {
       }
     }
 
-    public async getFarmList(token: string): Promise<{ farmName: string, id: string, cropType: string }[]> {
+    public async getFarmList(token: string): Promise<FarmList[]> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
