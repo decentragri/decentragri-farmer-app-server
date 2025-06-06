@@ -44,6 +44,8 @@ class FarmerService {
           image: farmData.image
         };
 
+        
+
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(createFarmCypher, params)
         );
