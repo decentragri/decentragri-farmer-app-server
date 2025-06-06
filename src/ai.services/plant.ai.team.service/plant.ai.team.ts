@@ -5,7 +5,8 @@ import { Agent, Task, Team } from "kaibanjs";
 
 export interface PlantImageSessionParams {
 	imageBytes: string;       // Stringified PackedByteArray from Godot (e.g., "[137,80,78,...]")
-	cropType: string;        // ISO 8601
+	cropType: string;
+    farmName: string;    
 	location?: {
 		lat: number;
 		lng: number;

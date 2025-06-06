@@ -5,6 +5,7 @@ export interface SensorReadings  {
 	temperature: number;
 	sunlight: number;
 	humidity: number;
+	farmName: string;
 	cropType?: string;
 	username: string;
 	sensorId: string;

@@ -10,6 +10,7 @@ export const sensorSessionSchema = {
 			moisture: t.Number(),
 			ph: t.Number(),
 			temperature: t.Number(),
+			farmName: t.String(),
 			sunlight: t.Number(),
 			humidity: t.Number(),
 			username: t.String(),
