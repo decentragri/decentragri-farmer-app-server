@@ -12,10 +12,6 @@ import { getDriver } from "../db/memgraph";
 import { authBearerSchema } from "../auth.services/auth.schema";
 
 
-
-
-
-
 const Farmer = (app: Elysia) => {
     app.post('api/create/farm', async ({ headers, body }) => {
         try {
@@ -29,8 +25,6 @@ const Farmer = (app: Elysia) => {
 
             const output: SuccessMessage = await farmerService.createFarm(jwtToken, body);
             return output;
-
-
         } catch (error: any) {
             console.error(error);
             throw error;
@@ -72,7 +66,6 @@ const Farmer = (app: Elysia) => {
 
             const output: CreatedFarm = await farmerService.getFarmData(jwtToken, params.id);
             return output;
-
         }
         catch (error: any) {
             console.error(error);
