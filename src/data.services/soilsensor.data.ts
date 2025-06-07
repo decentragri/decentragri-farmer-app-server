@@ -143,8 +143,12 @@ class SensorData {
         }
     }
 
-
-
+    /**
+     * Fetches sensor data for a specific farm.
+     * @param token - The user's access token.
+     * @param farmName - The name of the farm to fetch data for.
+     * @returns An array of sensor readings with interpretations for the specified farm.
+     */
     public async getSensorDataByFarm(token: string, farmName: string): Promise<SensorReadingsWithInterpretation[]> {
 	const driver: Driver = getDriver();
 	const session: Session | undefined = driver?.session();
