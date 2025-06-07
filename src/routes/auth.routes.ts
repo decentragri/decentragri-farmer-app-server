@@ -72,6 +72,7 @@ const Auth = (app: Elysia) => {
       }, authBearerSchema
     )
 
+
     .post('/api/renew/access/decentra', async ({ headers }) => {
         try {
             const authorizationHeader: string = headers.authorization;
@@ -112,9 +113,6 @@ const Auth = (app: Elysia) => {
         }
       }, fcmTokenSchema
     )
-
-
-
 
 }
 

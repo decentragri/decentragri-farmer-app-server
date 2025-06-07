@@ -40,46 +40,58 @@ class SensorData {
         } = sensorReadings;
     
         try {
-            await Promise.all([
-                session.executeWrite((tx: ManagedTransaction) =>
-                    tx.run(
-                        `
-                        // Ensure user exists
-                        MERGE (u:User {username: $username})
-                        
-                        // Ensure sensor exists and connect it to the user
-                        MERGE (s:Sensor {sensorId: $sensorId})
-                        MERGE (u)-[:OWNS]->(s)
-    
-                        // Create reading node
-                        CREATE (r:Reading {
-                            fertility: $fertility,
-                            moisture: $moisture,
-                            ph: $ph,
-                            temperature: $temperature,
-                            sunlight: $sunlight,
-                            humidity: $humidity,
-                            cropType: $cropType,
-                            username: $username,
-                            createdAt: $createdAt
-                        })
-    
-                        // Create interpretation node
-                        CREATE (i:Interpretation {
-                            value: $interpretation
-                        })
-    
-                        // Create relationships
-                        MERGE (s)-[:HAS_READING]->(r)
-                        MERGE (r)-[:INTERPRETED_AS]->(i)
-                        `,
-                        { sensorId, createdAt, interpretation, ...rawReadings, username}
-                    )
-                ),
-    
-                // Save to IPFS
-                await this.saveSensorDataToNFT(sensorReadings)
-            ]);
+        await Promise.all([
+            session.executeWrite((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MERGE (u:User {username: $username})
+
+                    MERGE (f:Farm {name: $farmName})
+                    MERGE (u)-[:OWNS]->(f)
+
+                    MERGE (s:Sensor {sensorId: $sensorId})
+                    MERGE (f)-[:HAS_SENSOR]->(s)
+
+                    CREATE (r:Reading {
+                        fertility: $fertility,
+                        moisture: $moisture,
+                        ph: $ph,
+                        temperature: $temperature,
+                        sunlight: $sunlight,
+                        humidity: $humidity,
+                        cropType: $cropType,
+                        username: $username,
+                        createdAt: $createdAt
+                    })
+
+                    CREATE (i:Interpretation {
+                        value: $interpretation
+                    })
+
+                    MERGE (s)-[:HAS_READING]->(r)
+                    MERGE (r)-[:INTERPRETED_AS]->(i)
+                    `,
+                    {
+                        sensorId,
+                        createdAt,
+                        interpretation,
+                        username,
+                        farmName: sensorReadings.farmName,
+                        fertility: sensorReadings.fertility,
+                        moisture: sensorReadings.moisture,
+                        ph: sensorReadings.ph,
+                        temperature: sensorReadings.temperature,
+                        sunlight: sensorReadings.sunlight,
+                        humidity: sensorReadings.humidity,
+                        cropType: sensorReadings.cropType ?? null,
+                    }
+                )
+            ),
+
+            // Save to IPFS
+            await this.saveSensorDataToNFT(sensorReadings)
+        ]);
+
         } catch (error: any) {
             console.error("Error saving sensor data:", error);
             throw new Error("Failed to save sensor data");
@@ -98,49 +110,50 @@ class SensorData {
         const driver: Driver = getDriver();
         const session: Session | undefined = driver?.session();
         const tokenService: TokenService = new TokenService();
-    
+
         const isServiceToken = token === process.env.SENSOR_FEED_SERVICE_JWT;
         let query: string;
         let params: Record<string, unknown> = {};
-    
+
         if (!session) {
             throw new Error("Unable to create database session.");
         }
-    
+
         try {
-            // Use appropriate Cypher based on token
             if (isServiceToken) {
                 query = `
-                    MATCH (u:User)-[:OWNS]->(s:Sensor)
+                    MATCH (u:User)-[:OWNS]->(f:Farm)-[:HAS_SENSOR]->(s:Sensor)
                     MATCH (s)-[:HAS_READING]->(r:Reading)
                     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation
+                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation, f.name AS farmName
                     ORDER BY r.createdAt DESC
                 `;
             } else {
                 const username = await tokenService.verifyAccessToken(token);
                 query = `
-                    MATCH (u:User {username: $username})-[:OWNS]->(s:Sensor)
+                    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)-[:HAS_SENSOR]->(s:Sensor)
                     MATCH (s)-[:HAS_READING]->(r:Reading)
                     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation
+                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation, f.name AS farmName
                     ORDER BY r.createdAt DESC
                 `;
                 params.username = username;
             }
-    
+
             const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
                 tx.run(query, params)
             );
-    
+
             return result.records.map((record) => {
                 const readingNode = record.get("reading");
                 const sensorId = record.get("sensorId");
                 const interpretation = record.get("interpretation");
-    
+                const farmName = record.get("farmName");
+
                 const reading: SensorReadingsWithInterpretation = readingNode.properties;
-    
-                const readingWithInterpretation: SensorReadingsWithInterpretation = {
+
+                return {
+                    farmName: farmName ?? "Unknown Farm",
                     fertility: reading.fertility,
                     moisture: reading.moisture,
                     ph: reading.ph,
@@ -152,11 +165,8 @@ class SensorData {
                     createdAt: reading.createdAt,
                     sensorId: sensorId,
                     id: reading.id,
-                    interpretation: interpretation ?? "No interpretation",
-         
+                    interpretation: interpretation ?? "No interpretation"
                 };
-    
-                return readingWithInterpretation;
             });
         } catch (error: any) {
             console.error("Error fetching sensor data:", error);
@@ -165,6 +175,67 @@ class SensorData {
             await session.close();
         }
     }
+
+
+
+    public async getSensorDataByFarm(token: string, farmName: string): Promise<SensorReadingsWithInterpretation[]> {
+	const driver: Driver = getDriver();
+	const session: Session | undefined = driver?.session();
+	const tokenService: TokenService = new TokenService();
+
+	if (!session) {
+		throw new Error("Unable to create database session.");
+	}
+
+	try {
+		const username = await tokenService.verifyAccessToken(token);
+
+		const query = `
+			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})-[:HAS_SENSOR]->(s:Sensor)
+			MATCH (s)-[:HAS_READING]->(r:Reading)
+			OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
+			RETURN f.name AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation
+			ORDER BY r.createdAt DESC
+		`;
+
+		const params = { username, farmName };
+
+		const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+			tx.run(query, params)
+		);
+
+		return result.records.map((record) => {
+			const readingNode = record.get("reading");
+			const sensorId = record.get("sensorId");
+			const interpretation = record.get("interpretation");
+			const farmName = record.get("farmName");
+
+			const reading: SensorReadingsWithInterpretation = readingNode.properties;
+
+			return {
+				fertility: reading.fertility,
+				moisture: reading.moisture,
+				ph: reading.ph,
+				temperature: reading.temperature,
+				sunlight: reading.sunlight,
+				humidity: reading.humidity,
+				cropType: reading.cropType,
+				username: reading.username,
+				createdAt: reading.createdAt,
+				sensorId: sensorId,
+				id: reading.id,
+				interpretation: interpretation ?? "No interpretation",
+				farmName
+			};
+		});
+	} catch (error: any) {
+		console.error("Error fetching farm sensor data:", error);
+		throw new Error("Failed to fetch farm sensor data");
+	} finally {
+		await session.close();
+	}
+}
+
     
     
 

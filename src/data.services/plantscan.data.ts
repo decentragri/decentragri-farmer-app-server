@@ -28,23 +28,26 @@ class PlantData {
 		if (!session) throw new Error("Unable to create database session.");
 
 		try {
-			await Promise.all([
-				session.executeWrite((tx: ManagedTransaction) =>
-					tx.run(
-						`
-						MERGE (u:User {username: $username})
-						MERGE (p:PlantScan {
-							cropType: $cropType,
-							date: $date,
-							note: $note,
-							lat: $lat,
-							lng: $lng,
-							interpretation: $interpretation
-						})
-						MERGE (u)-[:HAS_PLANT_SCAN]->(p)
+		await Promise.all([
+			session.executeWrite((tx: ManagedTransaction) =>
+				tx.run(
+					`
+					MERGE (u:User {username: $username})
+					MERGE (f:Farm {name: $farmName})
+					MERGE (u)-[:OWNS]->(f)
+					MERGE (p:PlantScan {
+						cropType: $cropType,
+						date: $date,
+						note: $note,
+						lat: $lat,
+						lng: $lng,
+						interpretation: $interpretation
+					})
+					MERGE (f)-[:HAS_PLANT_SCAN]->(p)
 					`,
 					{
 						username: username,
+						farmName: data.farmName,
 						cropType: data.cropType ?? null,
 						date: new Date().toISOString(),
 						note: data.note ?? null,
@@ -55,7 +58,8 @@ class PlantData {
 				)
 			),
 			await this.savePlantScanToNFT(data, data.imageBytes, username)
-			]);
+		]);
+
 		} catch (err) {
 			console.error("Error saving plant scan:", err);
 			throw new Error("Failed to save plant scan");
@@ -65,18 +69,24 @@ class PlantData {
 	}
 
 	/**
-	 * Retrieve all plant scans for the given user.
+	 * Retrieve all plant scans for the authenticated user.
+	 * @param token - Auth token
+	 * @returns Array of PlantScanResult objects
 	 */
 	public async getPlantScans(token: string): Promise<PlantScanResult[]> {
 		const driver: Driver = getDriver();
 		const session: Session | undefined = driver?.session();
 		const tokenService: TokenService = new TokenService();
 
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+
 		try {
 			const username: string = await tokenService.verifyAccessToken(token);
 
 			const query = `
-				MATCH (u:User {username: $username})-[:HAS_PLANT_SCAN]->(p:PlantScan)
+				MATCH (u:User {username: $username})-[:OWNS]->(:Farm)-[:HAS_PLANT_SCAN]->(p:PlantScan)
 				RETURN p ORDER BY p.date DESC
 			`;
 
@@ -87,7 +97,6 @@ class PlantData {
 			return result.records.map((record) => {
 				const raw = record.get("p").properties;
 
-				// Parse interpretation string into object
 				let parsedInterpretation: ParsedInterpretation;
 				try {
 					parsedInterpretation = JSON.parse(raw.interpretation);
@@ -111,6 +120,64 @@ class PlantData {
 			await session.close();
 		}
 	}
+
+
+
+
+	/**
+	 * Retrieve plant scans for a specific farm.
+	 * @param token - Auth token
+	 * @param farmName - Name of the farm to filter by
+	 * @returns Array of PlantScanResult objects
+	 */
+	public async getPlantScansByFarm(token: string, farmName: string): Promise<PlantScanResult[]> {
+	const driver: Driver = getDriver();
+	const session: Session | undefined = driver?.session();
+	const tokenService: TokenService = new TokenService();
+
+	if (!session) {
+		throw new Error("Unable to create database session.");
+	}
+
+	try {
+		const username: string = await tokenService.verifyAccessToken(token);
+
+		const query = `
+			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
+			RETURN p ORDER BY p.date DESC
+		`;
+
+		const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+			tx.run(query, { username, farmName })
+		);
+
+		return result.records.map((record) => {
+			const raw = record.get("p").properties;
+
+			let parsedInterpretation: ParsedInterpretation;
+			try {
+				parsedInterpretation = JSON.parse(raw.interpretation);
+			} catch (_) {
+				parsedInterpretation = raw.interpretation;
+			}
+
+			return {
+				cropType: raw.cropType,
+				note: raw.note,
+				lat: raw.lat,
+				lng: raw.lng,
+				createdAt: raw.date,
+				interpretation: parsedInterpretation
+			} as PlantScanResult;
+		});
+	} catch (error) {
+		console.error("Error fetching plant scans by farm:", error);
+		throw new Error("Failed to fetch plant scans for farm");
+	} finally {
+		await session.close();
+	}
+	}
+
 
 
 	/**
