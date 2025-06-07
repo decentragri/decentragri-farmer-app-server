@@ -13,6 +13,7 @@ import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, SCAN_EDITION_ADDRESS } from "../uti
 
 //**SERVICE IMPORTS */
 import TokenService from "../security.services/token.service";
+import { getSensorDataByFarmCypher, saveSensorDataCypher } from "./data.cypher";
 
 
 
@@ -32,45 +33,11 @@ class SensorData {
             throw new Error("Unable to create database session.");
         }
     
-        const {
-            sensorId,
-            interpretation,
-            createdAt,
-            ...rawReadings
-        } = sensorReadings;
-    
+        const { sensorId, interpretation, createdAt } = sensorReadings;
         try {
         await Promise.all([
             session.executeWrite((tx: ManagedTransaction) =>
-                tx.run(
-                    `
-                    MERGE (u:User {username: $username})
-
-                    MERGE (f:Farm {name: $farmName})
-                    MERGE (u)-[:OWNS]->(f)
-
-                    MERGE (s:Sensor {sensorId: $sensorId})
-                    MERGE (f)-[:HAS_SENSOR]->(s)
-
-                    CREATE (r:Reading {
-                        fertility: $fertility,
-                        moisture: $moisture,
-                        ph: $ph,
-                        temperature: $temperature,
-                        sunlight: $sunlight,
-                        humidity: $humidity,
-                        cropType: $cropType,
-                        username: $username,
-                        createdAt: $createdAt
-                    })
-
-                    CREATE (i:Interpretation {
-                        value: $interpretation
-                    })
-
-                    MERGE (s)-[:HAS_READING]->(r)
-                    MERGE (r)-[:INTERPRETED_AS]->(i)
-                    `,
+                tx.run(saveSensorDataCypher,
                     {
                         sensorId,
                         createdAt,
@@ -189,19 +156,10 @@ class SensorData {
 
 	try {
 		const username = await tokenService.verifyAccessToken(token);
-
-		const query = `
-			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})-[:HAS_SENSOR]->(s:Sensor)
-			MATCH (s)-[:HAS_READING]->(r:Reading)
-			OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-			RETURN f.name AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation
-			ORDER BY r.createdAt DESC
-		`;
-
 		const params = { username, farmName };
 
 		const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-			tx.run(query, params)
+			tx.run(getSensorDataByFarmCypher, params)
 		);
 
 		return result.records.map((record) => {
@@ -234,11 +192,9 @@ class SensorData {
 	} finally {
 		await session.close();
 	}
-}
+    }
 
     
-    
-
     /**
      * Saves sensor data to IPFS and mints an NFT.
      * @param sensorReadings - The sensor readings to save.
