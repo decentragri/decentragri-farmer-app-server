@@ -12,7 +12,7 @@ import { getDriver } from "../db/memgraph";
 import type { UserLoginResponse } from "../auth.services/auth.interface";
 
 //** SCHEMA IMPORTS */
-import { authBearerSchema, loginSchema, registerSchema } from "../auth.services/auth.schema";
+import { authBearerSchema, fcmTokenSchema, loginSchema, registerSchema } from "../auth.services/auth.schema";
 
 
 
@@ -86,6 +86,27 @@ const Auth = (app: Elysia) => {
         }
       }, authBearerSchema
     )
+
+
+    .post('/api/save/fcm-token/android', async ({ headers, body }) => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const driver = getDriver();
+            const authService = new AuthService(driver);
+
+            const output = await authService.saveFcmToken(jwtToken, body)
+            return output;
+
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }, fcmTokenSchema
+)
 
 
 

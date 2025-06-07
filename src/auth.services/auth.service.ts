@@ -110,7 +110,6 @@ class AuthService {
     }
 
 
-
     /**
      * Logs in a user by verifying their credentials and generating tokens.
      * @param loginData - The login data containing username and password.
@@ -177,8 +176,6 @@ class AuthService {
     }
 
     
-
-
     /**
      * Validates a session by verifying the refresh token and checking if the user exists.
      * @param token - The refresh token to validate.
@@ -260,6 +257,36 @@ class AuthService {
         } catch (error: any) {
             console.error("Error refreshing session:", error);
             throw new error
+        }
+    }
+
+
+    public async saveFcmToken(token: string, body: { token: string }): Promise<{ success: boolean }> {
+        const session = this.driver?.session();
+        const tokenService = new TokenService();
+
+        if (!session) throw { error: "Database session not available" };
+
+        try {
+            const username: string = await tokenService.verifyAccessToken(token);
+
+
+            await session.executeWrite((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})
+                    SET u.fcmToken = $fcmToken
+                    `,
+                    { username, fcmToken: body.token }
+                )
+            );
+
+            return { success: true };
+        } catch (error: any) {
+            console.error("Error saving FCM token:", error);
+            throw { error: "Failed to save FCM token" };
+        } finally {
+            await session.close();
         }
     }
 

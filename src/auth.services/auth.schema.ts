@@ -20,4 +20,11 @@ export const registerSchema = {
 
 export const authBearerSchema = { 
     headers: t.Object({ authorization: t.String() })
-}
+};
+
+export const fcmTokenSchema = {
+    body: t.Object({
+        token: t.String()
+    }),
+    headers: t.Object({ authorization: t.String() })
+};
