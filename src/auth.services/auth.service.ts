@@ -18,6 +18,7 @@ import TokenService from '../security.services/token.service';
 
 //** CONFIG IMPORT */
 import { SALT_ROUNDS } from '../utils/constants';
+import type { SuccessMessage } from '../onchain.services/onchain.interface';
 
 
 class AuthService {
@@ -261,7 +262,7 @@ class AuthService {
     }
 
 
-    public async saveFcmToken(token: string, body: { token: string }): Promise<{ success: boolean }> {
+    public async saveFcmToken(token: string, body: { token: string }): Promise<SuccessMessage> {
         const session = this.driver?.session();
         const tokenService = new TokenService();
 
@@ -281,7 +282,7 @@ class AuthService {
                 )
             );
 
-            return { success: true };
+            return { success: "FCM token saved" };
         } catch (error: any) {
             console.error("Error saving FCM token:", error);
             throw { error: "Failed to save FCM token" };

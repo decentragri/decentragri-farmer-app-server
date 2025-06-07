@@ -10,9 +10,11 @@ import { getDriver } from "../db/memgraph";
 
 //** TYPE IMPORTS */
 import type { UserLoginResponse } from "../auth.services/auth.interface";
+import type { SuccessMessage } from "../onchain.services/onchain.interface";
 
 //** SCHEMA IMPORTS */
 import { authBearerSchema, fcmTokenSchema, loginSchema, registerSchema } from "../auth.services/auth.schema";
+
 
 
 
@@ -32,6 +34,8 @@ const Auth = (app: Elysia) => {
         }
       }, registerSchema
     )
+
+
     .post('/api/login/decentra', async ({ body }): Promise<UserLoginResponse> => {
         try {
             const driver = getDriver();
@@ -46,6 +50,7 @@ const Auth = (app: Elysia) => {
         }
       }, loginSchema
     )
+
 
     .post('/api/validate-session/decentra', async ({ headers }): Promise<UserLoginResponse> => {
         try {
@@ -88,7 +93,7 @@ const Auth = (app: Elysia) => {
     )
 
 
-    .post('/api/save/fcm-token/android', async ({ headers, body }) => {
+    .post('/api/save/fcm-token/android', async ({ headers, body }): Promise<SuccessMessage> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -98,15 +103,15 @@ const Auth = (app: Elysia) => {
             const driver = getDriver();
             const authService = new AuthService(driver);
 
-            const output = await authService.saveFcmToken(jwtToken, body)
+            const output: SuccessMessage = await authService.saveFcmToken(jwtToken, body)
             return output;
 
         } catch (error) {
             console.error(error);
             throw error;
         }
-    }, fcmTokenSchema
-)
+      }, fcmTokenSchema
+    )
 
 
 
