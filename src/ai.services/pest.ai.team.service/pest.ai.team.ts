@@ -36,72 +36,68 @@ class PestTeam {
 	}
 
     /**
-     * Starts the pest risk forecast process for a given farm and crop.
-     *
-     * This method gathers recent farm data and current weather information,
-     * then creates and runs an AI-powered task to assess the risk of pest infestation.
-     * The AI agent analyzes the provided data and returns a JSON object indicating
-     * the risk level, justification, and recommended preventive actions.
-     *
-     * @param params - The parameters required to perform the pest risk forecast, including farm name, username, location, and crop type.
-     * @returns A promise that resolves with the result of the pest risk forecast team execution.
-     * @throws Will throw an error if the forecast process fails.
+     * Start the pest risk forecast analysis
+     * @param params - Parameters containing farm and location info
+     * @returns Promise resolving to the analysis result
      */
-	public async start(params: PestRiskForecastParams) {
-		try {
-			const { farmName, username, location, cropType } = params;
+    public async start(params: PestRiskForecastParams) {
+        try {
+            const { farmName, username, location, cropType } = params;
 
-			// Load recent farm data (last 7 days)
-			const farmDataService = new FarmDataService();
-			const farmData: FarmScanResult = await farmDataService.getRecentFarmScans(username, farmName);
+            // Load recent farm data (last 7 days)
+            const farmDataService = new FarmDataService();
+            const farmData: FarmScanResult = await farmDataService.getRecentFarmScans(username, farmName);
 
-			// Fetch current weather for farm
-			const weatherService = new WeatherService();
-			const weather: WeatherData = await weatherService.currentWeatherInternal(location.lat, location.lng);
+            // Fetch current weather for farm
+            const weatherService = new WeatherService();
+            const weather: WeatherData = await weatherService.currentWeatherInternal(location.lat, location.lng);
 
             const task = new Task({
                 title: "Pest Infestation Forecast",
                 description: `
-            You are an AI specialized in forecasting crop pest risks.
+                You are an AI agronomist trained to forecast pest infestation risks based on real-world agricultural data.
 
-            The user is cultivating "${cropType}" on a farm located at latitude ${location.lat} and longitude ${location.lng}.
+                User Context:
+                - Crop: "${cropType}"
+                - Location: Latitude ${location.lat}, Longitude ${location.lng}
 
-            Provided Data:
-            - Weather Information: ${JSON.stringify(weather)}
-            - Soil Measurements: ${JSON.stringify(farmData.soilReadings)}
-            - Plant Health Scans: ${JSON.stringify(farmData.plantScans)}
+                Input Data:
+                - Weather: ${JSON.stringify(weather)}
+                - Soil Readings: ${JSON.stringify(farmData.soilReadings)}
+                - Plant Scans: ${JSON.stringify(farmData.plantScans)}
 
-            Objectives:
-            1. Determine whether there is a high, medium, or low risk of pest infestation.
-            2. Explain your assessment with insights from the data (e.g., high humidity leads to increased pest risk).
-            3. Recommend 2–3 preventive measures for the farmer to implement immediately.
+                Your Job:
+                1. Determine pest infestation risk level ("High", "Medium", or "Low").
+                2. Justify your assessment using insights from the data.
+                3. Suggest 2–3 preventive actions the farmer should take immediately.
 
-            Example Response Format:
-            {
-            "RiskLevel": "High | Medium | Low",
-            "Reason": "Concise justification based on provided data",
-            "PreventiveActions": ["Action 1", "Action 2", "Action 3"]
-            }`,
-                expectedOutput: `A valid JSON object with keys: RiskLevel, Reason, PreventiveActions`,
+                ⚠️ Output MUST be a valid JSON object with the following keys:
+                {
+                    "RiskLevel": "High" | "Medium" | "Low",
+                    "Reason": "Concise justification based on provided data",
+                    "PreventiveActions": ["Action 1", "Action 2", "Action 3"]
+                }`,
+                expectedOutput: `Valid JSON with keys: RiskLevel (string), Reason (string), PreventiveActions (string array).`,
                 agent: this.pestRiskAnalyzer
             });
 
-			const team = new Team({
-				name: "Pest Risk Forecast Team",
-				agents: [this.pestRiskAnalyzer],
-				tasks: [task],
-				inputs: {},
-				env: {
-					OPENAI_API_KEY: import.meta.env.DEEPSEEK_API_KEY || ""
-				}
-			});
+            const team = new Team({
+                name: "Pest Risk Forecast Team",
+                agents: [this.pestRiskAnalyzer],
+                tasks: [task],
+                inputs: {},
+                env: {
+                    OPENAI_API_KEY: import.meta.env.DEEPSEEK_API_KEY || ""
+                }
+            });
 
-			return await team.start();
-		} catch (error) {
-			console.error("❌ Failed to run pest forecast AI:", error);
-			throw error;
-		}
-	}
+            return await team.start();
+        } catch (error) {
+            console.error("Failed to run pest forecast AI:", error);
+            throw error;
+        }
+    }
+
 }
 
 export default PestTeam;

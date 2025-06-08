@@ -100,7 +100,7 @@ class PlantImageTeam {
 
 
             const visualClassification = await this.classifyImageWithOpenAI(base64, cropType);
-            console.log("🖼️ Image classified as:", visualClassification);
+            console.log("Image classified as:", visualClassification);
 
             if (
                 visualClassification.includes("Invalid cropType: not a plant") ||
@@ -144,7 +144,7 @@ class PlantImageTeam {
 
             return await team.start();
         } catch (error) {
-            console.error("❌ Failed to process hybrid plant image analysis:", error);
+            console.error("Failed to process hybrid plant image analysis:", error);
             throw error;
         }
     }

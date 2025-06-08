@@ -7,3 +7,12 @@ export interface PestRiskForecastParams {
     };
     cropType: string;
 }
+
+
+
+
+export interface PestScanResult extends PestRiskForecastParams {
+    interpretation: string; // Analysis result from the pest risk forecast
+    createdAt: string; // Timestamp of the analysis
+    
+}
