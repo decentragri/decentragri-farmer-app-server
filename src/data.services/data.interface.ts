@@ -1,3 +1,4 @@
+import type { SensorReadingsWithInterpretation } from "../ai.services/soil.ai.team.service/soil.types";
 
 
 
@@ -18,3 +19,7 @@ export interface ParsedInterpretation {
 	Recommendations: string[];
 }
 
+export interface FarmScanResult {
+    plantScans: PlantScanResult[];
+    soilReadings: SensorReadingsWithInterpretation[];
+}
