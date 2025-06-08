@@ -34,3 +34,12 @@ export const getSensorDataByFarmCypher = `
     RETURN f.name AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation
     ORDER BY r.createdAt DESC
 	`
+
+export const getRecentFarmScansCypher = `
+    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})
+    OPTIONAL MATCH (f)-[:HAS_SOIL_READING]->(soil:Reading)
+        WHERE soil.createdAt >= datetime($cutoff)
+    OPTIONAL MATCH (f)-[:HAS_PLANT_SCAN]->(plant:PlantScan)
+        WHERE plant.date >= datetime($cutoff)
+    RETURN collect(soil) AS soilReadings, collect(plant) AS plantScans
+	`
