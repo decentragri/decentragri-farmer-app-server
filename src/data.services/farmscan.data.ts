@@ -19,7 +19,7 @@ import { getRecentFarmScansCypher } from './data.cypher';
 
 
 
-class FarmData {
+class FarmDataService {
     /**
         * Retrieves recent farm scan results for a specific user and farm within the last 7 days.
         *
@@ -61,4 +61,4 @@ class FarmData {
 
 }
 
-export default FarmData;
+export default FarmDataService;
