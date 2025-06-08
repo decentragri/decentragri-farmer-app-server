@@ -1,5 +1,6 @@
 //**SERVICE IMPORTS */
 import PestRiskForecastRunner from "../ai.services/pest.ai.team.service/pest.main";
+import PestData from "../data.services/pest.data";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
@@ -8,7 +9,6 @@ import type { SuccessMessage } from "../onchain.services/onchain.interface";
 //** SCHEMA IMPORTS */
 import { pestRiskForecastParamsSchema } from "../ai.services/pest.ai.team.service/pest.schema";
 import { authBearerSchema } from "../auth.services/auth.schema";
-import PestData from "../data.services/pest.data";
 
 
 const PestAI = (app: Elysia) => {
