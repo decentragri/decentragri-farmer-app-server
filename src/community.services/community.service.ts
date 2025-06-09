@@ -9,6 +9,7 @@ import TokenService from '../security.services/token.service';
 //** TYPE IMPORTS */
 import type { Farmer } from './community.interface';
 import type { CreatedFarm } from '../farmer.services/farmer.interface';
+import type { SuccessMessage } from '../onchain.services/onchain.interface';
 
 
 class CommunityService {
@@ -176,6 +177,193 @@ class CommunityService {
             await session.close();
         }
     }
+
+
+    public async followFarmer(token: string, targetUsername: string): Promise<SuccessMessage> {
+        const tokenService = new TokenService();
+        await tokenService.verifyAccessToken(token);
+
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const username = await tokenService.verifyAccessToken(token);
+            const result = await session.executeWrite((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username}), (f:User {username: $targetUsername})
+                    CREATE (u)-[:FOLLOWS]->(f)
+                    RETURN u.username AS username, f.username AS targetUsername
+                    `,
+                    { username, targetUsername }
+                )
+            );
+
+            if (result.records.length === 0) {
+                throw new Error("Failed to follow farmer.");
+            }
+
+            return{ success: `Successfully followed ${username}` };
+        } catch (error) {
+            console.error("Error following farmer:", error);
+            throw new Error("Failed to follow farmer.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
+    public async unfollowFarmer(token: string, targetUsername: string): Promise<SuccessMessage>  {
+        const tokenService = new TokenService();
+        await tokenService.verifyAccessToken(token);
+
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const username = await tokenService.verifyAccessToken(token);
+            const result = await session.executeWrite((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[r:FOLLOWS]->(f:User {username: $targetUsername})
+                    DELETE r
+                    RETURN u.username AS username, f.username AS targetUsername
+                    `,
+                    { username, targetUsername }
+                )
+            );
+
+            if (result.records.length === 0) {
+                throw new Error("Failed to unfollow farmer.");
+            }
+
+            return { success: `Successfully unfollowed ${username}` };
+        } catch (error) {
+            console.error("Error unfollowing farmer:", error);
+            throw new Error("Failed to unfollow farmer.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
+    public async getFollowers(token: string,): Promise<Farmer[]> {
+        const tokenService = new TokenService();
+        const username = await tokenService.verifyAccessToken(token);
+
+
+
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const result = await session.executeRead((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})<-[:FOLLOWS]-(f:User)
+                    RETURN f.username AS username,
+                           f.level AS level,
+                           f.experience AS experience,
+                           f.createdAt AS createdAt,
+                           f.rank AS rank
+                    `,
+                    { username }
+                )
+            );
+
+            const followers: Farmer[] = result.records.map((record) => ({
+                username: record.get('username'),
+                level: record.get('level'),
+                experience: record.get('experience'),
+                createdAt: record.get('createdAt'),
+                rank: record.get('rank'),
+            }));
+
+            return followers;
+        } catch (error) {
+            console.error("Error retrieving followers:", error);
+            throw new Error("Failed to retrieve followers.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
+    public async getFollowing(token: string): Promise<Farmer[]> {
+        const tokenService = new TokenService();
+        const username = await tokenService.verifyAccessToken(token);
+
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const result = await session.executeRead((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[:FOLLOWS]->(f:User)
+                    RETURN f.username AS username,
+                           f.level AS level,
+                           f.experience AS experience,
+                           f.createdAt AS createdAt,
+                           f.rank AS rank
+                    `,
+                    { username }
+                )
+            );
+
+            const following: Farmer[] = result.records.map((record) => ({
+                username: record.get('username'),
+                level: record.get('level'),
+                experience: record.get('experience'),
+                createdAt: record.get('createdAt'),
+                rank: record.get('rank'),
+            }));
+
+            return following;
+        } catch (error) {
+            console.error("Error retrieving following:", error);
+            throw new Error("Failed to retrieve following.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
+    public async getMutualFollowers(token: string): Promise<Farmer[]> {
+        const tokenService = new TokenService();
+        const username = await tokenService.verifyAccessToken(token);
+
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const result = await session.executeRead((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[:FOLLOWS]->(f:User)<-[:FOLLOWS]-(u2:User)
+                    RETURN f.username AS username,
+                           f.level AS level,
+                           f.experience AS experience,
+                           f.createdAt AS createdAt,
+                           f.rank AS rank
+                    `,
+                    { username }
+                )
+            );
+
+            const mutualFollowers: Farmer[] = result.records.map((record) => ({
+                username: record.get('username'),
+                level: record.get('level'),
+                experience: record.get('experience'),
+                createdAt: record.get('createdAt'),
+                rank: record.get('rank'),
+            }));
+
+            return mutualFollowers;
+        } catch (error) {
+            console.error("Error retrieving mutual followers:", error);
+            throw new Error("Failed to retrieve mutual followers.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
 
 }
 
