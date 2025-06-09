@@ -13,11 +13,17 @@ export interface FarmData {
 
 }
 
-export interface CreatedFarm extends FarmData {
+export interface CreatedFarm {
+  farmName: string;
+  cropType: string; // List of crop types planted in the farm
+  description?: string; // Optional description of the farm
+  image?: string; // URL or base64 encoded image of the farm
   id: string; // Unique identifier for the farm
   createdAt?: Date; // Timestamp of farm creation
   updatedAt?: Date; // Timestamp of last update
   owner?: string; // Username of the farm owner
+  lat: number; // Latitude of the farm location
+  lng: number; // Longitude of the farm location
 
 }
 
