@@ -3,7 +3,7 @@ import { Driver, ManagedTransaction, Session, type QueryResult } from "neo4j-dri
 import { getDriver } from "../db/memgraph";
 
 //** TYPES */
-import type { PlantImageSessionParams } from "../ai.services/plant.ai.team.service/plant.ai.team";
+import type { PlantImageScanParams, PlantImageSessionParams } from "../ai.services/plant.ai.team.service/plant.interface";
 //** SERVICES */
 import TokenService from "../security.services/token.service";
 import WalletService, { engine } from "../wallet.services/wallet.service";
@@ -21,7 +21,7 @@ class PlantData {
 	/**
 	 * Save plant image analysis data into Memgraph and mint an NFT.
 	 */
-	public async savePlantScan(data: PlantImageSessionParams & { interpretation: string }, username: string): Promise<void> {
+	public async savePlantScan(data: PlantImageScanParams, username: string): Promise<void> {
 		const driver: Driver = getDriver();
 		const session: Session | undefined = driver?.session();
 
@@ -121,9 +121,7 @@ class PlantData {
 		}
 	}
 
-
-
-
+	
 	/**
 	 * Retrieve plant scans for a specific farm.
 	 * @param token - Auth token
@@ -180,14 +178,8 @@ class PlantData {
 
 
 
-	/**
-	 * Mint NFT representing the plant image analysis.
-	 */
-	private async savePlantScanToNFT(
-		data: PlantImageSessionParams & { interpretation: string },
-		image: string,
-		username: string
-	): Promise<void> {
+
+	private async savePlantScanToNFT( data: PlantImageScanParams, image: string, username: string): Promise<void> {
 		const driver: Driver = getDriver();
 		const walletService = new WalletService(driver);
 		const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);

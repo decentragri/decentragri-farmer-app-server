@@ -4,8 +4,9 @@ import TokenService from '../../security.services/token.service';
 import PlantData from '../../data.services/plantscan.data';
 
 //**TYPE IMPORTS */
-import type { PlantImageSessionParams } from './plant.ai.team';
+
 import type { SuccessMessage } from '../../onchain.services/onchain.interface';
+import type { PlantImageSessionParams } from './plant.interface';
 
 class PlantImageRunner {
 	/**

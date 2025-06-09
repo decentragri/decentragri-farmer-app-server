@@ -1,18 +1,10 @@
 // ** OPENAI + KAIBAN HYBRID APPROACH **
 import OpenAI from "openai";
 import { Agent, Task, Team } from "kaibanjs";
+import type { PlantImageSessionParams } from "./plant.interface";
 
 
-export interface PlantImageSessionParams {
-	imageBytes: string;       // Stringified PackedByteArray from Godot (e.g., "[137,80,78,...]")
-	cropType: string;
-    farmName: string;    
-	location?: {
-		lat: number;
-		lng: number;
-	};
-	note?: string;
-}
+
 
 class PlantImageTeam {
 	private imageAnalyzer: Agent;
