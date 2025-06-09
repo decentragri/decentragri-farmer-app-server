@@ -2,7 +2,6 @@
 //** MEMGRAPH DRIVER
 import { getDriver } from '../db/memgraph';
 
-
 //**SERVICE IMPORT
 import TokenService from '../security.services/token.service';
 
@@ -363,8 +362,7 @@ class CommunityService {
         }
     }
 
-
-
+    
 }
 
 export default CommunityService;
