@@ -175,7 +175,7 @@ const Community = (app: Elysia) => {
     , userNameSchema
     )
 
-    
+
     .get('/api/farmers/following/:username', async ({ headers, params }): Promise<Farmer[]> => {
         try {
             const authorizationHeader: string = headers.authorization;
@@ -237,7 +237,7 @@ const Community = (app: Elysia) => {
     }
     , userNameSchema
     )
-    
+
 }
 
 export default Community;
