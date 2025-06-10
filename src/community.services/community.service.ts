@@ -244,11 +244,67 @@ class CommunityService {
     }
 
 
-    public async getFollowers(token: string,): Promise<Farmer[]> {
+    public async blockFarmer(token: string, targetUsername: string): Promise<SuccessMessage> {
         const tokenService = new TokenService();
-        const username = await tokenService.verifyAccessToken(token);
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const username = await tokenService.verifyAccessToken(token);
+            const result = await session.executeWrite((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username}), (f:User {username: $targetUsername})
+                    CREATE (u)-[:BLOCKS]->(f)
+                    RETURN u.username AS username, f.username AS targetUsername
+                    `,
+                    { username, targetUsername }
+                )
+            );
+            if (result.records.length === 0) {
+                throw new Error("Failed to block farmer.");
+            }
+            return { success: `Successfully blocked ${targetUsername}` };
+        } catch (error) {
+            console.error("Error blocking farmer:", error);
+            throw new Error("Failed to block farmer.");
+        } finally {
+            await session.close();
+        }
+    }
 
 
+    public async unblockFarmer(token: string, targetUsername: string): Promise<SuccessMessage> {
+        const tokenService = new TokenService();
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+            const username = await tokenService.verifyAccessToken(token);
+            const result = await session.executeWrite((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[r:BLOCKS]->(f:User {username: $targetUsername})
+                    DELETE r
+                    RETURN u.username AS username, f.username AS targetUsername
+                    `,
+                    { username, targetUsername }
+                )
+            );
+            if (result.records.length === 0) {
+                throw new Error("Failed to unblock farmer.");
+            }
+            return { success: `Successfully unblocked ${targetUsername}` };
+        } catch (error) {
+            console.error("Error unblocking farmer:", error);
+            throw new Error("Failed to unblock farmer.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
+    public async getFollowers(token: string, username: string): Promise<Farmer[]> {
+        const tokenService = new TokenService();
+        await tokenService.verifyAccessToken(token);
 
         const driver = getDriver();
         const session = driver.session();
@@ -285,9 +341,9 @@ class CommunityService {
     }
 
 
-    public async getFollowing(token: string): Promise<Farmer[]> {
+    public async getFollowing(token: string, username: string): Promise<Farmer[]> {
         const tokenService = new TokenService();
-        const username = await tokenService.verifyAccessToken(token);
+        await tokenService.verifyAccessToken(token);
 
         const driver = getDriver();
         const session = driver.session();
@@ -361,6 +417,49 @@ class CommunityService {
             await session.close();
         }
     }
+
+
+    public async getBlockedFarmers(token: string, username: string): Promise<Farmer[]> {
+        const tokenService = new TokenService();
+        await tokenService.verifyAccessToken(token);
+
+        const driver = getDriver();
+        const session = driver.session();
+        try {
+
+            const result = await session.executeRead((tx) =>
+                tx.run(
+                    `
+                    MATCH (u:User {username: $username})-[:BLOCKS]->(f:User)
+                    RETURN f.username AS username,
+                           f.level AS level,
+                           f.experience AS experience,
+                           f.createdAt AS createdAt,
+                           f.rank AS rank
+                    `,
+                    { username }
+                )
+            );
+
+            const blockedFarmers: Farmer[] = result.records.map((record) => ({
+                username: record.get('username'),
+                level: record.get('level'),
+                experience: record.get('experience'),
+                createdAt: record.get('createdAt'),
+                rank: record.get('rank'),
+            }));
+
+            return blockedFarmers;
+        } catch (error) {
+            console.error("Error retrieving blocked farmers:", error);
+            throw new Error("Failed to retrieve blocked farmers.");
+        } finally {
+            await session.close();
+        }
+    }
+
+
+
 
     
 }
