@@ -19,8 +19,14 @@ import { savePlantScanCypher } from "./data.cypher";
 
 
 class PlantData {
+
 	/**
-	 * Save plant image analysis data into Memgraph and mint an NFT.
+	 * Saves a plant scan record to the database and stores the scan as an NFT.
+	 *
+	 * @param data - The parameters of the plant image scan, including farm name, crop type, location, note, interpretation, and image bytes.
+	 * @param username - The username of the user performing the scan.
+	 * @returns A promise that resolves when the plant scan has been saved.
+	 * @throws Will throw an error if the database session cannot be created or if saving the plant scan fails.
 	 */
 	public async savePlantScan(data: PlantImageScanParams, username: string): Promise<void> {
 		const driver: Driver = getDriver();
@@ -164,6 +170,15 @@ class PlantData {
 	}
 
 
+	/**
+	 * Saves a plant scan as an NFT by uploading the image, generating metadata, and minting the NFT to the user's smart wallet.
+	 *
+	 * @param data - The parameters of the plant image scan, including crop type, interpretation, location, and optional note.
+	 * @param image - The plant image as a JSON-encoded array of bytes.
+	 * @param username - The username of the user to whom the NFT will be minted.
+	 * @returns A promise that resolves when the NFT has been successfully minted.
+	 * @throws Will throw an error if the NFT minting process fails.
+	 */
 	private async savePlantScanToNFT( data: PlantImageScanParams, image: string, username: string): Promise<void> {
 		const driver: Driver = getDriver();
 		const walletService = new WalletService(driver);
