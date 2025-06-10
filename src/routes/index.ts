@@ -6,6 +6,7 @@ import OnChain from "./onchain.routes";
 import Weather from "./weather.routes";
 import PlantAI from "./plant-ai.routes";
 import Farmer from "./farmer.routes";
+import Community from "./community.routes";
 
 const routes = (app: any): void => {
     [
@@ -15,7 +16,8 @@ const routes = (app: any): void => {
         Insight,
         OnChain,
         Weather,
-        Farmer
+        Farmer,
+        Community
     ].forEach(route => route(app));
 }
 

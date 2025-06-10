@@ -8,7 +8,8 @@ import { farmNameSchema, userNameSchema } from "../community.services/community.
 
 
 const Community = (app: Elysia) => {
-    app.get('/api/farmers/all', async ({ headers }): Promise<Farmer[]> => {
+    app
+    .get('/api/farmers/all', async ({ headers }): Promise<Farmer[]> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
