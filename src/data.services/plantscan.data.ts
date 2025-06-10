@@ -3,7 +3,7 @@ import { Driver, ManagedTransaction, Session, type QueryResult } from "neo4j-dri
 import { getDriver } from "../db/memgraph";
 
 //** TYPES */
-import type { PlantImageScanParams, PlantImageSessionParams } from "../ai.services/plant.ai.team.service/plant.interface";
+import type { PlantImageScanParams } from "../ai.services/plant.ai.team.service/plant.interface";
 //** SERVICES */
 import TokenService from "../security.services/token.service";
 import WalletService, { engine } from "../wallet.services/wallet.service";
@@ -12,6 +12,7 @@ import WalletService, { engine } from "../wallet.services/wallet.service";
 import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./data.interface";
+import { savePlantScanCypher } from "./data.cypher";
 
 
 
@@ -30,21 +31,7 @@ class PlantData {
 		try {
 		await Promise.all([
 			session.executeWrite((tx: ManagedTransaction) =>
-				tx.run(
-					`
-					MERGE (u:User {username: $username})
-					MERGE (f:Farm {name: $farmName})
-					MERGE (u)-[:OWNS]->(f)
-					MERGE (p:PlantScan {
-						cropType: $cropType,
-						date: $date,
-						note: $note,
-						lat: $lat,
-						lng: $lng,
-						interpretation: $interpretation
-					})
-					MERGE (f)-[:HAS_PLANT_SCAN]->(p)
-					`,
+				tx.run(savePlantScanCypher,
 					{
 						username: username,
 						farmName: data.farmName,
@@ -175,8 +162,6 @@ class PlantData {
 		await session.close();
 	}
 	}
-
-
 
 
 	private async savePlantScanToNFT( data: PlantImageScanParams, image: string, username: string): Promise<void> {
