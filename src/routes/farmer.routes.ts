@@ -116,6 +116,8 @@ const Farmer = (app: Elysia) => {
     }, authBearerSchema
     )
 
+    
+
 }
 
 export default Farmer
