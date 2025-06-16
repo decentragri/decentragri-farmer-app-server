@@ -123,15 +123,16 @@ class ProfileService {
         };
     }
 
-    // Calculates the experience gain for a user based on their current level and accuracy
     /**
-     * Calculates the amount of experience a user gains based on their current level and accuracy,
-     * updates the user's experience, and returns the result of the level-up calculation.
+     * Retrieves the profile picture for a user by their username.
+     * This method queries the Neo4j database for a `ProfilePic` node associated with the given user,
+     * fetches the image from SeaweedFS using the file identifier (`fid`), and returns the image data
+     * as a JSON-encoded byte array string.
      *
-     * @param username - The username of the user whose experience is being calculated. Defaults to "nashar4".
-     * @param accuracy - The accuracy value (as a decimal between 0 and 1) used to adjust the experience gain.
-     * @returns A promise that resolves to a {@link LevelUpResult} containing the updated user experience and level information.
-     * @throws Will throw an error if user details cannot be retrieved or experience cannot be calculated.
+     * @param userName - The username of the user whose profile picture is to be retrieved.
+     * @returns A promise that resolves to a `BufferData` object containing the profile picture data as a JSON-encoded byte array string.
+     *          If no profile picture is found or fetching fails, `bufferData` will be an empty string.
+     * @throws Throws an error if there is an issue querying the database or fetching the image.
      */
     public async calculateExperienceGain(username: string = "nashar4", accuracy: number): Promise<LevelUpResult> {
         try {
@@ -160,6 +161,7 @@ class ProfileService {
         }
     }
     
+
     // Calculates the required experience for a given level using a unified formula
     private async getRequiredUserExperience(level: number): Promise<number> {
         // Unified formula for required experience
