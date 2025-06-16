@@ -417,7 +417,6 @@ class ProfileService {
 
 
 
-
     /**
      * Retrieves the profile picture for a user by their username.
      *
