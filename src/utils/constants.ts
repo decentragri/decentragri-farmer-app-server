@@ -43,3 +43,5 @@ export const GAME_SERVER_KEY: string = process.env.GAME_SERVER_KEY || ""
 export const ANDROID_APP_HASH: string = process.env.ANDROID_APP_HASH || ""
 
 export const WEATHER_API_KEY: string = process.env.WEATHER_API_KEY || ""
+export const SEAWEED_MASTER: string = "http://decentragri-seaweed-master:9333"
+export const SEAWEED_VOLUME: string = "http://decentragri-seaweed-volume:8081"

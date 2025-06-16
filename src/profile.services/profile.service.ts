@@ -16,8 +16,7 @@ import type { SuccessMessage } from '../onchain.services/onchain.interface';
 import TokenService from '../security.services/token.service';
 import type { BufferData, UserLoginResponse } from '../auth.services/auth.interface';
 import type { LevelUpResult, UserProfileResponse } from './profile.interface';
-import { profilePictureCypher } from './profile.cypher';
-import { unlink } from 'fs/promises';
+import { SEAWEED_MASTER, SEAWEED_VOLUME } from '../utils/constants';
 
 //** CONFIG IMPORT */
 
@@ -279,26 +278,28 @@ class ProfileService {
 
 
     /**
-     * Uploads a new profile picture for the authenticated user.
+     * Uploads a user's profile picture to a SeaweedFS volume server and updates the user's profile in the database.
      *
-     * This method verifies the provided access token, parses and validates the image buffer data,
-     * saves the image to disk, deletes any previous profile picture file, and updates the user's
-     * profile picture information in the Memgraph database.
+     * This method performs the following steps:
+     * 1. Verifies the provided access token to obtain the username.
+     * 2. Parses and validates the provided image buffer data (as a JSON-encoded number array).
+     * 3. Uploads the image to a SeaweedFS volume server.
+     * 4. Deletes any existing profile picture associated with the user.
+     * 5. Creates a new `ProfilePic` node in the database and associates it with the user.
      *
      * @param token - The JWT access token for authenticating the user.
-     * @param buffer - An object containing a JSON-encoded string representing the image as a number array.
-     * @returns A promise that resolves to a success message upon successful upload.
-     * @throws Will throw an error if the token is invalid, the buffer format is incorrect,
-     *         the byte values are invalid, or if any file/database operation fails.
+     * @param buffer - An object containing the image data as a JSON-encoded string of a number array.
+     * @returns A promise that resolves to a success message upon successful upload and database update.
+     * @throws Will throw an error if the token is invalid, the buffer format is incorrect, the upload fails, or the database operation fails.
      */
     public async uploadProfilePic(token: string, buffer: { bufferData: string }): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
 
       try {
-        const username: string = await tokenService.verifyAccessToken(token);
+        const username = await tokenService.verifyAccessToken(token);
 
-        // Parse and validate PackedByteArray
+        // Parse and validate byte array
         let byteArray: number[];
         try {
           byteArray = JSON.parse(buffer.bufferData);
@@ -315,25 +316,30 @@ class ProfileService {
         }
 
         const imageBuffer = Buffer.from(byteArray);
-
+        const fileFormat = 'png';
         const uploadedAt = Date.now();
-        const fileFormat = 'png'; // Adjust for real MIME detection
-        const fileSize = imageBuffer.byteLength;
 
-        const uploadsDir = resolve(process.cwd(), 'uploads/profile-pics');
-        await mkdir(uploadsDir, { recursive: true });
+        // 1. Get FID and public URL from Seaweed master
+        const assignRes = await fetch(SEAWEED_MASTER + '/dir/assign');
+        const assignJson = await assignRes.json();
+        const { fid, publicUrl } = assignJson;
 
-        const filename = `${username}_${uploadedAt}.${fileFormat}`;
-        const filePath = join(uploadsDir, filename);
-        const publicUrl = `/uploads/profile-pics/${filename}`;
+        // 2. Upload image to Seaweed volume server
+        const form = new FormData();
+        form.append('file', new Blob([imageBuffer]), `${username}_${uploadedAt}.${fileFormat}`);
 
-        // Delete old picture file if exists
+        const uploadRes = await fetch(`http://${publicUrl}/${fid}`, {
+          method: 'POST',
+          body: form,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`Seaweed upload failed: ${uploadRes.statusText}`);
+        }
+
+        const fileUrl = `http://${publicUrl}/${fid}`;
         await this.deleteOldProfilePicFile(session, username);
 
-        // Save new image to disk
-        await writeFile(filePath, imageBuffer);
-
-        // Update Memgraph
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
             `
@@ -345,24 +351,24 @@ class ProfileService {
               url: $url,
               fileFormat: $fileFormat,
               fileSize: $fileSize,
-              uploadedAt: $uploadedAt
+              uploadedAt: $uploadedAt,
+              fid: $fid
             })
             MERGE (u)-[:HAS_PROFILE_PIC]->(p)
             `,
             {
               username,
               id: nanoid(),
-              url: publicUrl,
+              url: fileUrl,
               fileFormat,
-              fileSize,
+              fileSize: imageBuffer.length,
               uploadedAt,
+              fid,
             }
           )
         );
 
-        return {
-          success: 'Profile picture uploaded successfully',
-        };
+        return { success: 'Profile picture uploaded successfully' };
       } catch (err) {
         console.error('Upload error:', err);
         throw err;
@@ -383,27 +389,29 @@ class ProfileService {
      * @param username - The username of the user whose old profile picture should be deleted.
      * @returns A promise that resolves when the operation is complete.
      */
-    private async deleteOldProfilePicFile(session: any, username: string): Promise<void> {
-		try {
-			const result = await session.executeRead((tx: ManagedTransaction) =>
-				tx.run(
-					`
-					MATCH (u:User {username: $username})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
-					RETURN p.url AS oldUrl
-					`,
-					{ username }
-				)
-			);
+      private async deleteOldProfilePicFile(session: any, username: string): Promise<void> {
+        try {
+          const result = await session.executeRead((tx: ManagedTransaction) =>
+            tx.run(
+              `
+              MATCH (u:User {username: $username})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
+              RETURN p.fid AS oldFid
+              `,
+              { username }
+            )
+          );
 
-			const oldUrl: string | undefined = result?.records?.[0]?.get('oldUrl');
-			if (oldUrl) {
-				const oldPath = resolve(process.cwd(), '.' + oldUrl);
-				await unlink(oldPath);
-			}
-		} catch (err: any) {
-			console.warn(`Old profile picture could not be deleted: ${err.message}`);
-		}
-	  }
+          const oldFid: string | undefined = result?.records?.[0]?.get('oldFid');
+          if (oldFid) {
+            await fetch(SEAWEED_VOLUME + `/${oldFid}`, {
+              method: 'DELETE',
+            });
+          }
+        } catch (err: any) {
+          console.warn(`Old profile picture could not be deleted: ${err.message}`);
+        }
+      }
+
 
 
 
