@@ -79,9 +79,51 @@ services:
       retries: 5
       timeout: 10s
 
+  decentragri-seaweed-master:
+    image: chrislusf/seaweedfs:latest
+    container_name: decentragri-seaweed-master
+    command: "master -ip=decentragri-seaweed-master -mdir=/data"
+    ports:
+      - "9333:9333"  # UI/API for master
+    volumes:
+      - seaweed-master-data:/data
+    networks:
+      - decentragri-network
+
+  decentragri-seaweed-volume:
+    image: chrislusf/seaweedfs:latest
+    container_name: decentragri-seaweed-volume
+    command: "volume -max=5 -mserver=decentragri-seaweed-master:9333 -ip=decentragri-seaweed-volume -dir=/data"
+    ports:
+      - "8081:8080"  # Volume server API
+    volumes:
+      - seaweed-volume-data:/data
+    depends_on:
+      - decentragri-seaweed-master
+    networks:
+      - decentragri-network
+
+  decentragri-seaweed-filer:
+    image: chrislusf/seaweedfs:latest
+    container_name: decentragri-seaweed-filer
+    command: "filer -master=decentragri-seaweed-master:9333"
+    ports:
+      - "8888:8888"  # Filer UI/API
+      - "8333:8333"  # Optional S3 API
+    volumes:
+      - seaweed-filer-data:/data
+    depends_on:
+      - decentragri-seaweed-master
+    networks:
+      - decentragri-network
+
+
 volumes:
   valkey-data:
   postgres-data:
+  seaweed-master-data:
+  seaweed-volume-data:
+  seaweed-filer-data:
 
 networks:
   decentragri-network:
