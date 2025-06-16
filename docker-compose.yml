@@ -95,7 +95,8 @@ services:
     container_name: decentragri-seaweed-volume
     command: "volume -max=5 -mserver=decentragri-seaweed-master:9333 -ip=decentragri-seaweed-volume -dir=/data"
     ports:
-      - "8081:8080"  # Volume server API
+      - "8086:8080"  # admin UI port remapped to 8086 on host
+      - "8087:8081"  # volume public port remapped to 8087 on host
     volumes:
       - seaweed-volume-data:/data
     depends_on:
