@@ -16,8 +16,6 @@ import { savePlantScanCypher } from "./data.cypher";
 
 
 
-
-
 class PlantData {
 
 	/**

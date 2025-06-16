@@ -389,28 +389,28 @@ class ProfileService {
      * @param username - The username of the user whose old profile picture should be deleted.
      * @returns A promise that resolves when the operation is complete.
      */
-      private async deleteOldProfilePicFile(session: any, username: string): Promise<void> {
-        try {
-          const result = await session.executeRead((tx: ManagedTransaction) =>
-            tx.run(
-              `
-              MATCH (u:User {username: $username})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
-              RETURN p.fid AS oldFid
-              `,
-              { username }
-            )
-          );
+    private async deleteOldProfilePicFile(session: any, username: string): Promise<void> {
+      try {
+        const result = await session.executeRead((tx: ManagedTransaction) =>
+          tx.run(
+            `
+            MATCH (u:User {username: $username})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
+            RETURN p.fid AS oldFid
+            `,
+            { username }
+          )
+        );
 
-          const oldFid: string | undefined = result?.records?.[0]?.get('oldFid');
-          if (oldFid) {
-            await fetch(SEAWEED_VOLUME + `/${oldFid}`, {
-              method: 'DELETE',
-            });
-          }
-        } catch (err: any) {
-          console.warn(`Old profile picture could not be deleted: ${err.message}`);
+        const oldFid: string | undefined = result?.records?.[0]?.get('oldFid');
+        if (oldFid) {
+          await fetch(SEAWEED_VOLUME + `/${oldFid}`, {
+            method: 'DELETE',
+          });
         }
+      } catch (err: any) {
+        console.warn(`Old profile picture could not be deleted: ${err.message}`);
       }
+    }
 
 
 
@@ -418,14 +418,14 @@ class ProfileService {
     /**
      * Retrieves the profile picture for a user by their username.
      *
-     * This method queries the database for a `User` node with the specified username,
-     * follows the `HAS_PROFILE_PIC` relationship to the associated `ProfilePic` node,
-     * and returns the image data as a buffer.
+     * This method queries the Neo4j database for a `ProfilePic` node associated with the given user,
+     * fetches the image from SeaweedFS using the file identifier (`fid`), and returns the image data
+     * as a JSON-encoded byte array string.
      *
      * @param userName - The username of the user whose profile picture is to be retrieved.
-     * @returns A promise that resolves to a `BufferData` object containing the image buffer data,
-     *          or an empty string if no profile picture is found.
-     * @throws Will throw an error if the database query fails.
+     * @returns A promise that resolves to a `BufferData` object containing the profile picture data as a JSON-encoded byte array string.
+     *          If no profile picture is found or fetching fails, `bufferData` will be an empty string.
+     * @throws Throws an error if there is an issue querying the database or fetching the image.
      */
     public async getProfilePicture(userName: string): Promise<BufferData> {
       const session = this.driver?.session();
@@ -434,17 +434,29 @@ class ProfileService {
           tx.run(
             `
             MATCH (u:User {username: $userName})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
-            RETURN p.image AS image
+            RETURN p.fid AS fid
             `,
             { userName }
           )
         );
 
-        if (result && result.records.length > 0) {
-          return { bufferData: result.records[0].get('image') };
-        } else {
-          return { bufferData: "" }; // No profile picture found
+        const record = result?.records?.[0];
+        const fid: string | undefined = record?.get('fid');
+
+        if (!fid) {
+          return { bufferData: "" }; // No picture found
         }
+
+        const res = await fetch(`${SEAWEED_VOLUME}/${fid}`);
+        if (!res.ok) {
+          console.warn(`Failed to fetch profile picture from SeaweedFS: ${res.status}`);
+          return { bufferData: "" };
+        }
+
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        return { bufferData: JSON.stringify([...buffer]) }; // Return as JSON-encoded byte array
+
       } catch (error: any) {
         console.error("Error retrieving profile picture:", error);
         throw error;
