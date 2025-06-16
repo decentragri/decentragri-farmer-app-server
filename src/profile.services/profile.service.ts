@@ -427,7 +427,9 @@ class ProfileService {
      *          If no profile picture is found or fetching fails, `bufferData` will be an empty string.
      * @throws Throws an error if there is an issue querying the database or fetching the image.
      */
-    public async getProfilePicture(userName: string): Promise<BufferData> {
+    public async getProfilePicture(token: string): Promise<BufferData> {
+      const tokenService = new TokenService();
+      const userName = await tokenService.verifyAccessToken(token);
       const session = this.driver?.session();
       try {
         const result = await session?.executeRead((tx: ManagedTransaction) =>
