@@ -17,6 +17,7 @@ import TokenService from '../security.services/token.service';
 import type { BufferData, UserLoginResponse } from '../auth.services/auth.interface';
 import type { LevelUpResult, UserProfileResponse } from './profile.interface';
 import { SEAWEED_MASTER, SEAWEED_VOLUME } from '../utils/constants';
+import { getFromSeaweed, uploadToSeaweed } from '../utils/file.seaweed';
 
 //** CONFIG IMPORT */
 
@@ -329,25 +330,16 @@ class ProfileService {
         const fileFormat = 'png';
         const uploadedAt = Date.now();
 
-        // 1. Get FID and public URL from Seaweed master
-        const assignRes = await fetch(SEAWEED_MASTER + '/dir/assign');
-        const assignJson = await assignRes.json();
-        const { fid, publicUrl } = assignJson;
+        // ✅ Upload using utility function
+        const fileUrl = await uploadToSeaweed(
+          imageBuffer,
+          `${username}_${uploadedAt}.${fileFormat}`,
+          'image/png'
+        );
 
-        // 2. Upload image to Seaweed volume server
-        const form = new FormData();
-        form.append('file', new Blob([imageBuffer]), `${username}_${uploadedAt}.${fileFormat}`);
+        // Extract FID from the file URL
+        const fid = fileUrl.split('/').pop();
 
-        const uploadRes = await fetch(`http://${publicUrl}/${fid}`, {
-          method: 'POST',
-          body: form,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error(`Seaweed upload failed: ${uploadRes.statusText}`);
-        }
-
-        const fileUrl = `http://${publicUrl}/${fid}`;
         await this.deleteOldProfilePicFile(session, username);
 
         await session?.executeWrite((tx: ManagedTransaction) =>
@@ -373,7 +365,7 @@ class ProfileService {
               fileFormat,
               fileSize: imageBuffer.length,
               uploadedAt,
-              fid,
+              fid
             }
           )
         );
@@ -386,6 +378,7 @@ class ProfileService {
         await session?.close();
       }
     }
+
 
 
     /**
@@ -458,11 +451,8 @@ class ProfileService {
           return { bufferData: "" }; // No picture found
         }
 
-        const res = await fetch(`${SEAWEED_VOLUME}/${fid}`);
-        if (!res.ok) {
-          console.warn(`Failed to fetch profile picture from SeaweedFS: ${res.status}`);
-          return { bufferData: "" };
-        }
+        const res: Blob = await getFromSeaweed(fid);
+        
 
         const arrayBuffer = await res.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
