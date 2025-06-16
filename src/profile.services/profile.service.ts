@@ -1,3 +1,7 @@
+//** FILE API IMPORTS */
+import { writeFile, mkdir } from 'fs/promises';
+import { join, resolve } from 'path';
+
 
 //** MEMGRAPH DRIVER
 import { Driver, ManagedTransaction, Session, type QueryResult } from 'neo4j-driver-core'
@@ -13,6 +17,7 @@ import TokenService from '../security.services/token.service';
 import type { BufferData, UserLoginResponse } from '../auth.services/auth.interface';
 import type { LevelUpResult, UserProfileResponse } from './profile.interface';
 import { profilePictureCypher } from './profile.cypher';
+import { unlink } from 'fs/promises';
 
 //** CONFIG IMPORT */
 
@@ -273,56 +278,132 @@ class ProfileService {
     }
 
 
-
     /**
-     * Uploads a new profile picture for the user associated with the provided token.
-     * 
-     * This method first verifies the user's access token, removes any existing profile picture,
-     * and then creates a new `ProfilePic` node in the database, associating it with the user.
-     * The image is stored as a buffer along with metadata such as upload time, file format, and size.
-     * 
-     * @param token - The JWT access token identifying the user.
-     * @param imageBuffer - The buffer data containing the image to be uploaded.
+     * Uploads a new profile picture for the authenticated user.
+     *
+     * This method verifies the provided access token, parses and validates the image buffer data,
+     * saves the image to disk, deletes any previous profile picture file, and updates the user's
+     * profile picture information in the Memgraph database.
+     *
+     * @param token - The JWT access token for authenticating the user.
+     * @param buffer - An object containing a JSON-encoded string representing the image as a number array.
      * @returns A promise that resolves to a success message upon successful upload.
-     * @throws Will throw an error if the token is invalid, the database operation fails, or any other error occurs during the process.
+     * @throws Will throw an error if the token is invalid, the buffer format is incorrect,
+     *         the byte values are invalid, or if any file/database operation fails.
      */
-    public async uploadProfilePic(token: string, imageBuffer: BufferData,): Promise<SuccessMessage> {
+    public async uploadProfilePic(token: string, buffer: { bufferData: string }): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
+
       try {
-        const userName: string = await tokenService.verifyAccessToken(token);
+        const username: string = await tokenService.verifyAccessToken(token);
 
-        const uploadedAt: number = Date.now();
-        const fileFormat: string = "png";
-        const fileSize: number = 100;
+        // Parse and validate PackedByteArray
+        let byteArray: number[];
+        try {
+          byteArray = JSON.parse(buffer.bufferData);
+          if (!Array.isArray(byteArray)) throw new Error();
+        } catch {
+          throw new Error('Invalid buffer format: must be a JSON-encoded number array string');
+        }
 
-        // Remove existing profile picture if it exists
+        if (
+          byteArray.length === 0 ||
+          byteArray.some((n) => typeof n !== 'number' || n < 0 || n > 255)
+        ) {
+          throw new Error('Invalid byte values in PackedByteArray');
+        }
+
+        const imageBuffer = Buffer.from(byteArray);
+
+        const uploadedAt = Date.now();
+        const fileFormat = 'png'; // Adjust for real MIME detection
+        const fileSize = imageBuffer.byteLength;
+
+        const uploadsDir = resolve(process.cwd(), 'uploads/profile-pics');
+        await mkdir(uploadsDir, { recursive: true });
+
+        const filename = `${username}_${uploadedAt}.${fileFormat}`;
+        const filePath = join(uploadsDir, filename);
+        const publicUrl = `/uploads/profile-pics/${filename}`;
+
+        // Delete old picture file if exists
+        await this._deleteOldProfilePicFile(session, username);
+
+        // Save new image to disk
+        await writeFile(filePath, imageBuffer);
+
+        // Update Memgraph
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
             `
-            MATCH (u:User {username: $userName})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
-            DETACH DELETE p
+            MATCH (u:User {username: $username})
+            OPTIONAL MATCH (u)-[r:HAS_PROFILE_PIC]->(old:ProfilePic)
+            DELETE r, old
+            CREATE (p:ProfilePic {
+              id: $id,
+              url: $url,
+              fileFormat: $fileFormat,
+              fileSize: $fileSize,
+              uploadedAt: $uploadedAt
+            })
+            MERGE (u)-[:HAS_PROFILE_PIC]->(p)
             `,
-            { userName }
+            {
+              username,
+              id: nanoid(),
+              url: publicUrl,
+              fileFormat,
+              fileSize,
+              uploadedAt,
+            }
           )
         );
 
-        // Create a new ProfilePic node and connect to the user
-        await session?.executeWrite((tx: ManagedTransaction) =>
-          tx.run(
-            profilePictureCypher,
-            { userName, id: nanoid(), image: imageBuffer.bufferData, uploadedAt, fileFormat, fileSize }
-          )
-        );
-
-        return { success: "Profile picture upload successful" };
-      } catch (error: any) {
-        console.error("Error updating profile picture:", error);
-        throw error;
+        return {
+          success: 'Profile picture uploaded successfully',
+        };
+      } catch (err) {
+        console.error('Upload error:', err);
+        throw err;
       } finally {
         await session?.close();
       }
     }
+
+
+    /**
+     * Deletes the old profile picture file associated with a user, if it exists.
+     *
+     * This method queries the database for the current profile picture URL of the specified user,
+     * resolves the file path, and attempts to delete the file from the filesystem.
+     * If the file cannot be deleted, a warning is logged.
+     *
+     * @param session - The database session used to execute the read transaction.
+     * @param username - The username of the user whose old profile picture should be deleted.
+     * @returns A promise that resolves when the operation is complete.
+     */
+    private async _deleteOldProfilePicFile(session: any, username: string): Promise<void> {
+		try {
+			const result = await session.executeRead((tx: ManagedTransaction) =>
+				tx.run(
+					`
+					MATCH (u:User {username: $username})-[:HAS_PROFILE_PIC]->(p:ProfilePic)
+					RETURN p.url AS oldUrl
+					`,
+					{ username }
+				)
+			);
+
+			const oldUrl: string | undefined = result?.records?.[0]?.get('oldUrl');
+			if (oldUrl) {
+				const oldPath = resolve(process.cwd(), '.' + oldUrl);
+				await unlink(oldPath);
+			}
+		} catch (err: any) {
+			console.warn(`Old profile picture could not be deleted: ${err.message}`);
+		}
+	  }
 
 
 

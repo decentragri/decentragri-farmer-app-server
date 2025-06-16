@@ -1,13 +1,14 @@
 
 
 export const profilePictureCypher = `
-  MATCH (u:User {username: $userName})
-  CREATE (p:ProfilePic {
-    id: $id,
-    image: $image,
-    uploadedAt: $uploadedAt,
-    fileFormat: $fileFormat,
-    fileSize: $fileSize,
-    likes: []
-  })
-  CREATE (u)-[:HAS_PROFILE_PIC]->(p)`
+    MATCH (u:User {username: $userName})
+    CREATE (p:ProfilePic {
+      id: $id,
+      url: $url,
+      fileFormat: $fileFormat,
+      fileSize: $fileSize,
+      uploadedAt: $uploadedAt
+    })
+    MERGE (u)-[:HAS_PROFILE_PIC]->(p)
+					`;
+  
