@@ -28,7 +28,14 @@ class WalletService {
   }
 
 
-  //** Creates a wallet and returns the wallet address.
+
+  /**
+   * Creates a new backend wallet for the specified user.
+   *
+   * @param username - The username to use as the wallet label.
+   * @returns A promise that resolves to the newly created wallet's address.
+   * @throws Will throw an error if wallet creation fails.
+   */
   public async createWallet(username: string): Promise<string> {
      try {
          // Create a new backend wallet with the player's username as the label
@@ -45,6 +52,17 @@ class WalletService {
   }
 
 
+  /**
+   * Retrieves the wallet balances and token prices for a given wallet address.
+   *
+   * This method fetches balances for ETH, SWELL, DecentrAgri (DAGRI), and rsWETH tokens,
+   * as well as their respective USD prices. It handles errors gracefully by returning a price of 0
+   * if fetching the price fails for any token.
+   *
+   * @param walletAddress - The address of the wallet to retrieve balances for.
+   * @returns A promise that resolves to a `WalletData` object containing the wallet's balances and token prices.
+   * @throws Will throw an error if fetching wallet balances or prices fails.
+   */
   public async getWalletBalance(walletAddress: string): Promise<WalletData> {
     const insightService = new InsightService();
 
@@ -98,6 +116,17 @@ class WalletService {
   }
 
 
+  /**
+   * Retrieves the smart wallet address associated with a given username.
+   *
+   * This method queries the database for a user node matching the provided username
+   * and returns the corresponding smart wallet address. If the user does not exist,
+   * an error is thrown.
+   *
+   * @param userName - The username of the user whose smart wallet address is to be retrieved.
+   * @returns A promise that resolves to the smart wallet address as a string.
+   * @throws Will throw an error if the user with the specified username is not found or if a database error occurs.
+   */
   public async getSmartWalletAddress(userName: string): Promise<string> {
     try {
         const session: Session | undefined = this.driver?.session();
@@ -125,6 +154,18 @@ class WalletService {
   }
 
 
+  /**
+   * Transfers a token (either native ETH or ERC-20) from the user's smart wallet to a specified receiver.
+   *
+   * - For native ETH transfers, sends the specified amount directly without requiring allowance.
+   * - For ERC-20 token transfers, sets the necessary allowance before transferring the token.
+   * - Waits for each transaction (allowance and transfer) to be mined before proceeding.
+   *
+   * @param token - The access token used to authenticate and identify the user.
+   * @param tokenTransferData - An object containing the receiver's address, token name, and amount to transfer.
+   * @returns A promise that resolves to an object indicating the success of the transfer.
+   * @throws Will throw an error if the transfer fails at any step.
+   */
   public async transferToken(token: string, tokenTransferData: TokenTransferData): Promise<{ success: string }> {
     const tokenService = new TokenService();
     const username: string = await tokenService.verifyAccessToken(token);
@@ -189,6 +230,13 @@ class WalletService {
   }
 
 
+  /**
+   * Retrieves the blockchain chain ID and contract address for a given token name.
+   *
+   * @param tokenName - The name of the token (e.g., "ETH", "SWELL", "RSWETH", "DAGRI").
+   * @returns A promise that resolves to an object containing the `chainId` and `contractAddress` for the specified token.
+   * @throws Will throw an error if the token name is unrecognized or if there is a failure in retrieving the information.
+   */
 	public async getTokenChainAndAddress(tokenName: string): Promise<{ chainId: string; contractAddress: string }> {
 		try {
 			let chainId: string;
@@ -227,17 +275,21 @@ class WalletService {
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Ensures that a transaction with the specified `queueId` is mined by polling its status,
+   * handling errors, and retrying as necessary. The method performs a limited number of immediate
+   * retries for both normal and errored states, logging status changes and progress at configurable intervals.
+   * If the transaction is not mined within the allowed retries, it moves the monitoring process to the background.
+   *
+   * @param queueId - The unique identifier for the transaction to monitor.
+   * @returns A promise that resolves when the transaction is successfully mined, cancelled, or background monitoring is initiated.
+   *
+   * @remarks
+   * - Logs status changes and progress to the console.
+   * - Handles "errored" and "cancelled" transaction states with specific logic.
+   * - Initiates background monitoring if the transaction is not mined within the maximum retries.
+   * - Retries are performed synchronously for errored transactions.
+   */
   public async ensureTransactionMined(queueId: string): Promise<void> {
 		const maxRetries = 3; // Number of immediate retries before background retry
 		const maxErrorRetries = 3; // Max retries for errored transactions
@@ -300,6 +352,18 @@ class WalletService {
 	}
 
 
+  /**
+   * Retries a transaction in the background until it is mined, cancelled, or the maximum number of retries is reached.
+   *
+   * This method periodically checks the status of a transaction identified by `queueId`.
+   * - If the transaction is mined, it logs a success message and stops retrying.
+   * - If the transaction has errored, it attempts to retry and synchronize the transaction, logging a warning.
+   * - If the transaction is cancelled, it logs an error and stops retrying.
+   * - If a network error occurs, it logs a warning and continues retrying.
+   * The retry process runs in the background and will attempt up to 100 retries, waiting 5 seconds between each attempt.
+   *
+   * @param queueId - The unique identifier of the transaction to monitor and retry.
+   */
   private retryInBackground(queueId: string) {
 		const retryInterval = 5000; // Retry every 5 seconds
 		const maxBackgroundRetries = 100; // Give up after 100 background retries
