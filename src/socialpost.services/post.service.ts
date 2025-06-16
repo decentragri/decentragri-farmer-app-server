@@ -7,7 +7,7 @@ import type { SuccessMessage } from '../onchain.services/onchain.interface';
 //** BUN */
 import { nanoid } from 'nanoid';
 import type { Driver, Session, QueryResult, ManagedTransaction } from 'neo4j-driver';
-import type { CreatePostBody } from './post.interface';
+import type { CreatePostBody, GetPostResult } from './post.interface';
 
 //** SERVICES */
 import TokenService from '../security.services/token.service';
@@ -99,74 +99,154 @@ class SocialPostService {
 
 
     /**
-     * Retrieves a post by its ID, including its content, author, like count, comment count,
-     * and whether the current user (identified by the provided token) has liked the post.
+     * Retrieves a post by its ID, including author, like count, comment count, and shared post details if applicable.
      *
      * @param token - The access token of the current user, or null if unauthenticated.
      * @param postId - The unique identifier of the post to retrieve.
-     * @returns A promise that resolves to an object containing post details:
+     * @returns A promise that resolves to an object containing post details, including:
      *   - id: The post's unique identifier.
      *   - content: The content of the post.
-     *   - imageUrl: The URL of the post's image, if any.
+     *   - imageUrl: The image URL associated with the post.
      *   - createdAt: The creation timestamp of the post.
      *   - author: The username of the post's author.
-     *   - likeCount: The number of likes the post has received.
+     *   - likeCount: The number of likes on the post.
      *   - commentCount: The number of comments on the post.
      *   - likedByCurrentUser: Whether the current user has liked the post.
-     * @throws Will throw an error if the post is not found or if retrieval fails.
+     *   - sharedPost (optional): Details of the original post if this post is a share, including id, content, imageUrl, createdAt, and author.
+     * @throws Error if the post is not found or if there is a failure retrieving the post.
      */
-    public async getPost(token: string | null, postId: string): Promise<any> {
+    public async getPost(token: string | null, postId: string): Promise<GetPostResult> {
+        const session: Session | undefined = this.driver?.session();
+        if (!session) throw new Error('Unable to create database session.');
+
+        try {
+            let username: string | null = null;
+            if (token) {
+                const tokenService = new TokenService();
+                username = await tokenService.verifyAccessToken(token);
+            }
+
+            const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MATCH (p:Post {id: $postId})
+                    WHERE NOT EXISTS(p.deleted) OR p.deleted = false
+                    MATCH (p)<-[:POSTED]-(author:User)
+                    OPTIONAL MATCH (p)<-[:LIKED]-(liker:User)
+                    OPTIONAL MATCH (p)<-[:ON]-(comment:Comment)
+                    OPTIONAL MATCH (p)-[:SHARED]->(original:Post)<-[:POSTED]-(originalAuthor:User)
+
+                    RETURN 
+                        p.id AS id,
+                        p.content AS content,
+                        p.imageUrl AS imageUrl,
+                        p.createdAt AS createdAt,
+                        author.username AS author,
+                        COUNT(DISTINCT liker) AS likeCount,
+                        COUNT(DISTINCT comment) AS commentCount,
+                        ANY(likerName IN COLLECT(liker.username) WHERE likerName = $username) AS likedByCurrentUser,
+                        
+                        original.id AS originalPostId,
+                        original.content AS originalContent,
+                        original.imageUrl AS originalImageUrl,
+                        original.createdAt AS originalCreatedAt,
+                        originalAuthor.username AS originalAuthor
+                    `,
+                    { postId, username }
+                )
+            );
+
+            if (!result.records.length) {
+                throw new Error('Post not found.');
+            }
+
+            const record = result.records[0];
+
+            const postData: GetPostResult = {
+                id: record.get('id'),
+                content: record.get('content'),
+                imageUrl: record.get('imageUrl'),
+                createdAt: record.get('createdAt'),
+                author: record.get('author'),
+                likeCount: record.get('likeCount').toNumber?.() ?? 0,
+                commentCount: record.get('commentCount').toNumber?.() ?? 0,
+                likedByCurrentUser: record.get('likedByCurrentUser') ?? false,
+            };
+
+            const originalPostId = record.get('originalPostId');
+            if (originalPostId) {
+                postData.sharedPost = {
+                    id: originalPostId,
+                    content: record.get('originalContent'),
+                    imageUrl: record.get('originalImageUrl'),
+                    createdAt: record.get('originalCreatedAt'),
+                    author: record.get('originalAuthor')
+                };
+            }
+
+            return postData;
+        } catch (error) {
+            console.error('Error retrieving post:', error);
+            throw new Error('Failed to retrieve post.');
+        } finally {
+            await session?.close();
+        }
+    }
+
+
+    /**
+     * Shares an existing post by creating a new shared post linked to the original.
+     *
+     * @param token - The JWT access token of the user sharing the post.
+     * @param originalPostId - The ID of the post to be shared.
+     * @param content - Optional content to include with the shared post.
+     * @returns A promise that resolves to a success message if the post is shared successfully.
+     * @throws Will throw an error if the database session cannot be created, the token is invalid, or the post cannot be shared.
+     */
+    public async sharePost(token: string, originalPostId: string, content?: string): Promise<SuccessMessage> {
 	const session: Session | undefined = this.driver?.session();
 	if (!session) throw new Error('Unable to create database session.');
 
 	try {
-		let username: string | null = null;
-		if (token) {
-			const tokenService = new TokenService();
-			username = await tokenService.verifyAccessToken(token);
-		}
+		const tokenService = new TokenService();
+		const username = await tokenService.verifyAccessToken(token);
 
-		const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+		const newPostId = nanoid();
+		const createdAt = new Date().toISOString();
+
+		const result = await session.executeWrite((tx: ManagedTransaction) =>
 			tx.run(
 				`
-                MATCH (p:Post {id: $postId})
-                WHERE NOT EXISTS(p.deleted) OR p.deleted = false
-                MATCH (p)<-[:POSTED]-(author:User)
-                OPTIONAL MATCH (p)<-[:LIKED]-(liker:User)
-                OPTIONAL MATCH (p)<-[:ON]-(comment:Comment)
-                RETURN 
-                    p.id AS id,
-                    p.content AS content,
-                    p.imageUrl AS imageUrl,
-                    p.createdAt AS createdAt,
-                    author.username AS author,
-                    COUNT(DISTINCT liker) AS likeCount,
-                    COUNT(DISTINCT comment) AS commentCount,
-                    ANY(likerName IN COLLECT(liker.username) WHERE likerName = $username) AS likedByCurrentUser
+				MATCH (u:User {username: $username})
+				MATCH (original:Post {id: $originalPostId})
+				WHERE NOT EXISTS(original.deleted) OR original.deleted = false
+
+				CREATE (u)-[:POSTED]->(shared:Post {
+					id: $newPostId,
+					content: $content,
+					createdAt: datetime($createdAt),
+					isShared: true
+				})
+				CREATE (shared)-[:SHARED]->(original)
+
+				RETURN shared.id AS id
 				`,
-				{ postId, username }
+				{
+					username,
+					originalPostId,
+					newPostId,
+					content: content ?? '',
+					createdAt
+				}
 			)
 		);
 
-		if (!result.records.length) {
-			throw new Error('Post not found.');
-		}
+		if (result.records.length === 0) throw new Error('Failed to share post.');
+		return { success: 'Post shared successfully.' };
 
-		const record = result.records[0];
-
-		return {
-			id: record.get('id'),
-			content: record.get('content'),
-			imageUrl: record.get('imageUrl'),
-			createdAt: record.get('createdAt'),
-			author: record.get('author'),
-			likeCount: record.get('likeCount').toNumber?.() ?? 0,
-			commentCount: record.get('commentCount').toNumber?.() ?? 0,
-			likedByCurrentUser: record.get('likedByCurrentUser') ?? false
-		};
 	} catch (error) {
-		console.error('Error retrieving post:', error);
-		throw new Error('Failed to retrieve post.');
+		console.error('Error sharing post:', error);
+		throw new Error('Failed to share post.');
 	} finally {
 		await session?.close();
 	}
@@ -338,6 +418,7 @@ class SocialPostService {
             await session?.close();
         }
     }
+
 
 }
 
