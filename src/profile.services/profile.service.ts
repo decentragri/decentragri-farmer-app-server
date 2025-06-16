@@ -56,9 +56,12 @@ class ProfileService {
           throw new Error("User not found");
         }
 
+        const profilePicture = await this.getProfilePicture(token); // Ensure profile picture is fetched
+
         const userProfile: UserProfileResponse = {
           ...userResult.records[0].get('user').properties,
-          ...counts
+          ...counts,
+          image: profilePicture.bufferData,
         };
         return userProfile;
 

@@ -10,4 +10,5 @@ export interface UserProfileResponse extends UserLoginResponse {
     farmCount: number;
     plantScanCount: number;
     readingCount: number;
+    image: string | null;
 }
