@@ -27,8 +27,6 @@ class ProfileService {
       this.driver = driver
     };
 
-    // Define a new interface for the profile response, extending UserLoginResponse
-
 
     /**
      * Retrieves the profile of a user based on the provided access token.
@@ -163,13 +161,20 @@ class ProfileService {
     
 
     // Calculates the required experience for a given level using a unified formula
+    /**
+     * Calculates the required user experience points to reach a specified level.
+     *
+     * Uses a unified formula: Math.round(Math.pow(level, 1.8) + level * 4).
+     *
+     * @param level - The target user level for which to calculate the required experience.
+     * @returns A promise that resolves to the required experience points as a number.
+     */
     private async getRequiredUserExperience(level: number): Promise<number> {
         // Unified formula for required experience
         return Math.round(Math.pow(level, 1.8) + level * 4);
     }
     
 
-    // Generates experience for a user, updating their level and experience points accordingly
     /**
      * Calculates the user's new level and remaining experience after gaining experience points.
      * 
