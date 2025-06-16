@@ -22,10 +22,16 @@ export interface CreatedFarm {
   createdAt?: Date; // Timestamp of farm creation
   updatedAt?: Date; // Timestamp of last update
   owner?: string; // Username of the farm owner
-  lat: number; // Latitude of the farm location
-  lng: number; // Longitude of the farm location
+  lat?: number; // Latitude of the farm location
+  lng?: number; // Longitude of the farm location
 
 }
+
+export interface UpdatedFarm extends CreatedFarm {
+  lat?: number; // Latitude of the farm location
+  lng?: number; // Longitude of the farm location
+}
+
 
 export interface FarmList {
   farmName: string,
