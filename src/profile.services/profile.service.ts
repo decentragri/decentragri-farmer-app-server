@@ -328,7 +328,7 @@ class ProfileService {
         const publicUrl = `/uploads/profile-pics/${filename}`;
 
         // Delete old picture file if exists
-        await this._deleteOldProfilePicFile(session, username);
+        await this.deleteOldProfilePicFile(session, username);
 
         // Save new image to disk
         await writeFile(filePath, imageBuffer);
@@ -383,7 +383,7 @@ class ProfileService {
      * @param username - The username of the user whose old profile picture should be deleted.
      * @returns A promise that resolves when the operation is complete.
      */
-    private async _deleteOldProfilePicFile(session: any, username: string): Promise<void> {
+    private async deleteOldProfilePicFile(session: any, username: string): Promise<void> {
 		try {
 			const result = await session.executeRead((tx: ManagedTransaction) =>
 				tx.run(
