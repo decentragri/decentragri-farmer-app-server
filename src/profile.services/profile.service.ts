@@ -74,7 +74,7 @@ class ProfileService {
 
     /**
      * Retrieves various counts related to the user (farms, plant scans, sensors, readings).
-     * @param session - The Neo4j session.
+     * @param session - The Memgraph session.
      * @param username - The username to query.
      * @returns An object with farmCount, plantScanCount, sensorCount, and readingCount.
      */
@@ -124,7 +124,7 @@ class ProfileService {
 
     /**
      * Retrieves the profile picture for a user by their username.
-     * This method queries the Neo4j database for a `ProfilePic` node associated with the given user,
+     * This method queries the Memgraph database for a `ProfilePic` node associated with the given user,
      * fetches the image from SeaweedFS using the file identifier (`fid`), and returns the image data
      * as a JSON-encoded byte array string.
      *
@@ -420,7 +420,7 @@ class ProfileService {
     /**
      * Retrieves the profile picture for a user by their username.
      *
-     * This method queries the Neo4j database for a `ProfilePic` node associated with the given user,
+     * This method queries the Memgraph database for a `ProfilePic` node associated with the given user,
      * fetches the image from SeaweedFS using the file identifier (`fid`), and returns the image data
      * as a JSON-encoded byte array string.
      *
