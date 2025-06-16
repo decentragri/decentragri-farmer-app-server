@@ -7,7 +7,7 @@ import type { SuccessMessage } from '../onchain.services/onchain.interface';
 //** BUN */
 import { nanoid } from 'nanoid';
 import type { Driver, Session, QueryResult, ManagedTransaction } from 'neo4j-driver';
-import type { CreatePostBody, GetPostResult } from './post.interface';
+import type { CreatePostBody, FeedPost, GetPostResult } from './post.interface';
 
 //** SERVICES */
 import TokenService from '../security.services/token.service';
@@ -192,6 +192,101 @@ class SocialPostService {
             await session?.close();
         }
     }
+
+
+    public async getPostsForFeed(token: string, page = 1, limit = 20): Promise<FeedPost[]> {
+        const session = this.driver?.session();
+        if (!session) throw new Error('Unable to create database session');
+
+        const skip = (page - 1) * limit;
+
+        try {
+            const tokenService = new TokenService();
+            const username = await tokenService.verifyAccessToken(token);
+
+            const result = await session.executeRead((tx: ManagedTransaction) =>
+                tx.run(
+                    `
+                    MATCH (me:User {username: $username})
+                    MATCH (author:User)-[:POSTED]->(p:Post)
+                    WHERE author.username <> $username AND (NOT EXISTS(p.deleted) OR p.deleted = false)
+
+                    OPTIONAL MATCH (p)<-[:LIKED]-(liker:User)
+                    OPTIONAL MATCH (p)<-[:ON]-(comment:Comment)
+                    OPTIONAL MATCH (p)-[:SHARED]->(original:Post)<-[:POSTED]-(originalAuthor:User)
+                    OPTIONAL MATCH (me)-[:FOLLOWS]->(author)
+
+                    WITH 
+                        p,
+                        author,
+                        original,
+                        originalAuthor,
+                        COUNT(DISTINCT liker) AS likeCount,
+                        COUNT(DISTINCT comment) AS commentCount,
+                        (CASE WHEN original IS NULL THEN false ELSE true END) AS isShared,
+                        (CASE WHEN (me)-[:FOLLOWS]->(author) THEN 1 ELSE 0 END) AS isFollowing,
+                        datetime().epochSeconds - p.createdAt.epochSeconds AS ageInSeconds
+
+                    WITH p, author, original, originalAuthor, likeCount, commentCount, isShared, isFollowing, ageInSeconds,
+                        (likeCount * 3 + commentCount * 2 + isFollowing * 10 - ageInSeconds / 600) AS score
+
+                    RETURN 
+                        p.id AS id,
+                        p.content AS content,
+                        p.imageUrl AS imageUrl,
+                        p.createdAt AS createdAt,
+                        author.username AS author,
+                        likeCount,
+                        commentCount,
+                        isShared,
+                        original.id AS originalPostId,
+                        original.content AS originalContent,
+                        original.imageUrl AS originalImageUrl,
+                        original.createdAt AS originalCreatedAt,
+                        originalAuthor.username AS originalAuthor,
+                        score
+
+                    ORDER BY score DESC
+                    SKIP $skip
+                    LIMIT $limit
+                    `,
+                    { username, skip, limit }
+                )
+            );
+
+            return result.records.map((record) => {
+                const post: FeedPost = {
+                    id: record.get('id'),
+                    content: record.get('content'),
+                    imageUrl: record.get('imageUrl'),
+                    createdAt: record.get('createdAt'),
+                    author: record.get('author'),
+                    likeCount: record.get('likeCount').toNumber?.() ?? 0,
+                    commentCount: record.get('commentCount').toNumber?.() ?? 0,
+                    isShared: record.get('isShared'),
+                };
+
+                if (record.get('originalPostId')) {
+                    post.sharedPost = {
+                        id: record.get('originalPostId'),
+                        content: record.get('originalContent'),
+                        imageUrl: record.get('originalImageUrl'),
+                        createdAt: record.get('originalCreatedAt'),
+                        author: record.get('originalAuthor'),
+                    };
+                }
+
+                return post;
+            });
+        } catch (err) {
+            console.error('Error generating feed:', err);
+            throw new Error('Failed to load feed');
+        } finally {
+            await session?.close();
+        }
+    }
+
+
 
 
     /**
