@@ -63,4 +63,6 @@ const Insight = (app: Elysia) => {
 
 }
 
+
+
 export default Insight;

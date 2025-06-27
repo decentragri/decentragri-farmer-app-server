@@ -194,6 +194,17 @@ class SocialPostService {
     }
 
 
+    /**
+     * Retrieves a paginated list of posts for the user's feed, ranked by a custom score based on likes, comments, following status, and post age.
+     *
+     * @param token - The JWT access token used to authenticate and identify the user.
+     * @param page - The page number for pagination (defaults to 1).
+     * @param limit - The maximum number of posts to return per page (defaults to 20).
+     * @returns A promise that resolves to an array of `FeedPost` objects representing the user's feed.
+     * @throws Will throw an error if the database session cannot be created or if there is a failure in loading the feed.
+     *
+     * The feed includes posts from other users (excluding the current user), with additional information such as like count, comment count, whether the post is shared, and original post details if applicable.
+     */
     public async getPostsForFeed(token: string, page = 1, limit = 20): Promise<FeedPost[]> {
         const session = this.driver?.session();
         if (!session) throw new Error('Unable to create database session');
@@ -285,8 +296,6 @@ class SocialPostService {
             await session?.close();
         }
     }
-
-
 
 
     /**
@@ -464,15 +473,6 @@ class SocialPostService {
     }
 
 
-    /**
-     * Deletes a post created by the authenticated user, along with its related comments and likes.
-     *
-     * @param token - The JWT access token of the user requesting the deletion.
-     * @param postId - The unique identifier of the post to be deleted.
-     * @returns A promise that resolves to a success message if the post is deleted successfully.
-     * @throws Will throw an error if the database session cannot be created, the post is not found,
-     *         the user is not authorized, or if the deletion fails for any reason.
-     */
     /**
      * Soft-deletes a post by setting its `deleted` property to `true`.
      * 

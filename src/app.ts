@@ -22,7 +22,7 @@ const app = new Elysia({
 
   
 
-//@ts-ignore
+//@ts-ignore test update only please
   .use(cors({
     methods: ["GET", "POST", "HEAD", "PUT", "OPTIONS"],
     allowedHeaders: [
