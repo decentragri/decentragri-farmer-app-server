@@ -37,6 +37,7 @@ export interface FarmList {
   farmName: string,
   id: string,
   cropType: string,
+  updatedAt: Date,
   
   
 

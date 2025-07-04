@@ -68,7 +68,7 @@ class FarmerService {
       const result = await session?.executeRead((tx: ManagedTransaction) =>
         tx.run(
         `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType`,
+         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType, f.updatedAt as updatedAt`,
         { username }
         )
       );
@@ -80,7 +80,8 @@ class FarmerService {
       return result.records.map(record => ({
         farmName: record.get('farmName'),
         id: record.get('id'),
-        cropType: record.get('cropType')
+        cropType: record.get('cropType'),
+        updatedAt: record.get('updatedAt')
       }));
       } catch (error) {
       console.error("Error fetching farm list:", error);
