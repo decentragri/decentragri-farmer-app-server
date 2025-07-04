@@ -28,7 +28,7 @@ const Weather = (app: Elysia) => {
     }, currentWeatherSchema
     )
 
-    app.get('api/weather/forecast/:location', async ({ headers, params }) => {
+    .get('api/weather/forecast/:location', async ({ headers, params }) => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
