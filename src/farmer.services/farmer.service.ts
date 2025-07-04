@@ -77,12 +77,22 @@ class FarmerService {
         return [];
       }
 
-      return result.records.map(record => ({
-        farmName: record.get('farmName'),
-        id: record.get('id'),
-        cropType: record.get('cropType'),
-        updatedAt: record.get('updatedAt')
-      }));
+      return result.records.map(record => {
+        const updatedAt = new Date(record.get('updatedAt'));
+        const formattedDate = updatedAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        return {
+          farmName: record.get('farmName'),
+          id: record.get('id'),
+          cropType: record.get('cropType'),
+          updatedAt: updatedAt,
+          formattedDate: formattedDate
+        } as FarmList & { formattedDate: string };
+      });
       } catch (error) {
       console.error("Error fetching farm list:", error);
       throw error;
