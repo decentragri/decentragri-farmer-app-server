@@ -53,6 +53,18 @@ class WeatherService {
                     throw new Error(`Error fetching forecast data: ${response.statusText}`);
                 }
                 const data: ForecastData = await response.json();
+                
+                // Format the date for each forecast day
+                if (data.forecast?.forecastday) {
+                    data.forecast.forecastday = data.forecast.forecastday.map(day => ({
+                        ...day,
+                        date: new Date(day.date).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            month: 'short', 
+                            day: 'numeric' 
+                        })
+                    }));
+                }
                 return data;
             } catch (error) {
                 console.error("Error fetching forecast data:", error);
