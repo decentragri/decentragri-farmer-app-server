@@ -3,7 +3,7 @@ import { WEATHER_API_KEY } from "../utils/constants";
 
 //** CLASS IMPORT */
 import TokenService from "../security.services/token.service";
-import type { WeatherData } from "./weather.interface";
+import type { ForecastData, WeatherData } from "./weather.interface";
 
 
 class WeatherService {
@@ -41,7 +41,7 @@ class WeatherService {
      * @returns A promise that resolves to a {@link ForecastData} object containing the forecast
      * @throws Will throw an error if authentication fails or if the API request fails
      */
-        public async getForecast(token: string, location: string): Promise<WeatherData> {
+        public async getForecast(token: string, location: string): Promise<ForecastData> {
             const tokenService = new TokenService();
             await tokenService.verifyAccessToken(token);
     
@@ -52,7 +52,7 @@ class WeatherService {
                 if (!response.ok) {
                     throw new Error(`Error fetching forecast data: ${response.statusText}`);
                 }
-                const data: WeatherData = await response.json();
+                const data: ForecastData = await response.json();
                 return data;
             } catch (error) {
                 console.error("Error fetching forecast data:", error);
