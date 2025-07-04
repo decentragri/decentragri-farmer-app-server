@@ -28,6 +28,22 @@ const Weather = (app: Elysia) => {
     }, currentWeatherSchema
     )
 
+    app.get('api/weather/forecast/:location', async ({ headers, params }) => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const weatherService = new WeatherService();
+            const output = await weatherService.getForecast(jwtToken, params.location);
+            return output;
+        } catch (error: any) {
+            console.error(error);
+            throw error;
+        }
+    }, currentWeatherSchema)
+
 
 
     

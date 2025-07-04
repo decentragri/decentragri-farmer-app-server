@@ -34,6 +34,33 @@ class WeatherService {
     }
 
         /**
+     * Retrieves 7-day weather forecast for a specified location.
+     *
+     * @param token - JWT access token for authentication
+     * @param location - The location (city name, lat/long, etc.) to get forecast for
+     * @returns A promise that resolves to a {@link ForecastData} object containing the forecast
+     * @throws Will throw an error if authentication fails or if the API request fails
+     */
+        public async getForecast(token: string, location: string): Promise<WeatherData> {
+            const tokenService = new TokenService();
+            await tokenService.verifyAccessToken(token);
+    
+            const url = `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${location}&days=7&aqi=no&alerts=no`;
+    
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Error fetching forecast data: ${response.statusText}`);
+                }
+                const data: WeatherData = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Error fetching forecast data:", error);
+                throw error;
+            }
+        }
+
+        /**
          * Retrieves the current weather data for a specified city using the WeatherAPI service.
          *
          * @param city - The name of the city for which to fetch the current weather.
