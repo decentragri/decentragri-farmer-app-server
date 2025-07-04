@@ -78,12 +78,20 @@ class FarmerService {
       }
 
       return result.records.map(record => {
-        const updatedAt = new Date(record.get('updatedAt'));
+        const rawDate = record.get('updatedAt');
+        console.log('Raw updatedAt from DB:', rawDate, typeof rawDate);
+        
+        // Handle both string and Date objects
+        const updatedAt = rawDate instanceof Date ? rawDate : new Date(rawDate);
+        console.log('Parsed Date:', updatedAt);
+        
+        // Format the date in the desired format
         const formattedDate = updatedAt.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
         });
+        console.log('Formatted Date:', formattedDate);
         
         return {
           farmName: record.get('farmName'),
