@@ -26,6 +26,16 @@ class WeatherService {
                 throw new Error(`Error fetching weather data: ${response.statusText}`);
             }
             const data: WeatherData = await response.json();
+            
+            // Format the current date
+            if (data.location?.localtime) {
+                const date = new Date(data.location.localtime);
+                data.location.localtime = date.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+            }
             return data;
         } catch (error) {
             console.error("Error fetching weather data:", error);
