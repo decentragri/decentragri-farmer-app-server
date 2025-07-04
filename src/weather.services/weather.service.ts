@@ -29,7 +29,12 @@ class WeatherService {
             
             // Format the current date
             if (data.location?.localtime) {
-                const date = new Date(data.location.localtime);
+                // Parse the date string in format 'YYYY-MM-DD HH:mm'
+                const [datePart, timePart] = data.location.localtime.split(' ');
+                const [year, month, day] = datePart.split('-').map(Number);
+                const [hours, minutes] = timePart.split(':').map(Number);
+                const date = new Date(year, month - 1, day, hours, minutes);
+                
                 data.location.localtime = date.toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     month: 'long', 
