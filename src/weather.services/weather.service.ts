@@ -81,8 +81,6 @@ class WeatherService {
                     }));
                 }
 
-
-                console.log(data);
                 return data;
             } catch (error) {
                 console.error("Error fetching forecast data:", error);

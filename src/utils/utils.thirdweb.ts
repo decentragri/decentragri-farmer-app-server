@@ -50,7 +50,6 @@ export const uploadPicIPFS = async (filePath: string): Promise<string> => {
 			files: [file],
 		});
 
-    console.log(uri)
 
 		return uri;
 	} catch (error) {
