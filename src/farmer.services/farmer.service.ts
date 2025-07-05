@@ -60,7 +60,7 @@ class FarmerService {
     }
 
 
-    public async getFarmList(token: string): Promise<FarmList[]> {
+    public async getFarmList(token: string): Promise<Array<FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string }>> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
@@ -68,7 +68,7 @@ class FarmerService {
       const result = await session?.executeRead((tx: ManagedTransaction) =>
         tx.run(
         `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType, f.updatedAt as updatedAt`,
+         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType, f.updatedAt as updatedAt, f.createdAt as createdAt`,
         { username }
         )
       );
@@ -78,28 +78,33 @@ class FarmerService {
       }
 
       return result.records.map(record => {
-        const rawDate = record.get('updatedAt');
-        console.log('Raw updatedAt from DB:', rawDate, typeof rawDate);
-        
-        // Handle both string and Date objects
-        const updatedAt = rawDate instanceof Date ? rawDate : new Date(rawDate);
-        console.log('Parsed Date:', updatedAt);
-        
-        // Format the date in the desired format
-        const formattedDate = updatedAt.toLocaleDateString('en-US', {
+        // Format updatedAt
+        const rawUpdatedAt = record.get('updatedAt');
+        const updatedAt = rawUpdatedAt instanceof Date ? rawUpdatedAt : new Date(rawUpdatedAt);
+        const formattedUpdatedAt = updatedAt.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
         });
-        console.log('Formatted Date:', formattedDate);
+        
+        // Format createdAt
+        const rawCreatedAt = record.get('createdAt');
+        const createdAt = rawCreatedAt instanceof Date ? rawCreatedAt : new Date(rawCreatedAt);
+        const formattedCreatedAt = createdAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
         
         return {
           farmName: record.get('farmName'),
           id: record.get('id'),
           cropType: record.get('cropType'),
           updatedAt: updatedAt,
-          formattedDate: formattedDate
-        } as FarmList & { formattedDate: string };
+          createdAt: createdAt,
+          formattedUpdatedAt: formattedUpdatedAt,
+          formattedCreatedAt: formattedCreatedAt
+        } as FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string };
       });
       } catch (error) {
       console.error("Error fetching farm list:", error);

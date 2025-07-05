@@ -102,6 +102,7 @@ export interface ForecastDay {
 	}>;
 }
 
+
 export interface ForecastData extends Pick<WeatherData, 'location'> {
 	forecast: {
 		forecastday: ForecastDay[];
