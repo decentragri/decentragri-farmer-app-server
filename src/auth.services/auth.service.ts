@@ -141,8 +141,8 @@ class AuthService {
 
             const storedPassword = result.records[0].get("password");
             const walletAddress = result.records[0].get("walletAddress");
-            const level = result.records[0].get("level");
-            const experience = result.records[0].get("experience");
+            const level: number = result.records[0].get("level").toNumber();
+            const experience: number = result.records[0].get("experience").toNumber();
 
             const isPasswordValid = await compare(password, storedPassword);
             if (!isPasswordValid) {
