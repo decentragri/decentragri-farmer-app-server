@@ -115,7 +115,7 @@ class FarmerService {
     }
 
 
-    public async getFarmData(token: string, id: string): Promise<CreatedFarm> {
+    public async getFarmData(token: string, id: string): Promise<CreatedFarm & { formattedUpdatedAt: string; formattedCreatedAt: string }> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
@@ -129,11 +129,34 @@ class FarmerService {
         );
 
         if (!result || result.records.length === 0) {
-          return {} as CreatedFarm; // Return empty object if no farm found
+          return {} as CreatedFarm & { formattedUpdatedAt: string; formattedCreatedAt: string }; // Return empty object if no farm found
         }
 
         const farmData = result.records[0].get('f').properties as CreatedFarm;
-        return farmData;
+        
+        // Format updatedAt
+        const rawUpdatedAt = farmData.updatedAt;
+        const updatedAt = rawUpdatedAt ? (rawUpdatedAt instanceof Date ? rawUpdatedAt : new Date(rawUpdatedAt)) : new Date();
+        const formattedUpdatedAt = updatedAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        // Format createdAt
+        const rawCreatedAt = farmData.createdAt;
+        const createdAt = rawCreatedAt ? (rawCreatedAt instanceof Date ? rawCreatedAt : new Date(rawCreatedAt)) : new Date();
+        const formattedCreatedAt = createdAt.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        return {
+          ...farmData,
+          formattedUpdatedAt,
+          formattedCreatedAt
+        };
       } catch (error) {
         console.error("Error fetching farm data:", error);
         throw error;
