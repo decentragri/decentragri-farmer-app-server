@@ -42,8 +42,6 @@ class PlantData {
 						cropType: data.cropType ?? null,
 						date: new Date().toISOString(),
 						note: data.note ?? null,
-						lat: data.location?.lat ?? null,
-						lng: data.location?.lng ?? null,
 						interpretation: data.interpretation
 					}
 				)
@@ -213,7 +211,6 @@ class PlantData {
 							cropType: data.cropType,
 							timestamp: new Date().toISOString(),
 							username,
-							location: data.location,
 							note: data.note ?? "No additional notes",
 							interpretation: data.interpretation
 						},

@@ -14,10 +14,13 @@
         "kaibanjs",
         "localtime",
         "mdir",
+        "MEMGRAPH",
         "mserver",
         "nashar",
+        "plantscan",
         "rsweth",
         "seaweedfs",
+        "thirdweb",
         "unfollowing",
         "valkey"
     ]
