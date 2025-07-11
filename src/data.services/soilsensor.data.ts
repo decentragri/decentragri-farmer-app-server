@@ -3,7 +3,7 @@ import { Driver, ManagedTransaction, Session, type QueryResult } from "neo4j-dri
 import { getDriver } from "../db/memgraph";
 
 //** TYPE IMPORTS */
-import type { SensorReadings, SensorReadingsWithInterpretation } from "../ai.services/soil.ai.team.service/soil.types"
+import type { SensorReadingsWithInterpretation } from "../ai.services/soil.ai.team.service/soil.types"
 
 //** UTILS IMPORT */
 import WalletService, { engine } from "../wallet.services/wallet.service";

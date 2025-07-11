@@ -6,12 +6,6 @@ export const plantImageSessionSchema = {
 		imageBytes: t.String(), // Stringified PackedByteArray
 		cropType: t.String(),
 		farmName: t.String(),
-		location: t.Optional(
-			t.Object({
-				lat: t.Number(),
-				lng: t.Number()
-			})
-		),
 		note: t.Optional(t.String())
 	})
 };
