@@ -1,6 +1,8 @@
 //** MEMGRAPH DRIVER AND TYPES
 import { Driver, ManagedTransaction, Session, type QueryResult } from "neo4j-driver";
 import { getDriver } from "../db/memgraph";
+import { notificationService } from "../notification.services/notification.service";
+import { NotificationType } from "../notification.services/notification.interface";
 
 //** TYPE IMPORTS */
 import type { SensorReadingsWithInterpretation } from "../ai.services/soil.ai.team.service/soil.types"
@@ -54,10 +56,26 @@ class SoilAnalysis {
                     }
                 )
             ),
-
             // Save to IPFS
             this.saveSoilAnalysisDataToNFT(sensorReadings)
         ]);
+
+        // Send notification
+        try {
+            await notificationService.sendRealTimeNotification(username, {
+                type: NotificationType.SOIL_ANALYSIS_SAVED,
+                title: 'Soil Analysis Saved',
+                message: `New soil analysis data has been saved for farm ${sensorReadings.farmName}`,
+                metadata: {
+                    farmName: sensorReadings.farmName,
+                    sensorId: sensorId,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        } catch (error) {
+            console.error('Failed to send notification:', error);
+            // Don't throw the error as we don't want to fail the main operation
+        }
 
         } catch (error: any) {
             console.error("Error saving sensor data:", error);

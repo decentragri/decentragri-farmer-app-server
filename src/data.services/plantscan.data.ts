@@ -7,15 +7,15 @@ import type { PlantImageScanParams } from "../ai.services/plant.ai.team.service/
 //** SERVICES */
 import TokenService from "../security.services/token.service";
 import WalletService, { engine } from "../wallet.services/wallet.service";
+import { notificationService } from "../notification.services/notification.service";
+import { NotificationType, type INotification } from "../notification.services/notification.interface";
 
 //** CONSTANTS */
 import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY } from "../utils/constants";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./data.interface";
 import { savePlantScanCypher } from "./data.cypher";
-import { createThirdwebClient, Engine, getContract } from "thirdweb";
-import { mintTo } from "thirdweb/extensions/erc1155";
-import { polygon } from "thirdweb/chains";
+
 
 
 
@@ -52,8 +52,42 @@ class PlantData {
 			await this.savePlantScanToNFT(data, data.imageBytes, username)
 		]);
 
+		// Send notification after successful save
+		const notification: Omit<INotification, 'id' | 'timestamp' | 'read'> = {
+			userId: username,
+			type: NotificationType.SOIL_ANALYSIS_SAVED, // Using existing type
+			title: 'Plant Scan Completed',
+			message: `Plant scan for ${data.farmName} has been processed successfully`,
+			metadata: {
+				farmName: data.farmName,
+				cropType: data.cropType,
+				scanDate: new Date().toISOString(),
+				// @ts-ignore - interpretation might have a summary property
+				summary: data.interpretation?.summary || 'No issues detected'
+			}
+		};
+		await notificationService.sendRealTimeNotification(username, notification);
+
 		} catch (err) {
 			console.error("Error saving plant scan:", err);
+			
+			// Send error notification
+			try {
+				const errorNotification: Omit<INotification, 'id' | 'timestamp' | 'read'> = {
+					userId: username,
+					type: NotificationType.SYSTEM_ALERT,
+					title: 'Plant Scan Failed',
+					message: 'Failed to process plant scan',
+					metadata: {
+						error: err instanceof Error ? err.message : 'Unknown error',
+						timestamp: new Date().toISOString()
+					}
+				};
+				await notificationService.sendRealTimeNotification(username, errorNotification);
+			} catch (notificationErr) {
+				console.error('Failed to send error notification:', notificationErr);
+			}
+			
 			throw new Error("Failed to save plant scan");
 		} finally {
 			await session.close();
