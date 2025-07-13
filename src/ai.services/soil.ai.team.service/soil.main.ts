@@ -1,5 +1,5 @@
 //**CLASS IMPORT */
-import SensorData from '../../data.services/soilsensor.data';
+import SoilAnalysis from '../../data.services/soilanalysisdata';
 import type { SuccessMessage } from '../../onchain.services/onchain.interface';
 import TokenService from '../../security.services/token.service';
 import SoilSensorTeam from './soil.ai.team';
@@ -95,8 +95,7 @@ class SoilSensorRunner {
 	public static async analyzeFromApi(token: string, params: SensorSessionParams): Promise<SuccessMessage> {
 		const tokenService: TokenService = new TokenService();
 		const soilSensorTeam = new SoilSensorTeam();
-		const sensorData = new SensorData();
-
+		const soilAnalysis = new SoilAnalysis();
 		try {
 			const username: string = await tokenService.verifyAccessToken(token);
 			console.log('🌱 API Request: Analyzing provided sensor data...');
@@ -116,7 +115,7 @@ class SoilSensorRunner {
 				createdAt: new Date().toISOString()
 			};
 
-			await sensorData.saveSensorData(dataSensor, username);
+			await soilAnalysis.saveSoilAnalysisData(dataSensor, username);
 			console.log('✅ Analysis complete.');
 			
 

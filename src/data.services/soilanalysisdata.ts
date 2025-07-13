@@ -18,14 +18,14 @@ import { getSensorDataByFarmCypher, saveSensorDataCypher } from "./data.cypher";
 
 
 
-class SensorData {
+class SoilAnalysis {
 
     /**
      * Saves sensor data to the database and IPFS.
      * @param sensorReadings - The sensor readings to save.
      * @param username - The username of the user saving the data.
      */
-    public async saveSensorData(sensorReadings: SensorReadingsWithInterpretation, username: string): Promise<void> {
+    public async saveSoilAnalysisData(sensorReadings: SensorReadingsWithInterpretation, username: string): Promise<void> {
         const driver: Driver = getDriver();
         const session: Session | undefined = driver?.session();
     
@@ -56,7 +56,7 @@ class SensorData {
             ),
 
             // Save to IPFS
-            await this.saveSensorDataToNFT(sensorReadings)
+            this.saveSoilAnalysisDataToNFT(sensorReadings)
         ]);
 
         } catch (error: any) {
@@ -73,7 +73,7 @@ class SensorData {
      * @param username - The username of the user.
      * @returns An array of sensor readings with interpretations.
      */
-    public async getSensorData(token: string): Promise<SensorReadingsWithInterpretation[]> {
+    public async getSoilAnalysisData(token: string): Promise<SensorReadingsWithInterpretation[]> {
         const driver: Driver = getDriver();
         const session: Session | undefined = driver?.session();
         const tokenService: TokenService = new TokenService();
@@ -149,7 +149,7 @@ class SensorData {
      * @param farmName - The name of the farm to fetch data for.
      * @returns An array of sensor readings with interpretations for the specified farm.
      */
-    public async getSensorDataByFarm(token: string, farmName: string): Promise<SensorReadingsWithInterpretation[]> {
+    public async getSoilAnalysisDataByFarm(token: string, farmName: string): Promise<SensorReadingsWithInterpretation[]> {
 	const driver: Driver = getDriver();
 	const session: Session | undefined = driver?.session();
 	const tokenService: TokenService = new TokenService();
@@ -203,7 +203,7 @@ class SensorData {
      * Saves sensor data to IPFS and mints an NFT.
      * @param sensorReadings - The sensor readings to save.
      */
-    public async saveSensorDataToNFT(sensorReadings: SensorReadingsWithInterpretation) {
+    public async saveSoilAnalysisDataToNFT(sensorReadings: SensorReadingsWithInterpretation) {
         const driver: Driver = getDriver();
         const walletService = new WalletService(driver);
         const smartWalletAddress: string = await walletService.getSmartWalletAddress(sensorReadings.username)
@@ -258,4 +258,4 @@ class SensorData {
 
 }
 
-export default SensorData
+export default SoilAnalysis

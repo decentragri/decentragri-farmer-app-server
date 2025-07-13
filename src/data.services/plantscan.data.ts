@@ -9,10 +9,13 @@ import TokenService from "../security.services/token.service";
 import WalletService, { engine } from "../wallet.services/wallet.service";
 
 //** CONSTANTS */
-import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
+import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY } from "../utils/constants";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./data.interface";
 import { savePlantScanCypher } from "./data.cypher";
+import { createThirdwebClient, Engine, getContract } from "thirdweb";
+import { mintTo } from "thirdweb/extensions/erc1155";
+import { polygon } from "thirdweb/chains";
 
 
 
@@ -227,6 +230,83 @@ class PlantData {
 			throw new Error("Failed to mint plant scan NFT");
 		}
 	}
+
+
+	// private async savePlantScanToNFT(
+	// 	data: PlantImageScanParams,
+	// 	image: string,
+	// 	username: string
+	// ): Promise<void> {
+	// 	const client = createThirdwebClient({
+	// 		secretKey: SECRET_KEY,
+	// 	});
+	
+	// 	const serverWallet = Engine.serverWallet({
+	// 		client,
+	// 		address: "0xDCec5A8Fa6e26A04Ed94967475C7b13E9Ff56dE5", // your admin wallet address
+	// 		vaultAccessToken: process.env.VAULT_ACCESS_TOKEN!,
+	// 	});
+	
+	// 	const byteImage: number[] = JSON.parse(image);
+	// 	const buffer: Buffer = Buffer.from(byteImage);
+	// 	const imageFile: File = new File([buffer], "plant-scan.png", {
+	// 		type: "image/png",
+	// 	});
+	
+	// 	const contract = getContract({
+	// 		client,
+	// 		address: PLANT_SCAN_EDITION_ADDRESS,
+	// 		chain: polygon, // or "mumbai", or any chain you configured
+	// 	});
+	
+	// 	const attributes = [
+	// 		{
+	// 			trait_type: "AI Evaluation",
+	// 			value: data.interpretation,
+	// 		},
+	// 		{
+	// 			trait_type: "Crop Type",
+	// 			value: data.cropType,
+	// 		},
+	// 	];
+	
+	// 	const metadata = {
+	// 		name: "Plant Health NFT",
+	// 		description: "Visual health check of crop using AI analysis.",
+	// 		image: imageFile,
+	// 		external_url: "https://decentragri.com/plant-scans",
+	// 		background_color: "#E0FFE0",
+	// 		properties: {
+	// 			image: "Uploaded via buffer", // fallback text
+	// 			cropType: data.cropType,
+	// 			timestamp: new Date().toISOString(),
+	// 			username,
+	// 			note: data.note ?? "No additional notes",
+	// 			interpretation: data.interpretation,
+	// 		},
+	// 		attributes,
+	// 	};
+
+	// 	const transaction = mintTo({
+	// 		contract,
+	// 		to: serverWallet.address, // receiver smart wallet
+	// 		supply: 1n,
+	// 		nft: metadata,
+	// 	});
+	
+	// 	try {
+
+	// 		const { transactionId } = await serverWallet.enqueueTransaction({
+	// 			transaction,
+	// 		  })
+			
+
+
+	// 	} catch (error) {
+	// 		console.error("Error minting plant scan NFT:", error);
+	// 		throw new Error("Failed to mint plant scan NFT");
+	// 	}
+	// }
 
 }
 

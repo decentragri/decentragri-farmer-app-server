@@ -4,7 +4,7 @@ import Elysia from 'elysia';
 //** SERVICE IMPORTS */
 import SoilSensorRunner from '../ai.services/soil.ai.team.service/soil.main';
 import { sensorSessionSchema } from '../ai.services/soil.ai.team.service/soil.schema';
-import SensorData from '../data.services/soilsensor.data';
+import SensorData from '../data.services/soilanalysisdata';
 import { authBearerSchema } from '../auth.services/auth.schema';
 import type { SensorReadingsWithInterpretation } from '../ai.services/soil.ai.team.service/soil.types';
 
@@ -27,7 +27,7 @@ const SoilAi = (app: Elysia) => {
     }, sensorSessionSchema
     )
 
-    .get('api/get-sensor-readings', async ({ headers }): Promise<SensorReadingsWithInterpretation[]> => {
+    .get('api/get-soil-analysis-data', async ({ headers }): Promise<SensorReadingsWithInterpretation[]> => {
         try {
             const authorizationHeader: string = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -35,7 +35,7 @@ const SoilAi = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const sensorData = new SensorData();
-            const output = await sensorData.getSensorData(jwtToken);
+            const output = await sensorData.getSoilAnalysisData(jwtToken);
     
             return output;
         } catch (error: any) {
