@@ -3,18 +3,10 @@ import { notificationService } from "../../notification.services/notification.se
 import TokenService from "../../security.services/token.service";
 import type { INotification } from "../../notification.services/notification.interface";
 import type { ElysiaWS } from 'elysia/ws';
+import { nanoid } from 'nanoid';
 
-// Track connected users and their WebSocket connections
+// Track active connections in memory
 const connectedUsers = new Map<string, ElysiaWS>();
-
-// Type for Elysia WebSocket with our custom properties
-interface CustomWebSocket {
-    send: (data: string) => void;
-    readyState: number;
-    OPEN: number;
-    username?: string;
-    data: any;
-}
 
 interface WebSocketMessage {
     type: string;
@@ -36,13 +28,20 @@ const NotificationRoutes = (app: Elysia) =>
                 const tokenService = new TokenService();
                 const username = await tokenService.verifyAccessToken(jwtToken);
                 
-                // Store the username on the WebSocket object
-                (ws as unknown as CustomWebSocket).username = username;
+                // Generate a unique connection ID
+                const connectionId = generateConnectionId();
                 
-                // Store the WebSocket connection with the username as the key
-                connectedUsers.set(username, ws);
+                // Store the connection in memory
+                connectedUsers.set(connectionId, ws);
                 
-                console.log(`User ${username} connected to notifications`);
+                // Store the username on the WebSocket for later use
+                // Using a type assertion to extend the WebSocket type
+                type CustomWS = ElysiaWS & { username?: string; connectionId?: string };
+                const customWs = ws as unknown as CustomWS;
+                customWs.username = username;
+                customWs.connectionId = connectionId;
+                
+                console.log(`User ${username} connected to notifications (connection: ${connectionId})`);
                 
                 // Send any unread notifications to the user on connect
                 const unreadNotifications: INotification[] = await notificationService.getUnreadNotifications(username);
@@ -63,34 +62,65 @@ const NotificationRoutes = (app: Elysia) =>
         },
         
         close(ws) {
-            // Clean up when a client disconnects
-            const customWs = ws as unknown as CustomWebSocket;
-            if (customWs.username) {
-                connectedUsers.delete(customWs.username);
-                console.log(`User ${customWs.username} disconnected from notifications`);
+            try {
+                type CustomWS = ElysiaWS & { username?: string; connectionId?: string };
+                const customWs = ws as unknown as CustomWS;
+                const connectionId = customWs.connectionId;
+                const username = customWs.username;
+                
+                if (connectionId) {
+                    // Remove from active connections
+                    connectedUsers.delete(connectionId);
+                    
+                    if (username) {
+                        console.log(`User ${username} disconnected from notifications (connection: ${connectionId})`);
+                    } else {
+                        console.log(`Connection ${connectionId} closed`);
+                    }
+                }
+            } catch (error) {
+                console.error('Error during WebSocket close:', error);
             }
         }
     });
 
 // Function to send a notification to a specific user
 export async function sendNotificationToUser(username: string, notification: INotification): Promise<boolean> {
-    const ws = connectedUsers.get(username) as unknown as CustomWebSocket;
-    if (ws && ws.readyState === ws.OPEN) {
-        try {
-            const message: WebSocketMessage = {
-                type: 'NEW_NOTIFICATION',
-                data: notification
-            };
-            
-            ws.send(JSON.stringify(message));
-            return true;
-        } catch (error) {
-            console.error(`Failed to send notification to ${username}:`, error);
-            connectedUsers.delete(username); // Remove disconnected client
-            return false;
+    try {
+        let sent = false;
+        
+        // Find all connections for this user
+        for (const [connectionId, ws] of connectedUsers.entries()) {
+            type CustomWS = ElysiaWS & { username?: string };
+            const customWs = ws as unknown as CustomWS;
+            const wsUsername = customWs.username;
+            if (wsUsername === username) {
+                try {
+                    const message: WebSocketMessage = {
+                        type: 'NEW_NOTIFICATION',
+                        data: notification
+                    };
+                    
+                    ws.send(JSON.stringify(message));
+                    sent = true;
+                    console.log(`Notification sent to ${username} (${connectionId})`);
+                } catch (error) {
+                    console.error(`Failed to send to ${username} (${connectionId}):`, error);
+                    // Remove the connection if it's no longer valid
+                    connectedUsers.delete(connectionId);
+                }
+            }
         }
+        
+        if (!sent) {
+            console.log(`No active connections found for user: ${username}`);
+        }
+        
+        return sent;
+    } catch (error) {
+        console.error(`Error sending notification to ${username}:`, error);
+        return false;
     }
-    return false;
 }
 
 // Function to broadcast a notification to all connected users
@@ -102,6 +132,10 @@ export async function broadcastNotification(notification: INotification, usernam
             sendNotificationToUser(username, notification)
         )
     );
+}
+
+function generateConnectionId(): string {
+    return nanoid();
 }
 
 export default NotificationRoutes;
