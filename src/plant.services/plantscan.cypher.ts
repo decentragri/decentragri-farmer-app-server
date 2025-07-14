@@ -32,6 +32,7 @@ export const savePlantScanCypher: string = 					`
         cropType: $cropType,
         date: $date,
         note: $note,
+        id: $id,
         interpretation: $interpretation
     })
     MERGE (f)-[:HAS_PLANT_SCAN]->(p)

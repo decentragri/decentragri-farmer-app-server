@@ -15,6 +15,7 @@ import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./plantscan.interface";
 import { savePlantScanCypher } from "./plantscan.cypher";
+import { nanoid } from "nanoid";
 
 
 
@@ -45,6 +46,7 @@ class PlantData {
 						cropType: data.cropType ?? null,
 						date: new Date().toISOString(),
 						note: data.note ?? null,
+						id: nanoid(),
 						interpretation: data.interpretation
 					}
 				)
