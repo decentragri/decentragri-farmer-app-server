@@ -32,17 +32,40 @@ class PlantImageRunner {
 			}
 
 			// Log the result for debugging
-			console.log(output.result);
+			console.log('Analysis result:', output.result);
 
-			const interpretation = output.result as unknown as string;
+			// Handle the result which could be an object or string
+			let interpretation: string;
 
-			// Stop if result indicates invalid image or crop type
-			if (
-				interpretation.includes("Invalid cropType: not a plant") ||
-				interpretation.includes("This image does not appear to contain a plant")
-			) {
-				console.warn("Not a valid plant scan. Skipping save.");
-				return { error: interpretation }; // Just return message, no DB or NFT
+			if (typeof output.result === 'string') {
+				// Handle string result (legacy format or error)
+				interpretation = output.result;
+
+				// Check for error cases
+				if (
+					interpretation.includes("Invalid cropType: not a plant") ||
+					interpretation.includes("This image does not appear to contain a plant")
+				) {
+					console.warn("Not a valid plant scan. Skipping save.");
+					return { error: interpretation };
+				}
+			} else if (output.result && typeof output.result === 'object') {
+				// Handle the new object format
+				const result = output.result as {
+					Diagnosis: string;
+					Reason: string;
+					Recommendations: string[];
+				};
+
+				// Format the interpretation string from the object
+				interpretation = `Diagnosis: ${result.Diagnosis}\n` +
+					`Reason: ${result.Reason}\n\n` +
+					'Recommendations:\n' +
+					result.Recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n');
+			} else {
+				// Handle unexpected format
+				console.warn('Unexpected result format:', output.result);
+				return { error: 'Unexpected analysis result format' };
 			}
 
 			// ✅ Only save if valid

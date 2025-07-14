@@ -31,7 +31,7 @@ class PlantImageTeam {
 
 		// Agent 2: Specialized in response formatting
 		this.responseFormatter = new Agent({
-			name: "Response Formatter",
+			name: "Yuha",
 			role: "Convert analysis into structured JSON format.",
 			goal: "Transform plant health analysis into clean, well-formatted JSON responses.",
 			backstory: "You are a technical expert specializing in data formatting and API responses, ensuring consistent and reliable output.",
@@ -233,7 +233,7 @@ class PlantImageTeam {
                 result: formattedResult
             };
 
-            return result;
+
         } catch (error) {
             console.error("Failed to process hybrid plant image analysis:", error);
             throw error;
