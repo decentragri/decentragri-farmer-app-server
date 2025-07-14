@@ -45,5 +45,5 @@ export const getRecentFarmScansCypher: string = `
 
 export const getFarmListCypher: string = `
     MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-    RETURN f
+    RETURN f.id, f.farmName, f.cropType, f.description, f.createdAt, f.updatedAt, f.image, f.lat, f.lng
 `
