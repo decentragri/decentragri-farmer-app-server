@@ -105,52 +105,44 @@ class PlantImageTeam {
             }
 
 
-            const task = new Task({
-                title: "Plant Health Recommendations",
-                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". 
-                
-                **YOUR TASK:**
-                1. Analyze the plant's health
-                2. Return a JSON object with this exact structure:
-                
-                {
-                    "Diagnosis": "Healthy" or "Infested" (choose one),
-                    "Reason": "Brief explanation of your diagnosis (1-2 sentences).",
-                    "Recommendations": [
-                        "First recommendation (be specific and actionable)",
-                        "Second recommendation (be specific and actionable)",
-                        "Optional third recommendation (if needed)"
-                    ]
+            // Extract diagnosis from the visual classification
+            const diagnosisMatch = visualClassification.match(/Diagnosis[\s:]+(Infested|Healthy)/i);
+            const diagnosis = diagnosisMatch ? diagnosisMatch[1] : 'Unknown';
+
+            // Extract reason (text after Diagnosis and before Recommendations)
+            const reasonMatch = visualClassification.match(/Diagnosis[\s:]+(?:Infested|Healthy)[\s\S]*?\*\*Evidence[\s:]*\*\*([\s\S]*?)(?=\*\*Recommendations|$)/i);
+            const reason = reasonMatch ? reasonMatch[1].trim() : 'Unable to determine the reason';
+
+            // Extract recommendations
+            const recommendationsMatch = visualClassification.match(/Recommendations[\s:]*([\s\S]*)/i);
+            let recommendations: string[] = [];
+            
+            if (recommendationsMatch) {
+                // Split by numbered list items (1., 2., etc.) or dashes
+                recommendations = recommendationsMatch[1]
+                    .split(/\d+\.\s*|[-•]\s*/)
+                    .map(rec => rec.trim())
+                    .filter(rec => rec.length > 0);
+            } else {
+                // Fallback to some default recommendations if none found
+                recommendations = [
+                    'Inspect the plant for pests and diseases',
+                    'Ensure proper watering and sunlight',
+                    'Consider consulting a local agricultural expert'
+                ];
+            }
+
+            // Format the response
+            const result = {
+                status: 'FINISHED',
+                result: {
+                    Diagnosis: diagnosis,
+                    Reason: reason,
+                    Recommendations: recommendations.slice(0, 3) // Take max 3 recommendations
                 }
-                
-                **IMPORTANT RULES:**
-                - Return ONLY the JSON object, nothing else
-                - No markdown formatting (no backticks, no code blocks)
-                - No additional text before or after the JSON
-                - Use double quotes for all strings
-                - Diagnosis must be exactly "Healthy" or "Infested"
-                - Include 2-3 recommendations as an array of strings`,
-                expectedOutput: `A valid JSON object with this exact structure (no markdown, no additional text):
-            {
-                "Diagnosis": "Healthy or Infested",
-                "Reason": "Brief explanation of the visual diagnosis.",
-                "Recommendations": ["Step 1", "Step 2", "Step 3"]
-            }`,
-                agent: this.imageAnalyzer
-            });
+            };
 
-
-            const team = new Team({
-                name: "Hybrid Plant Analysis Team",
-                agents: [this.imageAnalyzer],
-                tasks: [task],
-                inputs: {},
-                env: {
-                    OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
-                }
-            });
-
-            return await team.start();
+            return result;
         } catch (error) {
             console.error("Failed to process hybrid plant image analysis:", error);
             throw error;
