@@ -5,13 +5,8 @@ import PlantData from '../../plant.services/plantscan.service';
 
 //**TYPE IMPORTS */
 import type { SuccessMessage } from '../../onchain.services/onchain.interface';
-import type { PlantImageSessionParams } from './plant.interface';
-
-interface AnalysisResult {
-    Diagnosis: string;
-    Reason: string;
-    Recommendations: string[];
-}
+import type { AnalysisResult, PlantImageSessionParams } from "./plant.interface";
+import type { ParsedInterpretation } from "../../plant.services/plantscan.interface";
 
 class PlantImageRunner {
     private tokenService = new TokenService();
@@ -27,7 +22,7 @@ class PlantImageRunner {
         return `Diagnosis: ${result.Diagnosis}\n` +
             `Reason: ${result.Reason}\n\n` +
             'Recommendations:\n' +
-            result.Recommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n');
+            result.Recommendations.map((rec: string, i: number) => `${i + 1}. ${rec}`).join('\n');
     }
 
     /**
@@ -44,21 +39,31 @@ class PlantImageRunner {
     ): Promise<{ success?: string; error?: string }> {
         console.log('Analysis result:', output.result);
 
-        let interpretation: string;
+        let interpretation: string | ParsedInterpretation;
 
         if (typeof output.result === 'string') {
             // Handle string result (legacy format or error)
-            interpretation = output.result;
+            const resultStr = output.result;
 
             // Check for error cases
-            if (this.isInvalidPlantScan(interpretation)) {
+            if (this.isInvalidPlantScan(resultStr)) {
                 console.warn("Not a valid plant scan. Skipping save.");
-                return { error: interpretation };
+                return { error: resultStr };
             }
+            // Convert string to ParsedInterpretation object
+            interpretation = {
+                Diagnosis: resultStr,
+                Reason: "",
+                Recommendations: []
+            };
         } else if (output.result && typeof output.result === 'object') {
             // Handle the new object format
             const result = output.result as AnalysisResult;
-            interpretation = this.formatAnalysisResult(result);
+            interpretation = {
+                Diagnosis: result.Diagnosis,
+                Reason: result.Reason,
+                Recommendations: result.Recommendations
+            };
         } else {
             // Handle unexpected format
             console.warn('Unexpected result format:', output.result);

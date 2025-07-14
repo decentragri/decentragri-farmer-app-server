@@ -6,11 +6,18 @@ export interface PlantImageSessionParams {
 }
 
 
+import type { ParsedInterpretation } from "../../plant.services/plantscan.interface";
+
+export interface AnalysisResult {
+    Diagnosis: string;
+    Reason: string;
+    Recommendations: string[];
+}
+
 export interface PlantImageScanParams {
     imageBytes: string;  
 	cropType: string;
     farmName: string;    
 	note?: string;
-	interpretation: string; // Optional interpretation of the scan
-    
+	interpretation: string | ParsedInterpretation; // Can be either string or parsed interpretation object
 }
