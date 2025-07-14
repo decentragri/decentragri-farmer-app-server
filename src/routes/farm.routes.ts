@@ -115,6 +115,9 @@ const Farmer = (app: Elysia) => {
         }
     }, authBearerSchema
     )
+    
+
+
 
     
 

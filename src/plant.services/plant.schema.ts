@@ -9,3 +9,10 @@ export const plantImageSessionSchema = {
 		note: t.Optional(t.String())
 	})
 };
+
+
+export const getScanByFarmSchema = {
+    headers: t.Object({ authorization: t.String() }),
+    params: t.Object({ farmName: t.String() })
+};
+    
