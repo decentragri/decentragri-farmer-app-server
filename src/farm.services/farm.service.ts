@@ -78,15 +78,14 @@ class FarmService {
       try {
       const username: string = await tokenService.verifyAccessToken(token);
       const result = await session?.executeRead((tx: ManagedTransaction) =>
-        tx.run(
-        getFarmListCypher,
-        { username }
-        )
+        tx.run(getFarmListCypher, { username })
       );
 
       if (!result || result.records.length === 0) {
+        
         return [];
       }
+      console.log(result.records)
 
       return result.records.map(record => {
         // Format updatedAt
