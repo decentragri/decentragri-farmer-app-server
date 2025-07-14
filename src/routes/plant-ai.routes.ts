@@ -21,8 +21,9 @@ const PlantAI = (app: Elysia) => {
                 throw new Error('Bearer token not found in Authorization header');
             }
             const jwtToken: string = authorizationHeader.substring(7);
-
-            const output: SuccessMessage  = await PlantImageRunner.analyzeFromApi(jwtToken, body);
+            
+            const plantImageRunner: PlantImageRunner = new PlantImageRunner();
+            const output: SuccessMessage  = await plantImageRunner.analyzeFromApi(jwtToken, body);
             return output;
         } catch (error: any) {
             console.error(error);
