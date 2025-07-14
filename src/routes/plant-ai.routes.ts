@@ -1,13 +1,13 @@
 //**SERVICE IMPORTS */
 import PlantImageRunner from "../ai.services/plant.ai.team.service/plant.main";
-import PlantData from "../data.services/plantscan.data";
+import PlantData from "../plant.services/plantscan.service";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import type { PlantScanResult } from "../data.services/data.interface";
 
-import { plantImageSessionSchema } from "../data.services/plant.schema";
+import { plantImageSessionSchema } from "../plant.services/plant.schema";
 import { authBearerSchema } from "../auth.services/auth.schema";
 
 

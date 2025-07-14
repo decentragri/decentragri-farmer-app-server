@@ -1,27 +1,38 @@
 
 //** MEMGRAPH DRIVER
-import { Driver, ManagedTransaction } from 'neo4j-driver-core'
+import { Driver, ManagedTransaction, Session } from 'neo4j-driver-core'
 
 //** UUID GENERATOR
 import { nanoid } from "nanoid"
 
 //**TYPE IMPORTS */
-import type { CreatedFarm, FarmData, FarmList } from './farmer.interface';
+import type { CreatedFarm, FarmData, FarmList } from './farm.interface';
 import type { SuccessMessage } from '../onchain.services/onchain.interface';
+import type { FarmScanResult } from '../plant.services/plantscan.interface';
 
 //**SERVICE IMPORT
 import TokenService from '../security.services/token.service';
 
 //** CONFIG IMPORT */
-import { createFarmCypher } from './farmer.cypher';
+import { getDriver } from '../db/memgraph';
+
+//**CYPHERS IMPORT */
+import { createFarmCypher } from './farm.cypher';
+import { getRecentFarmScansCypher } from './farm.cypher';
 
 
-class FarmerService {
+class FarmService {
     driver?: Driver
     constructor(driver?: Driver) {
       this.driver = driver
       };
-
+    
+    /**
+     * Creates a new farm for the authenticated user.
+     * @param token - Auth token
+     * @param farmData - Farm data to create
+     * @returns Success message
+     */
     public async createFarm(token: string, farmData: FarmData): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -59,7 +70,11 @@ class FarmerService {
       }
     }
 
-
+    /**
+     * Retrieves a list of farms owned by the authenticated user.
+     * @param token - Auth token
+     * @returns Array of farm data
+     */
     public async getFarmList(token: string): Promise<Array<FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string }>> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -67,8 +82,7 @@ class FarmerService {
       const username: string = await tokenService.verifyAccessToken(token);
       const result = await session?.executeRead((tx: ManagedTransaction) =>
         tx.run(
-        `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
-         RETURN f.farmName AS farmName, f.id AS id, f.cropType as cropType, f.updatedAt as updatedAt, f.createdAt as createdAt`,
+        getRecentFarmScansCypher,
         { username }
         )
       );
@@ -114,7 +128,12 @@ class FarmerService {
       }
     }
 
-
+    /**
+     * Retrieves data for a specific farm owned by the authenticated user.
+     * @param token - Auth token
+     * @param id - Farm ID
+     * @returns Farm data
+     */
     public async getFarmData(token: string, id: string): Promise<CreatedFarm & { formattedUpdatedAt: string; formattedCreatedAt: string }> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -165,7 +184,12 @@ class FarmerService {
       }
     }
 
-
+    /**
+     * Updates a farm owned by the authenticated user.
+     * @param token - Auth token
+     * @param farmData - Farm data to update
+     * @returns Success message
+     */
     public async updateFarm(token: string, farmData: CreatedFarm): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -199,7 +223,12 @@ class FarmerService {
       }
     }
 
-
+    /**
+     * Deletes a farm owned by the authenticated user.
+     * @param token - Auth token
+     * @param id - Farm ID
+     * @returns Success message
+     */
     public async deleteFarm(token: string, id: string): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
@@ -222,6 +251,44 @@ class FarmerService {
       }
     }
 
+
+    /**
+    * Retrieves recent farm scan results for a specific user and farm within the last 7 days.
+    *
+    * @param username - The username associated with the farm scans.
+    * @param farmName - The name of the farm to retrieve scans for.
+    * @returns A promise that resolves to a `FarmScanResult` object containing arrays of soil readings and plant scans.
+    *
+    * @throws Will throw an error if the database query fails.
+    */
+    public async getRecentFarmScans(username: string, farmName: string): Promise<FarmScanResult> {
+        const driver: Driver = getDriver();
+        const session: Session | undefined = driver.session();
+
+        try {
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+            const result = await session.executeRead((tx) =>
+              tx.run(getRecentFarmScansCypher, {
+                  username,
+                  farmName,
+                  cutoff: sevenDaysAgo
+              })
+            );
+
+            const record = result.records[0];
+
+            return {
+              soilReadings: record.get("soilReadings").map((r: any) => r.properties),
+              plantScans: record.get("plantScans").map((p: any) => p.properties),
+            };
+        } catch (error) {
+            throw new Error(`Failed to retrieve recent farm scans: ${error}`);
+        } finally {
+            await session.close();
+        }
+    }
+
 }
 
-export default FarmerService;
+export default FarmService;

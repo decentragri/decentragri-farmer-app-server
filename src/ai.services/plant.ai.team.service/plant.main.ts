@@ -1,7 +1,7 @@
 //**CLASS IMPORTS */
 import PlantImageTeam from './plant.ai.team';
 import TokenService from '../../security.services/token.service';
-import PlantData from '../../data.services/plantscan.data';
+import PlantData from '../../plant.services/plantscan.service';
 
 //**TYPE IMPORTS */
 

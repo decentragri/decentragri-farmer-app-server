@@ -7,7 +7,7 @@ import TokenService from '../security.services/token.service';
 
 //** TYPE IMPORTS */
 import type { Farmer } from './community.interface';
-import type { CreatedFarm } from '../farmer.services/farmer.interface';
+import type { CreatedFarm } from '../farm.services/farm.interface';
 import type { SuccessMessage } from '../onchain.services/onchain.interface';
 
 

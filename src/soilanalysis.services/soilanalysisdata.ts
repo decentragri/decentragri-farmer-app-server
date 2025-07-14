@@ -15,12 +15,12 @@ import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, SCAN_EDITION_ADDRESS } from "../uti
 
 //**SERVICE IMPORTS */
 import TokenService from "../security.services/token.service";
-import { getSensorDataByFarmCypher, saveSensorDataCypher } from "./data.cypher";
+import { getSensorDataByFarmCypher, saveSensorDataCypher } from "../soilanalysis.services/soilanalysisdata.cypher";
 
 
 
 
-class SoilAnalysis {
+class SoilAnalysisService {
 
     /**
      * Saves sensor data to the database and IPFS.
@@ -276,4 +276,4 @@ class SoilAnalysis {
 
 }
 
-export default SoilAnalysis
+export default SoilAnalysisService

@@ -2,7 +2,7 @@
 import { Agent, Task, Team } from "kaibanjs";
 
 //** SERVICE IMPORT */
-import FarmDataService from "../../data.services/farmscan.data";
+import FarmService from "../../farm.services/farm.service";
 import WeatherService from "../../weather.services/weather.service";
 
 //** TYPE INTERFACE */
@@ -45,8 +45,8 @@ class PestTeam {
             const { farmName, username, location, cropType } = params;
 
             // Load recent farm data (last 7 days)
-            const farmDataService = new FarmDataService();
-            const farmData: FarmScanResult = await farmDataService.getRecentFarmScans(username, farmName);
+            const farmService: FarmService = new FarmService();
+            const farmData: FarmScanResult = await farmService.getRecentFarmScans(username, farmName);
 
             // Fetch current weather for farm
             const weatherService = new WeatherService();
@@ -71,7 +71,7 @@ class PestTeam {
                 2. Justify your assessment using insights from the data.
                 3. Suggest 2–3 preventive actions the farmer should take immediately.
 
-                ⚠️ Output MUST be a valid JSON object with the following keys:
+                Output MUST be a valid JSON object with the following keys:
                 {
                     "RiskLevel": "High" | "Medium" | "Low",
                     "Reason": "Concise justification based on provided data",

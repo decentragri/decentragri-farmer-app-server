@@ -1,11 +1,11 @@
 //**SERVICE IMPORTS */
-import FarmerService from "../farmer.services/farmer.service";
+import FarmerService from "../farm.services/farm.service";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import { farmerCreateFarmSchema, farmerUpdateFarmSchema } from "../farmer.services/farmer.schema";
-import type { CreatedFarm, FarmList } from "../farmer.services/farmer.interface";
+import { farmerCreateFarmSchema, farmerUpdateFarmSchema } from "../farm.services/farm.schema";
+import type { CreatedFarm, FarmList } from "../farm.services/farm.interface";
 
 //** MEMGRAPH IMPORTS */
 import { getDriver } from "../db/memgraph";

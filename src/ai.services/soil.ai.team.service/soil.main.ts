@@ -1,5 +1,5 @@
 //**CLASS IMPORT */
-import SoilAnalysis from '../../data.services/soilanalysisdata';
+import SoilAnalysis from '../../soilanalysis.services/soilanalysisdata';
 import type { SuccessMessage } from '../../onchain.services/onchain.interface';
 import TokenService from '../../security.services/token.service';
 import SoilSensorTeam from './soil.ai.team';

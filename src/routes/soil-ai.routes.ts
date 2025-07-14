@@ -4,7 +4,7 @@ import Elysia from 'elysia';
 //** SERVICE IMPORTS */
 import SoilSensorRunner from '../ai.services/soil.ai.team.service/soil.main';
 import { sensorSessionSchema } from '../ai.services/soil.ai.team.service/soil.schema';
-import SensorData from '../data.services/soilanalysisdata';
+import SoilAnalysis from '../soilanalysis.services/soilanalysisdata';
 import { authBearerSchema } from '../auth.services/auth.schema';
 import type { SensorReadingsWithInterpretation } from '../ai.services/soil.ai.team.service/soil.types';
 
@@ -34,7 +34,7 @@ const SoilAi = (app: Elysia) => {
                 throw new Error('Bearer token not found in Authorization header');
             }
             const jwtToken: string = authorizationHeader.substring(7);
-            const sensorData = new SensorData();
+            const sensorData = new SoilAnalysis();
             const output = await sensorData.getSoilAnalysisData(jwtToken);
     
             return output;

@@ -10,8 +10,6 @@ import WalletService, { engine } from "../wallet.services/wallet.service";
 
 //** CONSTANTS */
 import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
-import { uploadPicBuffer } from "../utils/utils.thirdweb";
-import type { PlantScanResult, ParsedInterpretation } from "./data.interface";
 import type { PestScanResult } from "../ai.services/pest.ai.team.service/pest.interface";
 
 

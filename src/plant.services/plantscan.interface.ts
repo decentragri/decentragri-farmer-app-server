@@ -1,7 +1,5 @@
 import type { SensorReadingsWithInterpretation } from "../ai.services/soil.ai.team.service/soil.types";
 
-
-
 // This file defines the interfaces for the data services used in the application.
 export interface PlantScanResult {
 	cropType: string;

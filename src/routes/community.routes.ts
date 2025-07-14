@@ -2,7 +2,7 @@ import type Elysia from "elysia";
 import type { Farmer } from "../community.services/community.interface";
 import CommunityService from "../community.services/community.service";
 import { authBearerSchema } from "../auth.services/auth.schema";
-import type { CreatedFarm } from "../farmer.services/farmer.interface";
+import type { CreatedFarm } from "../farm.services/farm.interface";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import { farmNameSchema, userNameSchema } from "../community.services/community.schema";
 
