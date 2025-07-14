@@ -32,20 +32,53 @@ class PlantImageRunner {
 			}
 
 			// Log the result for debugging
-			console.log(output.result);
+			console.log('Analysis result:', output.result);
 
-			const interpretation = output.result as unknown as string;
-
-			// Stop if result indicates invalid image or crop type
-			if (
-				interpretation.includes("Invalid cropType: not a plant") ||
-				interpretation.includes("This image does not appear to contain a plant")
-			) {
-				console.warn("Not a valid plant scan. Skipping save.");
-				return { error: interpretation }; // Just return message, no DB or NFT
+			// Define the expected type for the analysis result
+			interface PlantAnalysisResult {
+				Diagnosis: string;
+				Reason: string;
+				Recommendations: string[];
 			}
 
-			// ✅ Only save if valid
+			// Check if the result is a string (old format) or an object (new format)
+			let analysisResult: PlantAnalysisResult;
+
+			if (typeof output.result === 'string') {
+				// Handle old string format (for backward compatibility)
+				if (output.result.includes("Invalid cropType: not a plant") || 
+					output.result.includes("This image does not appear to contain a plant")) {
+					console.warn("Not a valid plant scan. Skipping save.");
+					return { error: output.result };
+				}
+				// Create a default analysis result for old format
+				analysisResult = {
+					Diagnosis: 'Unknown',
+					Reason: 'Legacy analysis format',
+					Recommendations: [
+						'This analysis was performed using an older format.',
+						'Please rescan for more detailed recommendations.'
+					]
+				};
+			} else {
+				// New object format
+				analysisResult = output.result as PlantAnalysisResult;
+			}
+
+			// Check if the analysis indicates an invalid plant scan
+			if (!analysisResult.Diagnosis || analysisResult.Diagnosis === 'Unknown') {
+				console.warn("Not a valid plant scan. Skipping save.");
+				return { error: "Unable to analyze the plant. Please ensure the image contains a valid plant." };
+			}
+
+			// Format the interpretation as a string for storage
+			const interpretation = `Diagnosis: ${analysisResult.Diagnosis}
+Reason: ${analysisResult.Reason}
+
+Recommendations:
+${analysisResult.Recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}`;
+
+			// Create the image record with the formatted interpretation
 			const imageRecord = {
 				...params,
 				interpretation,
