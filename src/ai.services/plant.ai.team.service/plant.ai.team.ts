@@ -106,25 +106,47 @@ class PlantImageTeam {
 
 
             // Extract diagnosis from the visual classification
-            const diagnosisMatch = visualClassification.match(/Diagnosis[\s:]+(Infested|Healthy)/i);
-            const diagnosis = diagnosisMatch ? diagnosisMatch[1] : 'Unknown';
+            let diagnosis = 'Unknown';
+            let reason = 'Unable to determine the reason';
+            let recommendations: string[] = [];
 
-            // Extract reason (text after Diagnosis and before Recommendations)
-            const reasonMatch = visualClassification.match(/Diagnosis[\s:]+(?:Infested|Healthy)[\s\S]*?\*\*Evidence[\s:]*\*\*([\s\S]*?)(?=\*\*Recommendations|$)/i);
-            const reason = reasonMatch ? reasonMatch[1].trim() : 'Unable to determine the reason';
+            // Try to extract diagnosis from the response
+            const diagnosisMatch = visualClassification.match(/Diagnosis[\s:]*\*\*\s*([^\n*]+)/i) || 
+                                 visualClassification.match(/Diagnosis[\s:]+(Infested|Healthy)/i);
+            
+            if (diagnosisMatch) {
+                diagnosis = diagnosisMatch[1].replace('**', '').trim();
+                // Ensure diagnosis is either 'Healthy' or 'Infested'
+                if (diagnosis.toLowerCase().includes('infested')) {
+                    diagnosis = 'Infested';
+                } else if (diagnosis.toLowerCase().includes('healthy')) {
+                    diagnosis = 'Healthy';
+                }
+            }
+
+            // Try to extract evidence/reason
+            const evidenceMatch = visualClassification.match(/Evidence[\s:]*\*\*\s*([^\n*]+)/i);
+            if (evidenceMatch) {
+                reason = evidenceMatch[1].replace('**', '').trim();
+            }
 
             // Extract recommendations
-            const recommendationsMatch = visualClassification.match(/Recommendations[\s:]*([\s\S]*)/i);
-            let recommendations: string[] = [];
-            
-            if (recommendationsMatch) {
+            const recommendationsSection = visualClassification.split(/Recommendations[\s:]*/i)[1];
+            if (recommendationsSection) {
                 // Split by numbered list items (1., 2., etc.) or dashes
-                recommendations = recommendationsMatch[1]
+                recommendations = recommendationsSection
                     .split(/\d+\.\s*|[-•]\s*/)
-                    .map(rec => rec.trim())
+                    .map(rec => {
+                        // Clean up the recommendation text
+                        rec = rec.replace(/^[^a-zA-Z0-9]+/, '').trim();
+                        rec = rec.replace(/\*\*/g, '').trim();
+                        return rec;
+                    })
                     .filter(rec => rec.length > 0);
-            } else {
-                // Fallback to some default recommendations if none found
+            }
+
+            // Ensure we have at least one recommendation
+            if (recommendations.length === 0) {
                 recommendations = [
                     'Inspect the plant for pests and diseases',
                     'Ensure proper watering and sunlight',
