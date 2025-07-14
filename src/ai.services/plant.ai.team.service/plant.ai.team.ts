@@ -105,66 +105,52 @@ class PlantImageTeam {
             }
 
 
-            // Extract diagnosis from the visual classification
-            let diagnosis = 'Unknown';
-            let reason = 'Unable to determine the reason';
-            let recommendations: string[] = [];
-
-            // Try to extract diagnosis from the response
-            const diagnosisMatch = visualClassification.match(/Diagnosis[\s:]*\*\*\s*([^\n*]+)/i) || 
-                                 visualClassification.match(/Diagnosis[\s:]+(Infested|Healthy)/i);
-            
-            if (diagnosisMatch) {
-                diagnosis = diagnosisMatch[1].replace('**', '').trim();
-                // Ensure diagnosis is either 'Healthy' or 'Infested'
-                if (diagnosis.toLowerCase().includes('infested')) {
-                    diagnosis = 'Infested';
-                } else if (diagnosis.toLowerCase().includes('healthy')) {
-                    diagnosis = 'Healthy';
+            const task = new Task({
+                title: "Plant Health Recommendations",
+                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". 
+                
+                **YOUR TASK:**
+                1. Analyze the plant's health
+                2. Return a JSON object with this exact structure:
+                
+                {
+                    "Diagnosis": "Healthy" or "Infested" (choose one),
+                    "Reason": "Brief explanation of your diagnosis (1-2 sentences).",
+                    "Recommendations": [
+                        "First recommendation (be specific and actionable)",
+                        "Second recommendation (be specific and actionable)",
+                        "Optional third recommendation (if needed)"
+                    ]
                 }
-            }
+                
+                **IMPORTANT RULES:**
+                - Return ONLY the JSON object, nothing else
+                - No markdown formatting (no backticks, no code blocks)
+                - No additional text before or after the JSON
+                - Use double quotes for all strings
+                - Diagnosis must be exactly "Healthy" or "Infested" or "Malnourished"
+                - Include 2-3 recommendations as an array of strings`,
+                expectedOutput: `A valid JSON object with this exact structure below (no markdown, no additional text):
+                {
+                    "Diagnosis": "Healthy" or "Infested" or "Malnourished",
+                    "Reason": "Brief explanation of the visual diagnosis.",
+                    "Recommendations": ["Step 1", "Step 2", "Step 3"]
+                }`,
+                agent: this.imageAnalyzer
+            });
 
-            // Try to extract evidence/reason
-            const evidenceMatch = visualClassification.match(/Evidence[\s:]*\*\*\s*([^\n*]+)/i);
-            if (evidenceMatch) {
-                reason = evidenceMatch[1].replace('**', '').trim();
-            }
 
-            // Extract recommendations
-            const recommendationsSection = visualClassification.split(/Recommendations[\s:]*/i)[1];
-            if (recommendationsSection) {
-                // Split by numbered list items (1., 2., etc.) or dashes
-                recommendations = recommendationsSection
-                    .split(/\d+\.\s*|[-•]\s*/)
-                    .map(rec => {
-                        // Clean up the recommendation text
-                        rec = rec.replace(/^[^a-zA-Z0-9]+/, '').trim();
-                        rec = rec.replace(/\*\*/g, '').trim();
-                        return rec;
-                    })
-                    .filter(rec => rec.length > 0);
-            }
-
-            // Ensure we have at least one recommendation
-            if (recommendations.length === 0) {
-                recommendations = [
-                    'Inspect the plant for pests and diseases',
-                    'Ensure proper watering and sunlight',
-                    'Consider consulting a local agricultural expert'
-                ];
-            }
-
-            // Format the response
-            const result = {
-                status: 'FINISHED',
-                result: {
-                    Diagnosis: diagnosis,
-                    Reason: reason,
-                    Recommendations: recommendations.slice(0, 3) // Take max 3 recommendations
+            const team = new Team({
+                name: "Hybrid Plant Analysis Team",
+                agents: [this.imageAnalyzer],
+                tasks: [task],
+                inputs: {},
+                env: {
+                    OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
                 }
-            };
+            });
 
-            return result;
+            return await team.start();
         } catch (error) {
             console.error("Failed to process hybrid plant image analysis:", error);
             throw error;
