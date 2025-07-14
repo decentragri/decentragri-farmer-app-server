@@ -26,14 +26,12 @@
  */
 export const savePlantScanCypher: string = 					`
     MERGE (u:User {username: $username})
-    MERGE (f:Farm {name: $farmName})
+    MERGE (f:Farm {farmName: $farmName})
     MERGE (u)-[:OWNS]->(f)
     MERGE (p:PlantScan {
         cropType: $cropType,
         date: $date,
         note: $note,
-        lat: $lat,
-        lng: $lng,
         interpretation: $interpretation
     })
     MERGE (f)-[:HAS_PLANT_SCAN]->(p)

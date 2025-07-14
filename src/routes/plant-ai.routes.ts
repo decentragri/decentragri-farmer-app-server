@@ -23,7 +23,6 @@ const PlantAI = (app: Elysia) => {
             const jwtToken: string = authorizationHeader.substring(7);
 
             const output: SuccessMessage  = await PlantImageRunner.analyzeFromApi(jwtToken, body);
-            
             return output;
         } catch (error: any) {
             console.error(error);

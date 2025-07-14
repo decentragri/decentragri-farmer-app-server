@@ -5,7 +5,7 @@ import Insight from "./insight.routes";
 import OnChain from "./onchain.routes";
 import Weather from "./weather.routes";
 import PlantAI from "./plant-ai.routes";
-import Farmer from "./farmer.routes";
+import Farmer from "./farm.routes";
 import Community from "./community.routes";
 import NotificationRoutes from "./websocket/notification.routes";
 const routes = (app: any): void => {
