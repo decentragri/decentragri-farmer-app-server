@@ -8,20 +8,39 @@ import type { PlantImageSessionParams } from "./plant.interface";
 
 class PlantImageTeam {
 	private imageAnalyzer: Agent;
+	private responseFormatter: Agent;
 	private openai: OpenAI;
 
 	constructor() {
+		// Agent 1: Specialized in image analysis
 		this.imageAnalyzer = new Agent({
-			name: "Carmen",
-			role: "Plant Image Health Analyst",
-			goal: "Give tailored plant care recommendations based on diagnosis.",
-			background: "Expert in agricultural best practices.",
+			name: "Plant Image Analyst",
+			role: "Analyze plant images and describe any visible health issues.",
+			goal: "Provide detailed, accurate descriptions of plant health issues from images.",
+			backstory: "You are a plant pathologist with expertise in identifying plant diseases and health issues through visual analysis.",
 			tools: [],
 			llmConfig: {
 				provider: "openai",
-				model: "gpt-4o-mini",
+				model: "gpt-4.1-mini",
 				apiKey: import.meta.env.OPENAI_API_KEY,
-                //@ts-ignore
+				//@ts-ignore
+				apiBaseUrl: "https://api.openai.com/v1",
+				maxRetries: 5
+			}
+		});
+
+		// Agent 2: Specialized in response formatting
+		this.responseFormatter = new Agent({
+			name: "Response Formatter",
+			role: "Convert analysis into structured JSON format.",
+			goal: "Transform plant health analysis into clean, well-formatted JSON responses.",
+			backstory: "You are a technical expert specializing in data formatting and API responses, ensuring consistent and reliable output.",
+			tools: [],
+			llmConfig: {
+				provider: "openai",
+				model: "gpt-4.1-mini",
+				apiKey: import.meta.env.OPENAI_API_KEY,
+				//@ts-ignore
 				apiBaseUrl: "https://api.openai.com/v1",
 				maxRetries: 3
 			}
@@ -43,7 +62,7 @@ class PlantImageTeam {
 
     private async classifyImageWithOpenAI(base64: string, cropType: string): Promise<string> {
         const response = await this.openai.chat.completions.create({
-            model: "gpt-4o",
+            model: "gpt-4.1-mini",
             messages: [
                 {
                     role: "user",
@@ -90,67 +109,131 @@ class PlantImageTeam {
             const base64 = this.convertPackedBytesToBase64(imageBytes);
             if (!base64) throw new Error("Invalid image byte data.");
 
+            // Step 1: Get initial image analysis
+            const visualClassification: string = await this.classifyImageWithOpenAI(base64, cropType);
+            console.log("Initial image analysis:", visualClassification);
 
-            const visualClassification = await this.classifyImageWithOpenAI(base64, cropType);
-            console.log("Image classified as:", visualClassification);
-
-            if (
-                visualClassification.includes("Invalid cropType: not a plant") ||
-                visualClassification.includes("This image does not appear to contain a plant")
-            ) {
+            // Check for invalid plant images
+            if (visualClassification.includes("Invalid cropType: not a plant") ||
+                visualClassification.includes("This image does not appear to contain a plant")) {
                 return {
                     status: 'FINISHED',
                     result: visualClassification
                 };
             }
 
-
-            const task = new Task({
-                title: "Plant Health Recommendations",
-                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". 
+            // Step 2: Create analysis task for the image analyzer
+            const analysisTask = new Task({
+                id: 'analysis',
+                title: "Analyze Plant Health",
+                description: `Analyze this plant image and describe any health issues you observe.
                 
-                **YOUR TASK:**
-                1. Analyze the plant's health
-                2. Return a JSON object with this exact structure:
+                Image Analysis: ${visualClassification}
+                Crop Type: ${cropType}
                 
-                {
-                    "Diagnosis": "Healthy" or "Infested" (choose one),
-                    "Reason": "Brief explanation of your diagnosis (1-2 sentences).",
-                    "Recommendations": [
-                        "First recommendation (be specific and actionable)",
-                        "Second recommendation (be specific and actionable)",
-                        "Optional third recommendation (if needed)"
-                    ]
-                }
-                
-                **IMPORTANT RULES:**
-                - Return ONLY the JSON object, nothing else
-                - No markdown formatting (no backticks, no code blocks)
-                - No additional text before or after the JSON
-                - Use double quotes for all strings
-                - Diagnosis must be exactly "Healthy" or "Infested" or "Malnourished"
-                - Include 2-3 recommendations as an array of strings`,
-                expectedOutput: `A valid JSON object with this exact structure below (no markdown, no additional text):
-                {
-                    "Diagnosis": "Healthy" or "Infested" or "Malnourished",
-                    "Reason": "Brief explanation of the visual diagnosis.",
-                    "Recommendations": ["Step 1", "Step 2", "Step 3"]
-                }`,
+                Focus on:
+                - Visible diseases or pests
+                - Signs of nutrient deficiencies
+                - Overall plant health
+                - Any other notable observations`,
+                expectedOutput: "A detailed description of the plant's health status and any visible issues.",
                 agent: this.imageAnalyzer
             });
 
+            // Step 3: Create formatting task for the response formatter
+            const formatTask = new Task({
+                id: 'formatting',
+                title: "Format Analysis Results",
+                description: `Convert the plant health analysis into a structured JSON format.
+                
+                Analysis: ${visualClassification}
+                
+                Required JSON structure:
+                {
+                    "Diagnosis": "Healthy" or "Infested" or "Malnourished",
+                    "Reason": "Brief explanation of the diagnosis",
+                    "Recommendations": [
+                        "First recommendation",
+                        "Second recommendation",
+                        "Third recommendation"
+                    ]
+                }`,
+                expectedOutput: "A valid JSON object with the specified structure, no additional text.",
+                agent: this.responseFormatter,
+                dependencies: ['analysis'] // This task depends on the analysis task
+            } as any); // Using type assertion to bypass TypeScript errors
 
+            // Create the team with both agents and tasks
             const team = new Team({
-                name: "Hybrid Plant Analysis Team",
-                agents: [this.imageAnalyzer],
-                tasks: [task],
-                inputs: {},
+                name: "Plant Health Analysis Pipeline",
+                agents: [this.imageAnalyzer, this.responseFormatter],
+                tasks: [analysisTask, formatTask],
+                inputs: { analysis: visualClassification }, // Pass the initial analysis to the formatter
                 env: {
                     OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
                 }
             });
 
-            return await team.start();
+            // Execute the team workflow
+            const result = await team.start();
+            
+            // Ensure we have a valid result
+            if (!result || !result.result) {
+                // If we have a visual classification but no result, use it as a fallback
+                if (visualClassification) {
+                    return {
+                        status: 'FINISHED',
+                        result: {
+                            Diagnosis: 'Unknown',
+                            Reason: 'Analysis completed but could not format results',
+                            Recommendations: [
+                                'Review the plant health manually',
+                                'Check for visible signs of disease or pests'
+                            ]
+                        }
+                    };
+                }
+                throw new Error("Failed to analyze plant image");
+            }
+
+            // Handle the result
+            let formattedResult = result.result;
+            if (typeof formattedResult === 'string') {
+                try {
+                    formattedResult = JSON.parse(formattedResult);
+                } catch (e) {
+                    console.error("Failed to parse result as JSON:", formattedResult);
+                    // Return a structured error response
+                    return {
+                        status: 'ERROR',
+                        error: 'Failed to parse analysis results',
+                        rawResult: formattedResult
+                    };
+                }
+            }
+
+            // Ensure the result has the expected structure
+            const resultObj = formattedResult as { Diagnosis?: string; Recommendations?: string[] };
+            if (!resultObj.Diagnosis || !resultObj.Recommendations) {
+                return {
+                    status: 'FINISHED',
+                    result: {
+                        Diagnosis: 'Unknown',
+                        Reason: 'Analysis completed with incomplete results',
+                        Recommendations: [
+                            'Review the plant health manually',
+                            'Check for visible signs of disease or pests'
+                        ]
+                    }
+                };
+            }
+
+            return {
+                status: 'FINISHED',
+                result: formattedResult
+            };
+
+            return result;
         } catch (error) {
             console.error("Failed to process hybrid plant image analysis:", error);
             throw error;
