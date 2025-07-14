@@ -167,7 +167,7 @@ class PlantData {
 		const username: string = await tokenService.verifyAccessToken(token);
 
 		const query = `
-			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
+			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
 			RETURN p ORDER BY p.date DESC
 		`;
 
