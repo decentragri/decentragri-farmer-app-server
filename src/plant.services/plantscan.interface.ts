@@ -4,9 +4,8 @@ import type { SensorReadingsWithInterpretation } from "../ai.services/soil.ai.te
 export interface PlantScanResult {
 	cropType: string;
 	note: string | null;
-	lat: number | null;
-	lng: number | null;
 	createdAt: string; // ISO 8601 format
+	id: string;
 	interpretation: string | ParsedInterpretation
 }
 

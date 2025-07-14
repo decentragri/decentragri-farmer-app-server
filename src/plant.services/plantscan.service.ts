@@ -135,9 +135,8 @@ class PlantData {
 				return {
 					cropType: raw.cropType,
 					note: raw.note,
-					lat: raw.lat,
-					lng: raw.lng,
 					createdAt: raw.date,
+					id: raw.id,
 					interpretation: parsedInterpretation
 				} as PlantScanResult;
 			});
@@ -190,9 +189,8 @@ class PlantData {
 			return {
 				cropType: raw.cropType,
 				note: raw.note,
-				lat: raw.lat,
-				lng: raw.lng,
 				createdAt: raw.date,
+				id: raw.id,
 				interpretation: parsedInterpretation
 			} as PlantScanResult;
 		});
