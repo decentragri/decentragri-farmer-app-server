@@ -42,3 +42,8 @@ export const getRecentFarmScansCypher: string = `
         WHERE PlantScan.date >= datetime($cutoff)
     RETURN collect(soil) AS soilReadings, collect(PlantScan) AS plantScans
 	`
+
+export const getFarmListCypher: string = `
+    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)
+    RETURN f
+`

@@ -17,8 +17,7 @@ import TokenService from '../security.services/token.service';
 import { getDriver } from '../db/memgraph';
 
 //**CYPHERS IMPORT */
-import { createFarmCypher } from './farm.cypher';
-import { getRecentFarmScansCypher } from './farm.cypher';
+import { createFarmCypher, getFarmListCypher, getRecentFarmScansCypher } from './farm.cypher';
 
 
 class FarmService {
@@ -80,7 +79,7 @@ class FarmService {
       const username: string = await tokenService.verifyAccessToken(token);
       const result = await session?.executeRead((tx: ManagedTransaction) =>
         tx.run(
-        getRecentFarmScansCypher,
+        getFarmListCypher,
         { username }
         )
       );
