@@ -107,19 +107,35 @@ class PlantImageTeam {
 
             const task = new Task({
                 title: "Plant Health Recommendations",
-                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". Based on this, your job is to:
-
-            1. Diagnose the plant.
-            2. Justify your diagnosis.
-            3. Provide 2–3 actionable recommendations.
-
-            Return the result as a strict JSON object with this exact structure:
+                description: `The user provided an image described as: "${visualClassification}" and claimed the cropType is "${cropType}". 
+                
+                **YOUR TASK:**
+                1. Analyze the plant's health
+                2. Return a JSON object with this exact structure:
+                
+                {
+                    "Diagnosis": "Healthy" or "Infested" (choose one),
+                    "Reason": "Brief explanation of your diagnosis (1-2 sentences).",
+                    "Recommendations": [
+                        "First recommendation (be specific and actionable)",
+                        "Second recommendation (be specific and actionable)",
+                        "Optional third recommendation (if needed)"
+                    ]
+                }
+                
+                **IMPORTANT RULES:**
+                - Return ONLY the JSON object, nothing else
+                - No markdown formatting (no backticks, no code blocks)
+                - No additional text before or after the JSON
+                - Use double quotes for all strings
+                - Diagnosis must be exactly "Healthy" or "Infested"
+                - Include 2-3 recommendations as an array of strings`,
+                expectedOutput: `A valid JSON object with this exact structure (no markdown, no additional text):
             {
                 "Diagnosis": "Healthy or Infested",
                 "Reason": "Brief explanation of the visual diagnosis.",
                 "Recommendations": ["Step 1", "Step 2", "Step 3"]
             }`,
-                expectedOutput: `A valid JSON object with keys: Diagnosis, Reason, Recommendations`,
                 agent: this.imageAnalyzer
             });
 
