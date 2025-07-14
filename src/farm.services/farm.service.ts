@@ -6,7 +6,7 @@ import { Driver, ManagedTransaction, Session } from 'neo4j-driver-core'
 import { nanoid } from "nanoid"
 
 //**TYPE IMPORTS */
-import type { CreatedFarm, FarmData, FarmList } from './farm.interface';
+import type { CreatedFarm, FarmData, FarmList, FarmUpdateData } from './farm.interface';
 import type { SuccessMessage } from '../onchain.services/onchain.interface';
 import type { FarmScanResult } from '../plant.services/plantscan.interface';
 
@@ -46,12 +46,10 @@ class FarmService {
           id,
           farmName: farmData.farmName,
           cropType: farmData.cropType,
-          description: farmData.description ?? null,
+          note: farmData.note,
           owner: username,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
-          lat: farmData.location?.lat,
-          lng: farmData.location?.lng,
           image: farmData.image
         };
 
@@ -190,7 +188,7 @@ class FarmService {
      * @param farmData - Farm data to update
      * @returns Success message
      */
-    public async updateFarm(token: string, farmData: CreatedFarm): Promise<SuccessMessage> {
+    public async updateFarm(token: string, farmData: FarmUpdateData): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
@@ -201,14 +199,15 @@ class FarmService {
           id: farmData.id,
           farmName: farmData.farmName,
           cropType: farmData.cropType,
-          description: farmData.description ?? null,
+          note: farmData.note ?? null,
+          image: farmData.image ?? null,
           updatedAt: updatedAt.toISOString(),
         };
 
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(
             `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
-             SET f.farmName = $farmName, f.crop = $crop, f.description = $description, f.updatedAt = $updatedAt
+             SET f.farmName = $farmName, f.cropType = $cropType, f.note = $note, f.image = $image, f.updatedAt = $updatedAt
              RETURN f`,
             params
           )

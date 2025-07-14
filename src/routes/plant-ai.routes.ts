@@ -5,7 +5,7 @@ import PlantData from "../plant.services/plantscan.service";
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import type { PlantScanResult } from "../data.services/data.interface";
+import type { PlantScanResult } from "../plant.services/plantscan.interface";
 
 import { plantImageSessionSchema } from "../plant.services/plant.schema";
 import { authBearerSchema } from "../auth.services/auth.schema";

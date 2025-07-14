@@ -3,7 +3,6 @@ export interface PlantImageSessionParams {
 	cropType: string;
     farmName: string;    
 	note?: string;
-    
 }
 
 

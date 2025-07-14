@@ -14,7 +14,7 @@ import { NotificationType, type INotification } from "../notification.services/n
 import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY } from "../utils/constants";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./plantscan.interface";
-import { savePlantScanCypher } from "./planscan.cypher";
+import { savePlantScanCypher } from "./plantscan.cypher";
 
 
 
