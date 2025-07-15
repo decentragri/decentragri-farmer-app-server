@@ -80,6 +80,9 @@ class PlantData {
 		const formattedCreatedAt = this.formatCreatedAt(raw.date);
 		const imageBytes = await this.fetchImageBytes(raw.imageUri);
 
+		// Convert Uint8Array to regular array for proper JSON serialization
+		const imageBytesArray = Array.from(imageBytes);
+
 		return {
 			cropType: raw.cropType,
 			note: raw.note,
@@ -87,7 +90,7 @@ class PlantData {
 			formattedCreatedAt,
 			id: raw.id,
 			imageUri: raw.imageUri,
-			imageBytes,
+			imageBytes: imageBytesArray,
 			interpretation: parsedInterpretation,
 		};
 	}

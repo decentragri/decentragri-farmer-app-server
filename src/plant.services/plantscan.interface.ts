@@ -9,7 +9,7 @@ export interface PlantScanResult {
 	id: string;
 	interpretation: string | ParsedInterpretation;
 	imageUri: string;
-	imageBytes: Uint8Array;
+	imageBytes: number[]; // Array of numbers for Godot PackedByteArray
 }
 
 
