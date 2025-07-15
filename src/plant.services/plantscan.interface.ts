@@ -8,6 +8,8 @@ export interface PlantScanResult {
 	formattedCreatedAt: string; // e.g. "July 15, 2025 - 12:00pm"
 	id: string;
 	interpretation: string | ParsedInterpretation;
+	imageUri: string;
+	imageBytes: Uint8Array;
 }
 
 
