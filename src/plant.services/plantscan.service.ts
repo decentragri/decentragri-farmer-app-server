@@ -11,7 +11,7 @@ import { notificationService } from "../notification.services/notification.servi
 import { NotificationType, type INotification } from "../notification.services/notification.interface";
 
 //** CONSTANTS */
-import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY } from "../utils/constants";
+import { CHAIN, CLIENT_ID, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY } from "../utils/constants";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./plantscan.interface";
 import { savePlantScanCypher } from "./plantscan.cypher";
@@ -61,7 +61,7 @@ class PlantData {
 	 */
 	private buildIPFSUrl(imageUri: string): string {
 		const trimmed = imageUri.replace(/^ipfs:\/\/(.*)/, "$1");
-		return `https://${SECRET_KEY}.ipfscdn.io/ipfs/${trimmed}`;
+		return `https://${CLIENT_ID}.ipfscdn.io/ipfs/${trimmed}`;
 	}
 
 	/**

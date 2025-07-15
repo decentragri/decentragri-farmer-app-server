@@ -23,6 +23,7 @@ export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmet
 
 // Thirdweb SDK Configuration
 export const SECRET_KEY: string = process.env.SECRET_KEY || ""
+export const CLIENT_ID: string = process.env.CLIENT_ID || ""
 // Chain and Wallet Factory Configuration
 export const CHAIN: string  = process.env.CHAIN || "1923"; // SWELL CHAIN
 
