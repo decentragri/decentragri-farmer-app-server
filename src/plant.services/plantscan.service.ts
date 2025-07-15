@@ -156,51 +156,65 @@ class PlantData {
 	 * @returns Array of PlantScanResult objects
 	 */
 	public async getPlantScansByFarm(token: string, farmName: string): Promise<PlantScanResult[]> {
-	const driver: Driver = getDriver();
-	const session: Session | undefined = driver?.session();
-	const tokenService: TokenService = new TokenService();
-
-	if (!session) {
-		throw new Error("Unable to create database session.");
+		const driver: Driver = getDriver();
+		const session: Session | undefined = driver?.session();
+		const tokenService: TokenService = new TokenService();
+	
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+	
+		try {
+			const username: string = await tokenService.verifyAccessToken(token);
+	
+			const query = `
+				MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
+				RETURN p ORDER BY p.date DESC
+			`;
+	
+			const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
+				tx.run(query, { username, farmName })
+			);
+	
+			return result.records.map((record) => {
+				const raw = record.get("p").properties;
+	
+				let parsedInterpretation: ParsedInterpretation;
+				try {
+					parsedInterpretation = JSON.parse(raw.interpretation);
+				} catch (_) {
+					parsedInterpretation = raw.interpretation;
+				}
+	
+				const createdAt = new Date(raw.date);
+				const formattedCreatedAt = createdAt.toLocaleString("en-US", {
+					month: "long",
+					day: "numeric",
+					year: "numeric",
+					hour: "numeric",
+					minute: "2-digit",
+					hour12: true,
+				}).replace(",", "") // remove comma after day
+				.replace("AM", "am")
+				.replace("PM", "pm");
+	
+				return {
+					cropType: raw.cropType,
+					note: raw.note,
+					createdAt: raw.date,
+					formattedCreatedAt,
+					id: raw.id,
+					interpretation: parsedInterpretation
+				} as PlantScanResult;
+			});
+		} catch (error) {
+			console.error("Error fetching plant scans by farm:", error);
+			throw new Error("Failed to fetch plant scans for farm");
+		} finally {
+			await session.close();
+		}
 	}
-
-	try {
-		const username: string = await tokenService.verifyAccessToken(token);
-
-		const query = `
-			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
-			RETURN p ORDER BY p.date DESC
-		`;
-
-		const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-			tx.run(query, { username, farmName })
-		);
-
-		return result.records.map((record) => {
-			const raw = record.get("p").properties;
-
-			let parsedInterpretation: ParsedInterpretation;
-			try {
-				parsedInterpretation = JSON.parse(raw.interpretation);
-			} catch (_) {
-				parsedInterpretation = raw.interpretation;
-			}
-
-			return {
-				cropType: raw.cropType,
-				note: raw.note,
-				createdAt: raw.date,
-				id: raw.id,
-				interpretation: parsedInterpretation
-			} as PlantScanResult;
-		});
-	} catch (error) {
-		console.error("Error fetching plant scans by farm:", error);
-		throw new Error("Failed to fetch plant scans for farm");
-	} finally {
-		await session.close();
-	}
-	}
+	
 
 
 	/**
