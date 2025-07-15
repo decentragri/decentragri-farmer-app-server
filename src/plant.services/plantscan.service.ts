@@ -17,10 +17,80 @@ import type { PlantScanResult, ParsedInterpretation } from "./plantscan.interfac
 import { savePlantScanCypher } from "./plantscan.cypher";
 import { nanoid } from "nanoid";
 
-
-
-
 class PlantData {
+
+	/**
+	 * Format a date string to "Month Day, Year - HH:MMam/pm" format
+	 * @param dateStr - ISO date string
+	 * @returns Formatted date string
+	 */
+	private formatCreatedAt(dateStr: string): string {
+		const date = new Date(dateStr);
+		return date.toLocaleString("en-US", {
+			month: "long",
+			day: "numeric",
+			year: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
+		})
+			.replace(",", "") // remove comma after day
+			.replace("AM", "am")
+			.replace("PM", "pm");
+	}
+
+	/**
+	 * Fetch and convert PNG image from IPFS
+	 * @param imageUri - IPFS URI
+	 * @returns Promise that resolves to Uint8Array of image bytes
+	 */
+	private async fetchImageBytes(imageUri: string): Promise<Uint8Array> {
+		const url = this.buildIPFSUrl(imageUri);
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new Error(`Failed to fetch image from IPFS: ${url}`);
+		}
+		const buf = await response.arrayBuffer();
+		return new Uint8Array(buf);
+	}
+
+	/**
+	 * Build proper IPFS URL from URI
+	 * @param imageUri - IPFS URI
+	 * @returns Full IPFS gateway URL
+	 */
+	private buildIPFSUrl(imageUri: string): string {
+		const trimmed = imageUri.replace(/^ipfs:\/\/(.*)/, "$1");
+		return `https://${SECRET_KEY}.ipfscdn.io/ipfs/${trimmed}`;
+	}
+
+	/**
+	 * Convert raw database record to PlantScanResult
+	 * @param raw - Raw database record
+	 * @returns PlantScanResult object
+	 */
+	private async convertToPlantScanResult(raw: any): Promise<PlantScanResult> {
+		let parsedInterpretation: ParsedInterpretation;
+		try {
+			parsedInterpretation = JSON.parse(raw.interpretation);
+		} catch {
+			parsedInterpretation = raw.interpretation;
+		}
+
+		const formattedCreatedAt = this.formatCreatedAt(raw.date);
+		const imageBytes = await this.fetchImageBytes(raw.imageUri);
+
+		return {
+			cropType: raw.cropType,
+			note: raw.note,
+			createdAt: raw.date,
+			formattedCreatedAt,
+			id: raw.id,
+			imageUri: raw.imageUri,
+			imageBytes,
+			interpretation: parsedInterpretation,
+		};
+	}
 
 	/**
 	 * Saves a plant scan record to the database and stores the scan as an NFT.
@@ -98,61 +168,6 @@ class PlantData {
 	}
 
 	/**
-	 * Retrieve all plant scans for the authenticated user.
-	 * @param token - Auth token
-	 * @returns Array of PlantScanResult objects
-	 */
-	public async getPlantScans(token: string): Promise<PlantScanResult[]> {
-		const driver: Driver = getDriver();
-		const session: Session | undefined = driver?.session();
-		const tokenService: TokenService = new TokenService();
-
-		if (!session) {
-			throw new Error("Unable to create database session.");
-		}
-
-		try {
-			const username: string = await tokenService.verifyAccessToken(token);
-
-			const query = `
-				MATCH (u:User {username: $username})-[:OWNS]->(:Farm)-[:HAS_PLANT_SCAN]->(p:PlantScan)
-				RETURN p ORDER BY p.date DESC
-			`;
-
-			const result: QueryResult = await session.executeRead((tx: ManagedTransaction) =>
-				tx.run(query, { username })
-			);
-
-			return result.records.map((record) => {
-				const raw = record.get("p").properties;
-
-				let parsedInterpretation: ParsedInterpretation;
-				try {
-					parsedInterpretation = JSON.parse(raw.interpretation);
-				} catch (_) {
-					parsedInterpretation = raw.interpretation;
-				}
-
-				return {
-					cropType: raw.cropType,
-					note: raw.note,
-					createdAt: raw.date,
-					formattedCreatedAt: raw.formattedCreatedAt,
-					id: raw.id,
-					imageUri: raw.imageUri,
-					interpretation: parsedInterpretation
-				} as PlantScanResult;
-			});
-		} catch (error) {
-			console.error("Error fetching plant scans:", error);
-			throw new Error("Failed to fetch plant scans");
-		} finally {
-			await session.close();
-		}
-	}
-
-	
-	/**
 	 * Retrieve plant scans for a specific farm.
 	 * @param token - Auth token
 	 * @param farmName - Name of the farm to filter by
@@ -162,82 +177,64 @@ class PlantData {
 		const driver = getDriver();
 		const session = driver?.session();
 		const tokenService = new TokenService();
-	  
-		if (!session) {
-		  throw new Error("Unable to create database session.");
-		}
-	  
-		try {
-		  const username = await tokenService.verifyAccessToken(token);
-	  
-		  const query = `
-			MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
-			RETURN p ORDER BY p.date DESC
-		  `;
-		  const result = await session.executeRead(tx =>
-			tx.run(query, { username, farmName })
-		  );
-	  
-		  const scans: PlantScanResult[] = [];
-		  for (const record of result.records) {
-			const raw = record.get("p").properties;
-			let parsedInterpretation: ParsedInterpretation;
-			try {
-			  parsedInterpretation = JSON.parse(raw.interpretation);
-			} catch {
-			  parsedInterpretation = raw.interpretation;
-			}
-	  
-			const createdAt = new Date(raw.date);
-			const formattedCreatedAt = createdAt
-			  .toLocaleString("en-US", {
-				month: "long",
-				day: "numeric",
-				year: "numeric",
-				hour: "numeric",
-				minute: "2-digit",
-				hour12: true,
-			  })
-			  .replace(",", "")
-			  .replace("AM", "am")
-			  .replace("PM", "pm");
-	  
-			// 1. Build IPFS URL
-			const url: string = `https://${SECRET_KEY}.ipfscdn.io/${raw.imageUri}`;
-	  
-			// 2. Fetch PNG bytes
-			const response = await fetch(url);
-			if (!response.ok) {
-			  console.error(`Failed to fetch image from IPFS: ${url}`);
-			  continue;
-			}
-			const buf = await response.arrayBuffer();
-			const bytes = new Uint8Array(buf);
-	  
-			scans.push({
-			  cropType: raw.cropType,
-			  note: raw.note,
-			  createdAt: raw.date,
-			  formattedCreatedAt,
-			  id: raw.id,
-			  imageUri: raw.imageUri,
-			  interpretation: parsedInterpretation,
-			  imageBytes: bytes, // Uint8Array for Godot PackedByteArray
-			});
-		  }
-	  
-		  return scans;
-	  
-		} catch (error) {
-		  console.error("Error fetching plant scans by farm:", error);
-		  throw new Error("Failed to fetch plant scans for farm");
-		} finally {
-		  await session.close();
-		}
-	  }
-	  
-	
 
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+
+		try {
+			const username = await tokenService.verifyAccessToken(token);
+			const query = `
+				MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_PLANT_SCAN]->(p:PlantScan)
+				RETURN p ORDER BY p.date DESC
+			`;
+			const result = await session.executeRead(tx =>
+				tx.run(query, { username, farmName })
+			);
+
+			const rawRecords = result.records.map(record => record.get("p").properties);
+			return Promise.all(rawRecords.map(raw => this.convertToPlantScanResult(raw)));
+		} catch (error) {
+			console.error("Error fetching plant scans by farm:", error);
+			throw new Error("Failed to fetch plant scans for farm");
+		} finally {
+			await session.close();
+		}
+	}
+
+	/**
+	 * Retrieve all plant scans for the authenticated user.
+	 * @param token - Auth token
+	 * @returns Array of PlantScanResult objects
+	 */
+	public async getPlantScans(token: string): Promise<PlantScanResult[]> {
+		const driver = getDriver();
+		const session = driver?.session();
+		const tokenService = new TokenService();
+
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+
+		try {
+			const username = await tokenService.verifyAccessToken(token);
+			const query = `
+				MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)-[:HAS_PLANT_SCAN]->(p:PlantScan)
+				RETURN p ORDER BY p.date DESC
+			`;
+			const result = await session.executeRead(tx =>
+				tx.run(query, { username })
+			);
+
+			const rawRecords = result.records.map(record => record.get("p").properties);
+			return Promise.all(rawRecords.map(raw => this.convertToPlantScanResult(raw)));
+		} catch (error) {
+			console.error("Error fetching plant scans:", error);
+			throw new Error("Failed to fetch plant scans");
+		} finally {
+			await session.close();
+		}
+	}
 
 	/**
 	 * Saves a plant scan as an NFT by uploading the image, generating metadata, and minting the NFT to the user's smart wallet.
