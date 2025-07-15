@@ -119,7 +119,7 @@ class SoilSensorRunner {
 			console.log('✅ Analysis complete.');
 			
 
-			return { success: params.sensorData.id }
+			return { success: "Soil Analysis successful"}
 		} catch (error: any) {
 			console.error("❌ Error analyzing sensor data:", error);
 			throw new Error("Failed to process sensor analysis.");

@@ -57,7 +57,7 @@ class SoilAnalysisService {
                 )
             ),
             // Save to IPFS
-            this.saveSoilAnalysisDataToNFT(sensorReadings)
+            this.saveSoilAnalysisDataToNFT(sensorReadings, username)
         ]);
 
         // Send notification
@@ -146,10 +146,8 @@ class SoilAnalysisService {
                     sunlight: reading.sunlight,
                     humidity: reading.humidity,
                     cropType: reading.cropType,
-                    username: reading.username,
                     createdAt: reading.createdAt,
                     sensorId: sensorId,
-                    id: reading.id,
                     interpretation: interpretation ?? "No interpretation"
                 };
             });
@@ -200,10 +198,8 @@ class SoilAnalysisService {
 				sunlight: reading.sunlight,
 				humidity: reading.humidity,
 				cropType: reading.cropType,
-				username: reading.username,
 				createdAt: reading.createdAt,
 				sensorId: sensorId,
-				id: reading.id,
 				interpretation: interpretation ?? "No interpretation",
 				farmName
 			};
@@ -221,10 +217,10 @@ class SoilAnalysisService {
      * Saves sensor data to IPFS and mints an NFT.
      * @param sensorReadings - The sensor readings to save.
      */
-    public async saveSoilAnalysisDataToNFT(sensorReadings: SensorReadingsWithInterpretation) {
+    public async saveSoilAnalysisDataToNFT(sensorReadings: SensorReadingsWithInterpretation, username: string) {
         const driver: Driver = getDriver();
         const walletService = new WalletService(driver);
-        const smartWalletAddress: string = await walletService.getSmartWalletAddress(sensorReadings.username)
+        const smartWalletAddress: string = await walletService.getSmartWalletAddress(username)
 
         try {
 
@@ -239,7 +235,6 @@ class SoilAnalysisService {
                         properties: {
                             cropType: sensorReadings.cropType,
                             timestamp: sensorReadings.createdAt,
-                            username: sensorReadings.username,
                             source: "DecentrAgri AI",
                             interpretation: sensorReadings.interpretation // 👈 full object saved here
                         },

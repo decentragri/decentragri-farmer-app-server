@@ -6,17 +6,14 @@ export const sensorSessionSchema = {
 	}),
 	body: t.Object({
 		sensorData: t.Object({
-			fertility: t.Number(),
+			farmName: t.String(),
 			moisture: t.Number(),
 			ph: t.Number(),
 			temperature: t.Number(),
-			farmName: t.String(),
+			fertility: t.Number(),
 			sunlight: t.Number(),
 			humidity: t.Number(),
-			username: t.String(),
 			sensorId: t.String(),
-			cropType: t.String(),
-			id: t.String()
 		}),
 
 	})

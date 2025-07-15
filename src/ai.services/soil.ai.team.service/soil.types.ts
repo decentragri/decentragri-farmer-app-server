@@ -7,9 +7,9 @@ export interface SensorReadings  {
 	humidity: number;
 	farmName: string;
 	cropType?: string;
-	username: string;
+
 	sensorId: string;
-	id: string;
+
 
 };
 

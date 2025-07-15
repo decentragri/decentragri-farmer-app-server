@@ -32,11 +32,7 @@ class PlantImageRunner {
      * @param username - Username of the user
      * @returns Success message or error object
      */
-    private async handleAnalysisResult(
-        output: any,
-        params: PlantImageSessionParams,
-        username: string
-    ): Promise<{ success?: string; error?: string }> {
+    private async handleAnalysisResult(output: any, params: PlantImageSessionParams, username: string): Promise<{ success?: string; error?: string }> {
         console.log('Analysis result:', output.result);
 
         let interpretation: string | ParsedInterpretation;
