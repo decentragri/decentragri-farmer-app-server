@@ -203,7 +203,7 @@ class PlantData {
 			  .replace("PM", "pm");
 	  
 			// 1. Build IPFS URL
-			const url: string = `https://${SECRET_KEY}.ipfscdn.io/ipfs/${raw.imageUri}`;
+			const url: string = `https://${SECRET_KEY}.ipfscdn.io/${raw.imageUri}`;
 	  
 			// 2. Fetch PNG bytes
 			const response = await fetch(url);
