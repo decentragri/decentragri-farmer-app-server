@@ -63,7 +63,7 @@ class PlantData {
 		const trimmed = imageUri.replace(/^ipfs:\/\/(.*)/, "$1");
 		return `https://${CLIENT_ID}.ipfscdn.io/ipfs/${trimmed}`;
 	}
-
+	
 	/**
 	 * Convert raw database record to PlantScanResult
 	 * @param raw - Raw database record
