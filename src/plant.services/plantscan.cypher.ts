@@ -33,6 +33,7 @@ export const savePlantScanCypher: string = 					`
         date: $date,
         note: $note,
         id: $id,
+        imageUri: $imageUri,
         interpretation: $interpretation
     })
     MERGE (f)-[:HAS_PLANT_SCAN]->(p)
