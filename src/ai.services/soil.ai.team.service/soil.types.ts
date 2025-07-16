@@ -25,6 +25,8 @@ export interface SensorReadings {
 	id: string;
 	/** ISO 8601 timestamp of when the reading was taken */
 	createdAt: string;
+	/** ISO 8601 timestamp of when the reading was submitted */
+	submittedAt: string;
 
 
 
@@ -37,6 +39,8 @@ export interface SensorReadings {
  * Provides descriptive analysis of each measured parameter.
  */
 export interface Interpretation {
+	/** Overall evaluation of the soil conditions */
+	evaluation: string;
 	/** Human-readable interpretation of soil fertility */
 	fertility: string;
 	/** Human-readable interpretation of soil moisture */
@@ -49,8 +53,8 @@ export interface Interpretation {
 	sunlight: string;
 	/** Human-readable interpretation of humidity level */
 	humidity: string;
-	/** Overall evaluation of the soil conditions */
-	evaluation: string;
+
+
 }
 	
 
@@ -61,7 +65,7 @@ export interface Interpretation {
 export interface SensorReadingsWithInterpretation extends SensorReadings {
 	/** AI-generated interpretation of the sensor readings */
 	interpretation: Interpretation;
-	submittedAt: string;
+	
 }
 
 
@@ -74,3 +78,4 @@ export interface SensorSessionParams {
 	sensorData: SensorReadings;
 
 };
+

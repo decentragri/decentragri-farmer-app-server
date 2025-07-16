@@ -7,6 +7,27 @@ import { NotificationType } from "../notification.services/notification.interfac
 //** TYPE IMPORTS */
 import type { SensorReadingsWithInterpretation } from "../ai.services/soil.ai.team.service/soil.types"
 
+/**
+ * Formats a date string to 'Month Day, Year - Hour:Minute AM/PM' format
+ * @param dateString - ISO date string
+ * @returns Formatted date string
+ */
+const formatDate = (dateString: string | Date): string => {
+    if (!dateString) return 'N/A';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    
+    return date.toLocaleString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+};
+
 //** UTILS IMPORT */
 import WalletService, { engine } from "../wallet.services/wallet.service";
 
@@ -142,6 +163,9 @@ class SoilAnalysisService {
 
                 const reading: SensorReadingsWithInterpretation = readingNode.properties;
 
+                const formattedCreatedAt = formatDate(createdAt);
+                const formattedSubmittedAt = formatDate(submittedAt);
+
                 return {
                     id: reading.id,
                     farmName: farmName ?? "Unknown Farm",
@@ -153,8 +177,10 @@ class SoilAnalysisService {
                     humidity: reading.humidity,
                     cropType: reading.cropType,
                     createdAt: createdAt,
+                    formattedCreatedAt: formattedCreatedAt,
                     sensorId: sensorId,
                     submittedAt: submittedAt,
+                    formattedSubmittedAt: formattedSubmittedAt,
                     interpretation: interpretation ?? "No interpretation"
                 };
             });
