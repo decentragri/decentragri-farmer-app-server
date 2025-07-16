@@ -27,6 +27,10 @@ export interface SensorReadings {
 	createdAt: string;
 	/** ISO 8601 timestamp of when the reading was submitted */
 	submittedAt: string;
+	/** Formatted timestamp of when the reading was taken */
+	formattedCreatedAt: string;
+	/** Formatted timestamp of when the reading was submitted */
+	formattedSubmittedAt: string;
 
 
 

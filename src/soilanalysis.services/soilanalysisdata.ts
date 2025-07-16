@@ -223,6 +223,9 @@ class SoilAnalysisService {
             const createdAt = record.get("createdAt");
             const submittedAt = record.get("submittedAt");
 
+            const formattedCreatedAt = formatDate(createdAt);
+            const formattedSubmittedAt = formatDate(submittedAt);
+
 			const reading: SensorReadingsWithInterpretation = readingNode.properties;
 
 			return {
@@ -238,6 +241,8 @@ class SoilAnalysisService {
 				createdAt: createdAt,
 				sensorId: sensorId,
 				interpretation: interpretation ?? "No interpretation",
+                formattedCreatedAt: formattedCreatedAt,
+                formattedSubmittedAt: formattedSubmittedAt,
 				farmName
 			};
 		});
