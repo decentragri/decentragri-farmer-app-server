@@ -29,7 +29,7 @@
 export const saveSensorDataCypher: string =                     `
     MERGE (u:User {username: $username})
 
-    MERGE (f:Farm {name: $farmName})
+    MERGE (f:Farm {farmName: $farmName})
     MERGE (u)-[:OWNS]->(f)
 
     MERGE (s:Sensor {sensorId: $sensorId})
@@ -75,9 +75,9 @@ export const saveSensorDataCypher: string =                     `
  *   - interpretation: The interpreted value of the reading, if available.
  */
 export const getSensorDataByFarmCypher: string = `
-    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})-[:HAS_SENSOR]->(s:Sensor)
+    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_SENSOR]->(s:Sensor)
     MATCH (s)-[:HAS_READING]->(r:Reading)
     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-    RETURN f.name AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation, r.createdAt AS createdAt, r.submittedAt AS submittedAt  
+    RETURN f.farmName AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation, r.createdAt AS createdAt, r.submittedAt AS submittedAt  
     ORDER BY r.createdAt DESC
 	`
