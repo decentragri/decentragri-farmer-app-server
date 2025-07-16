@@ -53,6 +53,8 @@ class SoilAnalysisService {
                         sunlight: sensorReadings.sunlight,
                         humidity: sensorReadings.humidity,
                         cropType: sensorReadings.cropType,
+                        id: sensorReadings.id,
+                        submittedAt: sensorReadings.submittedAt,
                     }
                 )
             ),
@@ -69,7 +71,7 @@ class SoilAnalysisService {
                 metadata: {
                     farmName: sensorReadings.farmName,
                     sensorId: sensorId,
-                    timestamp: new Date().toISOString()
+                    timestamp: sensorReadings.submittedAt
                 }
             });
         } catch (error) {
@@ -148,6 +150,7 @@ class SoilAnalysisService {
                     cropType: reading.cropType,
                     createdAt: reading.createdAt,
                     sensorId: sensorId,
+                    submittedAt: reading.submittedAt,
                     interpretation: interpretation ?? "No interpretation"
                 };
             });

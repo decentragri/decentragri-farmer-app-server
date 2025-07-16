@@ -21,6 +21,12 @@ export interface SensorReadings {
 	cropType: string;
 	/** Unique identifier of the sensor device */
 	sensorId: string;
+	/** Unique identifier of the sensor reading */
+	id: string;
+	/** ISO 8601 timestamp of when the reading was taken */
+	createdAt: string;
+
+
 
 
 };
@@ -55,8 +61,7 @@ export interface Interpretation {
 export interface SensorReadingsWithInterpretation extends SensorReadings {
 	/** AI-generated interpretation of the sensor readings */
 	interpretation: Interpretation;
-	/** ISO 8601 timestamp of when the reading was taken */
-	createdAt: string;
+	submittedAt: string;
 }
 
 

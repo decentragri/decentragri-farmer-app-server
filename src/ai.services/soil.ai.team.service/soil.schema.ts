@@ -15,6 +15,8 @@ export const sensorSessionSchema = {
 			sunlight: t.Number(),
 			humidity: t.Number(),
 			sensorId: t.String(),
+			createdAt: t.String(),
+			id: t.String(),
 		}),
 
 	})

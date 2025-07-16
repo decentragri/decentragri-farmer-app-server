@@ -112,6 +112,7 @@ class SoilSensorRunner {
 			const dataSensor: SensorReadingsWithInterpretation = {
 				...params.sensorData,
 				interpretation: parsedInterpretation,
+				submittedAt: new Date().toISOString(),
 				createdAt: new Date().toISOString()
 			};
 
