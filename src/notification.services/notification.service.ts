@@ -7,11 +7,7 @@ import { NotificationQueries } from "./notification.cypher";
 
 export class NotificationService implements INotificationService {
     private static instance: NotificationService;
-    private driver: Driver;
     
-    private constructor() {
-        this.driver = getDriver();
-    }
 
     public static getInstance(): NotificationService {
         if (!NotificationService.instance) {
@@ -20,12 +16,8 @@ export class NotificationService implements INotificationService {
         return NotificationService.instance;
     }
 
-    private async executeQuery<T = any>(
-        query: string, 
-        params: Record<string, any>,
-        readOnly: boolean = true
-    ): Promise<T> {
-        const session = this.driver.session();
+    private async executeQuery<T = any>(query: string, params: Record<string, any>, readOnly: boolean = true): Promise<T> {
+        const session = getDriver().session();
         try {
             const result = await (readOnly 
                 ? session.executeRead(tx => tx.run(query, params))
