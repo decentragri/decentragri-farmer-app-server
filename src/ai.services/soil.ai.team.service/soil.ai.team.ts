@@ -50,10 +50,10 @@ class SoilSensorTeam {
 			tools: [],
 			llmConfig: {
 				provider: 'openai',
-				model: 'deepseek-chat',
+				model: 'gpt-4o-mini',
 				apiKey: import.meta.env.OPENAI_API_KEY,
 				//@ts-ignore
-				apiBaseUrl: 'https://api.deepseek.com/v1',
+				apiBaseUrl: 'https://api.openai.com/v1',
 				maxRetries: 10
 			}
 		});
@@ -149,7 +149,7 @@ Rules:
 			agent: this.responseFormatter,
 			dependencies: ['adviseTask']
 		});
-
+		
 		// Create and configure the team
 		const team = new Team({
 			name: 'Soil Analysis Team',
