@@ -112,7 +112,7 @@ class SoilAnalysisService {
                     MATCH (u:User)-[:OWNS]->(f:Farm)-[:HAS_SENSOR]->(s:Sensor)
                     MATCH (s)-[:HAS_READING]->(r:Reading)
                     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation, f.name AS farmName
+                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation, f.name AS farmName, r.createdAt AS createdAt, r.submittedAt AS submittedAt
                     ORDER BY r.createdAt DESC
                 `;
             } else {
@@ -121,7 +121,7 @@ class SoilAnalysisService {
                     MATCH (u:User {username: $username})-[:OWNS]->(f:Farm)-[:HAS_SENSOR]->(s:Sensor)
                     MATCH (s)-[:HAS_READING]->(r:Reading)
                     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation, f.name AS farmName
+                    RETURN s.sensorId AS sensorId, r AS reading, i.value AS interpretation, f.name AS farmName, r.createdAt AS createdAt, r.submittedAt AS submittedAt
                     ORDER BY r.createdAt DESC
                 `;
                 params.username = username;
@@ -136,10 +136,13 @@ class SoilAnalysisService {
                 const sensorId = record.get("sensorId");
                 const interpretation = record.get("interpretation");
                 const farmName = record.get("farmName");
+                const createdAt = record.get("createdAt");
+                const submittedAt = record.get("submittedAt");
 
                 const reading: SensorReadingsWithInterpretation = readingNode.properties;
 
                 return {
+                    id: reading.id,
                     farmName: farmName ?? "Unknown Farm",
                     fertility: reading.fertility,
                     moisture: reading.moisture,
@@ -148,9 +151,9 @@ class SoilAnalysisService {
                     sunlight: reading.sunlight,
                     humidity: reading.humidity,
                     cropType: reading.cropType,
-                    createdAt: reading.createdAt,
+                    createdAt: createdAt,
                     sensorId: sensorId,
-                    submittedAt: reading.submittedAt,
+                    submittedAt: submittedAt,
                     interpretation: interpretation ?? "No interpretation"
                 };
             });
@@ -190,10 +193,14 @@ class SoilAnalysisService {
 			const sensorId = record.get("sensorId");
 			const interpretation = record.get("interpretation");
 			const farmName = record.get("farmName");
+            const createdAt = record.get("createdAt");
+            const submittedAt = record.get("submittedAt");
 
 			const reading: SensorReadingsWithInterpretation = readingNode.properties;
 
 			return {
+				submittedAt: submittedAt,
+				id: reading.id,
 				fertility: reading.fertility,
 				moisture: reading.moisture,
 				ph: reading.ph,
@@ -201,7 +208,7 @@ class SoilAnalysisService {
 				sunlight: reading.sunlight,
 				humidity: reading.humidity,
 				cropType: reading.cropType,
-				createdAt: reading.createdAt,
+				createdAt: createdAt,
 				sensorId: sensorId,
 				interpretation: interpretation ?? "No interpretation",
 				farmName

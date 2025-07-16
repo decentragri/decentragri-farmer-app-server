@@ -70,25 +70,25 @@ class SoilSensorTeam {
 		const interpretTask = new Task({
 			description: `Given the following structured sensor data, reformat it into clean JSON:
 	
-		${JSON.stringify(sensorData, null, 2)}
-		
-		Required Output Format:
-		{
-		"fertility": number,
-		"moisture": number,
-		"ph": number,
-		"temperature": number,
-		"sunlight": number,
-		"humidity": number
-		}`,
-				expectedOutput: `{
-		"fertility": number,
-		"moisture": number,
-		"ph": number,
-		"temperature": number,
-		"sunlight": number,
-		"humidity": number
-		}`,
+			${JSON.stringify(sensorData, null, 2)}
+			
+			Required Output Format:
+			{
+			"fertility": number,
+			"moisture": number,
+			"ph": number,
+			"temperature": number,
+			"sunlight": number,
+			"humidity": number
+			}`,
+					expectedOutput: `{
+			"fertility": number,
+			"moisture": number,
+			"ph": number,
+			"temperature": number,
+			"sunlight": number,
+			"humidity": number
+			}`,
 				agent: this.sensorDataInterpreter
 			});
 		
@@ -125,22 +125,41 @@ class SoilSensorTeam {
 				id: 'formatting',
 				title: "Format Analysis Results",
 				description: `Convert the soil analysis into a structured JSON format.
-		
-				Analysis: \${adviseTask.result}
 				
-				Required JSON structure:
+				You will receive the analysis as a 7-line numbered list. Convert it to JSON using these exact property names:
+				- Fertility (from line 1)
+				- Moisture (from line 2)
+				- pH (from line 3)
+				- Temperature (from line 4)
+				- Sunlight (from line 5)
+				- Humidity (from line 6)
+				- Evaluation (from line 7, remove any prefix like 'Overall Evaluation:')
+				
+				Example Input:
+				1. Fertility is optimal
+				2. Moisture is slightly low
+				3. pH level is perfect
+				4. Temperature is within range
+				5. Sunlight is adequate
+				6. Humidity is high
+				7. Overall Evaluation: Good
+				
+				Example Output:
 				{
-				"Fertility": "Advice related to fertility",
-				"Moisture": "Advice related to moisture",
-				"pH": "Advice related to pH",
-				"Temperature": "Advice related to temperature",
-				"Sunlight": "Advice related to sunlight",
-				"Humidity": "Advice related to humidity",
-				"Evaluation": "Overall Evaluation: <category>"
-				}`,
+				  "Fertility": "Fertility is optimal",
+				  "Moisture": "Moisture is slightly low",
+				  "pH": "pH level is perfect",
+				  "Temperature": "Temperature is within range",
+				  "Sunlight": "Sunlight is adequate",
+				  "Humidity": "Humidity is high",
+				  "Evaluation": "Good"
+				}
+				
+				Now process this analysis:
+				{{adviseTask}}`,
 				expectedOutput: "A valid JSON object with the specified structure, no additional text.",
 				agent: this.responseFormatter,
-				dependencies: ['adviseTask'] // depends on adviseTask
+				dependencies: ['adviseTask']
 			} as any);
 		
 			const team = new Team({
