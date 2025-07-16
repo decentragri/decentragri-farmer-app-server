@@ -18,10 +18,10 @@ class SoilSensorTeam {
 			tools: [],
 			llmConfig: {
 				provider: 'openai',
-				model: 'deepseek-chat',
-				apiKey: import.meta.env.DEEPSEEK_API_KEY,
+				model: 'gpt-4o-mini',
+				apiKey: import.meta.env.OPENAI_API_KEY,
 				//@ts-ignore
-				apiBaseUrl: 'https://api.deepseek.com/v1',
+				apiBaseUrl: 'https://api.openai.com/v1',
 				maxRetries: 10
 			}
 		});
@@ -34,10 +34,10 @@ class SoilSensorTeam {
 			tools: [],
 			llmConfig: {
 				provider: 'openai',
-				model: 'deepseek-chat',
-				apiKey: import.meta.env.DEEPSEEK_API_KEY,
+				model: 'gpt-4o-mini',
+				apiKey: import.meta.env.OPENAI_API_KEY,
 				//@ts-ignore
-				apiBaseUrl: 'https://api.deepseek.com/v1',
+				apiBaseUrl: 'https://api.openai.com/v1',
 				maxRetries: 10
 			}
 		});
@@ -51,7 +51,7 @@ class SoilSensorTeam {
 			llmConfig: {
 				provider: 'openai',
 				model: 'deepseek-chat',
-				apiKey: import.meta.env.DEEPSEEK_API_KEY,
+				apiKey: import.meta.env.OPENAI_API_KEY,
 				//@ts-ignore
 				apiBaseUrl: 'https://api.deepseek.com/v1',
 				maxRetries: 10
@@ -156,7 +156,7 @@ Rules:
 			agents: [this.sensorDataInterpreter, this.sensorAdvisor, this.responseFormatter],
 			tasks: [interpretTask, adviseTask, formatTask],
 			env: {
-				OPENAI_API_KEY: import.meta.env.DEEPSEEK_API_KEY || ""
+				OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY || ""
 			}
 		});
 
