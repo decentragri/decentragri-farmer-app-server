@@ -65,6 +65,7 @@ class SoilSensorTeam {
 	 * @returns The result of the analysis and recommendations.
 	 */
 	public async start(params: SensorSessionParams) {
+		console.log(params)
 		const { sensorData } = params;
 	
 		const interpretTask = new Task({

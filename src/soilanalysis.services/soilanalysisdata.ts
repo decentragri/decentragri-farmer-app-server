@@ -54,8 +54,8 @@ class SoilAnalysisService {
                         humidity: sensorReadings.humidity,
                         cropType: sensorReadings.cropType,
                         id: sensorReadings.id,
-                        submittedAt: sensorReadings.submittedAt,
-                        
+                        submittedAt: sensorReadings.submittedAt
+
                     }
                 )
             ),

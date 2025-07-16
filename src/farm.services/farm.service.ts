@@ -85,7 +85,6 @@ class FarmService {
         
         return [];
       }
-      console.log(result.records)
 
       return result.records.map(record => {
         // Format updatedAt

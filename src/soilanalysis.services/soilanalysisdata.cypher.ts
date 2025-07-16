@@ -46,7 +46,7 @@ export const saveSensorDataCypher: string =                     `
         username: $username,
         createdAt: $createdAt,
         submittedAt: $submittedAt,
-        id: $id,
+        id: $id
     })
 
     CREATE (i:Interpretation {
