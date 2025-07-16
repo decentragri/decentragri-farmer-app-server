@@ -14,7 +14,7 @@ class PlantImageTeam {
 	constructor() {
 		// Agent 1: Specialized in image analysis
 		this.imageAnalyzer = new Agent({
-			name: "Plant Image Analyst",
+			name: "Ian",
 			role: "Analyze plant images and describe any visible health issues.",
 			goal: "Provide detailed, accurate descriptions of plant health issues from images.",
 			backstory: "You are a plant pathologist with expertise in identifying plant diseases and health issues through visual analysis.",

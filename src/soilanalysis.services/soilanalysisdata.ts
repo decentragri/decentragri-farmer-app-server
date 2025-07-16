@@ -52,7 +52,7 @@ class SoilAnalysisService {
                         temperature: sensorReadings.temperature,
                         sunlight: sensorReadings.sunlight,
                         humidity: sensorReadings.humidity,
-                        cropType: sensorReadings.cropType ?? null,
+                        cropType: sensorReadings.cropType,
                     }
                 )
             ),
