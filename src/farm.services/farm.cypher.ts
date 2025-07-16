@@ -6,6 +6,7 @@ export const createFarmCypher: string = `
       id: $id,
       farmName: $farmName,
       cropType: $cropType,
+      owner: $owner,
       description: $description,
       createdAt: $createdAt,
       updatedAt: $updatedAt,
