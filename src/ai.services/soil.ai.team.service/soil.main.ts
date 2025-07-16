@@ -107,14 +107,26 @@ class SoilSensorRunner {
 				throw new Error('Workflow blocked during processing.');
 			}
 
-			const parsedInterpretation: ParsedAdvice = parseAdviceToObject(output.result as string);
+			// Ensure we have a string to parse
+			const resultString = typeof output.result === 'string' ? output.result : JSON.stringify(output.result);
+			const parsedInterpretation = parseAdviceToObject(resultString);
 
 			const dataSensor: SensorReadingsWithInterpretation = {
 				...params.sensorData,
-				interpretation: parsedInterpretation,
+				interpretation: {
+					fertility: parsedInterpretation.fertility || '',
+					moisture: parsedInterpretation.moisture || '',
+					ph: parsedInterpretation.ph || '',
+					temperature: parsedInterpretation.temperature || '',
+					sunlight: parsedInterpretation.sunlight || '',
+					humidity: parsedInterpretation.humidity || '',
+					evaluation: parsedInterpretation.evaluation || ''
+				},
 				submittedAt: new Date().toISOString(),
 				createdAt: new Date().toISOString()
 			};
+
+			console.log('Parsed interpretation:', JSON.stringify(parsedInterpretation, null, 2));
 
 			await soilAnalysis.saveSoilAnalysisData(dataSensor, username);
 			console.log('✅ Analysis complete.');
@@ -132,19 +144,35 @@ class SoilSensorRunner {
 
 
 function parseAdviceToObject(raw: string): ParsedAdvice {
-	const lines = raw.trim().split(/\r?\n/);
+    try {
+        // First, try to parse the raw string as JSON
+        const parsed = JSON.parse(raw);
+        
+        // Map the parsed JSON to the ParsedAdvice structure
+        return {
+            fertility: parsed.Fertility || '',
+            moisture: parsed.Moisture || '',
+            ph: parsed.pH || '',
+            temperature: parsed.Temperature || '',
+            sunlight: parsed.Sunlight || '',
+            humidity: parsed.Humidity || '',
+            evaluation: parsed.Evaluation || ''
+        };
+    } catch (e) {
+        // Fallback to the old format if JSON parsing fails
+        const lines = raw.trim().split(/\r?\n/);
+        const getLineText = (index: number) => lines[index]?.replace(/^\d+\.\s*/, '')?.trim() ?? '';
 
-	const getLineText = (index: number) => lines[index]?.replace(/^\d+\.\s*/, '') ?? '';
-
-	return {
-		fertility: getLineText(0),
-		moisture: getLineText(1),
-		ph: getLineText(2),
-		temperature: getLineText(3),
-		sunlight: getLineText(4),
-		humidity: getLineText(5),
-		evaluation: getLineText(6).replace(/^Overall Evaluation:\s*/i, '')
-	};
+        return {
+            fertility: getLineText(0),
+            moisture: getLineText(1),
+            ph: getLineText(2),
+            temperature: getLineText(3),
+            sunlight: getLineText(4),
+            humidity: getLineText(5),
+            evaluation: getLineText(6).replace(/^Overall Evaluation:\s*/i, '').trim()
+        };
+    }
 }
 
 
