@@ -55,6 +55,7 @@ class SoilAnalysisService {
                         cropType: sensorReadings.cropType,
                         id: sensorReadings.id,
                         submittedAt: sensorReadings.submittedAt,
+                        
                     }
                 )
             ),

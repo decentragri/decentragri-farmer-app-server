@@ -44,7 +44,9 @@ export const saveSensorDataCypher: string =                     `
         humidity: $humidity,
         cropType: $cropType,
         username: $username,
-        createdAt: $createdAt
+        createdAt: $createdAt,
+        submittedAt: $submittedAt,
+        id: $id,
     })
 
     CREATE (i:Interpretation {
