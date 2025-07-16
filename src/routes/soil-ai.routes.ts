@@ -7,7 +7,7 @@ import { sensorSessionSchema } from '../ai.services/soil.ai.team.service/soil.sc
 import SoilAnalysis from '../soilanalysis.services/soilanalysisdata';
 import { authBearerSchema } from '../auth.services/auth.schema';
 import type { SensorReadingsWithInterpretation } from '../ai.services/soil.ai.team.service/soil.types';
-
+import { getSoilAnalysisByFarmSchema } from '../soilanalysis.services/soilanalysis.schema';
 
 const SoilAi = (app: Elysia) => {
     app.post('api/save-sensor-readings', async ({ headers, body }) => {
@@ -34,8 +34,8 @@ const SoilAi = (app: Elysia) => {
                 throw new Error('Bearer token not found in Authorization header');
             }
             const jwtToken: string = authorizationHeader.substring(7);
-            const sensorData = new SoilAnalysis();
-            const output = await sensorData.getSoilAnalysisData(jwtToken);
+            const soilAnalysis = new SoilAnalysis();
+            const output = await soilAnalysis.getSoilAnalysisData(jwtToken);
     
             return output;
         } catch (error: any) {
@@ -45,7 +45,24 @@ const SoilAi = (app: Elysia) => {
     }, authBearerSchema
     )
 
+    .get('api/get-soil-analysis-by-farm/:farmName', async ({ headers, params }): Promise<SensorReadingsWithInterpretation[]> => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const soilAnalysis = new SoilAnalysis();
+            const output = await soilAnalysis.getSoilAnalysisDataByFarm(jwtToken, params.farmName);
     
+            return output;
+        } catch (error: any) {
+            console.error(error);
+            throw error;
+        }
+    }, getSoilAnalysisByFarmSchema
+    )
+
     
 }
 

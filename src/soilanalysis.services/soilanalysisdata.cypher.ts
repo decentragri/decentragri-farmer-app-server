@@ -78,6 +78,6 @@ export const getSensorDataByFarmCypher: string = `
     MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_SENSOR]->(s:Sensor)
     MATCH (s)-[:HAS_READING]->(r:Reading)
     OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
-    RETURN f.farmName AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation, r.createdAt AS createdAt, r.submittedAt AS submittedAt  
+    RETURN f.farmName AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation, r.createdAt AS createdAt, r.submittedAt AS submittedAt, r.id AS id  
     ORDER BY r.createdAt DESC
 	`
