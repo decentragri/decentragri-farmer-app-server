@@ -18,6 +18,10 @@ import { getDriver } from '../db/memgraph';
 
 //**CYPHERS IMPORT */
 import { createFarmCypher, getFarmListCypher, getRecentFarmScansCypher } from './farm.cypher';
+import { serverWallet, transactionContract } from '../utils/utils.thirdweb';
+import { DECENTRAGRI_TOKEN, PLANT_SCAN_EDITION_ADDRESS } from '../utils/constants';
+import { getNFT, getNFTs, getOwnedNFTs, mintTo } from 'thirdweb/extensions/erc1155';
+import { createListing } from 'thirdweb/extensions/marketplace';
 
 
 class FarmService {
@@ -133,7 +137,7 @@ class FarmService {
      * @param id - Farm ID
      * @returns Farm data
      */
-    public async getFarmData(token: string, id: string): Promise<CreatedFarm & { formattedUpdatedAt: string; formattedCreatedAt: string }> {
+    public async getFarmData(token: string, id: string): Promise<CreatedFarm> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
       try {
@@ -288,6 +292,134 @@ class FarmService {
             await session.close();
         }
     }
+
+
+
+    /**
+     * Sells a farm owned by the authenticated user.
+     * @param token - Auth token
+     * @param id - Farm ID
+     * @returns Success message
+     */
+    public async sellFarm(token: string, id: string): Promise<SuccessMessage> {
+      const tokenService = new TokenService();
+      const session = this.driver?.session();
+      try {
+        const username: string = await tokenService.verifyAccessToken(token);
+        const result = await session?.executeRead((tx: ManagedTransaction) =>
+          tx.run(
+            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
+             SET f.isForSale = true`,
+            { username, id }
+          )
+        );
+        
+        if (!result || result.records.length === 0) {
+          return { success: "Farm not found" };
+        }
+
+        return { success: "Farm Sale Application Submitted Successfully" };
+      } catch (error) {
+        console.error("Error selling farm:", error);
+        throw error;
+      } finally {
+        await session?.close();
+      }
+    }
+
+
+
+
+
+    // private async mintFarmNFT(walletAddress: string, farmData: CreatedFarm): Promise<void> {
+    //   try {
+    //     // Import the client and chain from your utils
+    //     // Get the contract with proper configuration
+    //     const contract = transactionContract(PLANT_SCAN_EDITION_ADDRESS);
+
+    //     const metadata = {
+    //       name: "Farm NFT",
+    //       description: "Farm NFT",
+    //       image: farmData.image,
+    //       external_url: "https://decentragri.com",
+    //       background_color: "#E0FFE0",
+    //       properties: {
+    //         uniqueId: nanoid(),
+    //         image: "Uploaded via buffer", // fallback text
+    //         cropType: farmData.cropType,
+    //         description: farmData.note,
+    //         lat: farmData.lat,
+    //         lng: farmData.lng,
+    //         note: farmData.note,
+    //       },
+    //       attributes: [
+    //         {
+    //           trait_type: "Crop Type",
+    //           value: farmData.cropType,
+    //         },
+    //         {
+    //           trait_type: "Latitude",
+    //           value: farmData.lat,
+    //         },
+    //         {
+    //           trait_type: "Longitude",
+    //           value: farmData.lng,
+    //         },
+    //         {
+    //           trait_type: "Note",
+    //           value: farmData.note,
+    //         },
+    //       ],
+    //     };
+
+
+    //     const transaction = mintTo({ contract, to: walletAddress, supply: 1n, nft: metadata });
+    //     (await serverWallet(walletAddress)).enqueueTransaction({ transaction })
+          
+     
+
+        
+    //   } catch (error) {
+        
+    //   }
+    // }
+
+
+
+    // private async listFarmForSale(walletAddress: string, id: string): Promise<void> {
+    //   try {
+
+
+        
+
+
+
+
+    //     // const contract = transactionContract(PLANT_SCAN_EDITION_ADDRESS);
+    //     // const transaction = createListing({
+    //     //   assetContractAddress: PLANT_SCAN_EDITION_ADDRESS, 
+    //     //   tokenId: BigInt(id), quantity: 1n, 
+    //     //   currencyContractAddress: DECENTRAGRI_TOKEN,
+    //     //   pricePerToken: "10000", 
+    //     //   contract})
+
+
+        
+
+
+ 
+
+
+
+
+        
+    //   } catch (error) {
+        
+    //   }
+    // }
+
+
+
 
 }
 

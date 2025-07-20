@@ -4,6 +4,7 @@ import { createThirdwebClient, Engine, getContract } from "thirdweb"
 import { mintTo } from "thirdweb/extensions/erc1155";
 import type { PlantImageScanParams } from "./src/ai.services/plant.ai.team.service/plant.interface";
 import { baseSepolia, polygon } from "thirdweb/chains";
+import { transactionContract } from "./src/utils/utils.thirdweb";
     export const getCurrentWeather = async (lat: number, lng: number): Promise<any> => {
         const url: string = `http://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${lat},${lng}`;
         const response = await fetch(url);
@@ -27,8 +28,7 @@ const result = await createServerWallet({
 
 
 
-const savePlantScanToNFT = async (
-    data: PlantImageScanParams,
+const savePlantScanToNFT = async (data: PlantImageScanParams,
     image: string | number[], // Accept both URL string and byte array
     username: string
 ): Promise<void> => {

@@ -163,8 +163,8 @@ class SoilAnalysisService {
 
                 const reading: SensorReadingsWithInterpretation = readingNode.properties;
 
-                const formattedCreatedAt = formatDate(createdAt);
-                const formattedSubmittedAt = formatDate(submittedAt);
+                const formattedCreatedAt: string = formatDate(createdAt);
+                const formattedSubmittedAt: string = formatDate(submittedAt);
 
                 return {
                     id: reading.id,

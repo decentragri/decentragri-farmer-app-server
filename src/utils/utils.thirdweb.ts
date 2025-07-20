@@ -1,12 +1,14 @@
 //** THIRDWEB IMPORTS */
-import { createThirdwebClient } from "thirdweb";
+import { createThirdwebClient, Engine, getContract } from "thirdweb";
 import { upload } from "thirdweb/storage";
 import { readFileSync } from 'fs';
-
+import type { ThirdwebClient } from 'thirdweb';
+import type { Chain } from 'thirdweb/chains';
 
 //** CONSTANTS IMPORT */
 import { SECRET_KEY } from "./constants";
 import path from "path";
+import { baseSepolia } from "thirdweb/chains";
 
 
 //**THIRDWEB SDK CONFIGURATION */
@@ -82,6 +84,18 @@ export const uploadPicBuffer = async (buffer: Buffer, fileName: string): Promise
 
 
 
+export const serverWallet = async (walletAddress: string) => {
+    return Engine.serverWallet({
+      client,
+      address: walletAddress, // your admin wallet address
+      vaultAccessToken: process.env.VAULT_ACCESS_TOKEN!,
+    });
+}
 
 
+
+
+export const transactionContract = (address: string, chain: Chain = baseSepolia) => {
+  return getContract({ client, address, chain });
+};
 

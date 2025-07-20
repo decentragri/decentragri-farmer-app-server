@@ -1,15 +1,18 @@
 //**SERVICE IMPORTS */
-import FarmerService from "../farm.services/farm.service";
+import FarmService from "../farm.services/farm.service";
+
+//** ELYSIA IMPORTS */
+import type Elysia from "elysia";
 
 //** SCHEMA & INTERFACE IMPORTS */
-import type Elysia from "elysia";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import { farmerCreateFarmSchema, farmerUpdateFarmSchema } from "../farm.services/farm.schema";
 import type { CreatedFarm, FarmList } from "../farm.services/farm.interface";
+import { farmerCreateFarmSchema, farmerUpdateFarmSchema } from "../farm.services/farm.schema";
+import { authBearerSchema } from "../auth.services/auth.schema";
 
 //** MEMGRAPH IMPORTS */
 import { getDriver } from "../db/memgraph";
-import { authBearerSchema } from "../auth.services/auth.schema";
+
 
 
 const Farmer = (app: Elysia) => {
@@ -21,9 +24,9 @@ const Farmer = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const driver = getDriver();
-            const farmerService = new FarmerService(driver);
+            const farmService = new FarmService(driver);
 
-            const output: SuccessMessage = await farmerService.createFarm(jwtToken, body);
+            const output: SuccessMessage = await farmService.createFarm(jwtToken, body);
             return output;
         } catch (error: any) {
             console.error(error);
@@ -42,7 +45,7 @@ const Farmer = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const driver = getDriver();
-            const farmerService = new FarmerService(driver);
+            const farmerService = new FarmService(driver);
 
             const output: FarmList[] = await farmerService.getFarmList(jwtToken);
             return output;
@@ -62,9 +65,9 @@ const Farmer = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const driver = getDriver();
-            const farmerService = new FarmerService(driver);
+            const farmService = new FarmService(driver);
 
-            const output: CreatedFarm = await farmerService.getFarmData(jwtToken, params.id);
+            const output: CreatedFarm = await farmService.getFarmData(jwtToken, params.id);
             return output;
         }
         catch (error: any) {
@@ -83,9 +86,9 @@ const Farmer = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const driver = getDriver();
-            const farmerService = new FarmerService(driver);
+            const farmService = new FarmService(driver);
 
-            const output: SuccessMessage = await farmerService.updateFarm(jwtToken, body);
+            const output: SuccessMessage = await farmService.updateFarm(jwtToken, body);
             return output;
 
         } catch (error: any) {
@@ -104,9 +107,31 @@ const Farmer = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
             const driver = getDriver();
-            const farmerService = new FarmerService(driver);
+            const farmerService = new FarmService(driver);
 
             const output: SuccessMessage = await farmerService.deleteFarm(jwtToken, params.id);
+            return output;
+
+        } catch (error: any) {
+            console.error(error);
+            throw error;
+        }
+    }, authBearerSchema
+    )
+
+
+
+    .post('api/sell/farm/:id', async ({ headers, params }) => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            const driver = getDriver();
+            const farmerService = new FarmService(driver);
+
+            const output: SuccessMessage = await farmerService.sellFarm(jwtToken, params.id);
             return output;
 
         } catch (error: any) {

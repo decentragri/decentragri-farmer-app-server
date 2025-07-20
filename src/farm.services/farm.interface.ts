@@ -16,7 +16,12 @@ export interface CreatedFarm {
   id: string; // Unique identifier for the farm
   createdAt?: Date; // Timestamp of farm creation
   updatedAt?: Date; // Timestamp of last update
+  isForSale?: boolean;
+  formattedUpdatedAt?: string;
+  formattedCreatedAt?: string;
   owner: string; // Username of the farm owner
+  lat: number;
+  lng: number;
 
 }
 
