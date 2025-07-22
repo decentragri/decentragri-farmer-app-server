@@ -304,28 +304,42 @@ class FarmService {
     public async sellFarm(token: string, id: string): Promise<SuccessMessage> {
       const tokenService = new TokenService();
       const session = this.driver?.session();
+    
       try {
         const username: string = await tokenService.verifyAccessToken(token);
-        const result = await session?.executeRead((tx: ManagedTransaction) =>
+    
+        const result = await session?.executeWrite(async (tx: ManagedTransaction) =>
           tx.run(
-            `MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
-             SET f.isForSale = true`,
+            `
+            MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {id: $id})
+            OPTIONAL MATCH (f)<-[:REQUESTS_TO_SELL]-(existing:SellRequest {status: "pending"})
+            WITH u, f, existing
+            WHERE existing IS NULL
+            CREATE (sr:SellRequest {
+              id: randomUUID(),
+              status: "pending",
+              requestedAt: datetime()
+            })
+            MERGE (sr)-[:REQUESTS_TO_SELL]->(f)
+            RETURN sr
+            `,
             { username, id }
           )
         );
-        
+    
         if (!result || result.records.length === 0) {
-          return { success: "Farm not found" };
+          return { success: "Farm not found or already has pending request" };
         }
-
+    
         return { success: "Farm Sale Application Submitted Successfully" };
       } catch (error) {
-        console.error("Error selling farm:", error);
+        console.error("Error submitting sell request:", error);
         throw error;
       } finally {
         await session?.close();
       }
     }
+    
 
 
 
