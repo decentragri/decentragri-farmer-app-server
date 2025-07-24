@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/node-geocoder": "^4.2.6"
   },
   "scripts": {
     "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 bun run --watch src/index.ts"
@@ -24,6 +25,7 @@
     "kaibanjs": "^0.19.1",
     "nanoid": "^5.1.5",
     "neo4j-driver": "^5.28.1",
+    "node-geocoder": "^4.4.1",
     "swell-node": "^6.0.0",
     "thirdweb": "^5.105.16"
   }

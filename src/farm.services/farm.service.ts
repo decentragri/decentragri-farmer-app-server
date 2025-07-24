@@ -3,7 +3,7 @@
 import { Driver, ManagedTransaction, Session } from 'neo4j-driver-core'
 
 //** UUID GENERATOR
-import { nanoid } from "nanoid"
+import { v4 as nanoid } from 'uuid';
 
 //**TYPE IMPORTS */
 import type { CreatedFarm, FarmData, FarmList, FarmUpdateData } from './farm.interface';
@@ -18,11 +18,17 @@ import { getDriver } from '../db/memgraph';
 
 //**CYPHERS IMPORT */
 import { createFarmCypher, getFarmListCypher, getRecentFarmScansCypher } from './farm.cypher';
+import * as NodeGeocoder from 'node-geocoder';
 import { serverWallet, transactionContract, uploadPicBuffer } from '../utils/utils.thirdweb';
 import { DECENTRAGRI_TOKEN, PLANT_SCAN_EDITION_ADDRESS } from '../utils/constants';
 import { getNFT, getNFTs, getOwnedNFTs, mintTo } from 'thirdweb/extensions/erc1155';
 import { createListing } from 'thirdweb/extensions/marketplace';
 
+// Initialize geocoder
+const geocoder = NodeGeocoder({
+  provider: 'openstreetmap',
+  formatter: null // disable formatter to get raw data
+});
 
 class FarmService {
     driver?: Driver
@@ -48,8 +54,19 @@ class FarmService {
         const byteImage: number[] = JSON.parse(farmData.imageBytes);
         const buffer: Buffer = Buffer.from(byteImage);
 
+        // Get location details from coordinates
+        const geocodeResult = await geocoder.reverse({
+          lat: farmData.coordinates.lat,
+          lon: farmData.coordinates.lng
+        });
 
-        const params = {
+        // Extract location details
+        const locationInfo = geocodeResult[0] || {};
+        const city = locationInfo.city || '';
+        const province = locationInfo.state || "";
+        const location = city && province ? `${city}, ${province}` : 'Unknown Location';
+
+        const params: CreatedFarm & { username: string } = {
           username,
           id,
           farmName: farmData.farmName,
@@ -59,7 +76,7 @@ class FarmService {
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
           coordinates: farmData.coordinates,
-          
+          location: location,
           image: await uploadPicBuffer(buffer, farmData.farmName)
         };
 

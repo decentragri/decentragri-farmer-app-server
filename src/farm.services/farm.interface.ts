@@ -18,8 +18,8 @@ export interface CreatedFarm {
   note?: string; // Optional description of the farm
   image: string; // URL or base64 encoded image of the farm
   id: string; // Unique identifier for the farm
-  createdAt?: Date; // Timestamp of farm creation
-  updatedAt?: Date; // Timestamp of last update
+  createdAt?: Date | string; // Timestamp of farm creation
+  updatedAt?: Date | string; // Timestamp of last update
   isForSale?: boolean;
   formattedUpdatedAt?: string;
   formattedCreatedAt?: string;
