@@ -52,7 +52,9 @@ export const getFarmListCypher: string = `
            f.description as description, 
            f.createdAt as createdAt, 
            f.updatedAt as updatedAt, 
-           f.image as image, 
+           f.coordinates as coordinates,
+           f.image as image,
+           f.owner as owner,
            f.lat as lat, 
            f.lng as lng
 `

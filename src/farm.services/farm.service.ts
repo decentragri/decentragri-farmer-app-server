@@ -135,10 +135,7 @@ class FarmService {
           cropType: record.get('cropType'),
           description: record.get('description'),
           image: record.get('image'),
-          coordinates: {
-            lat: record.get('lat'),
-            lng: record.get('lng')
-          },
+          coordinates: record.get('coordinates'),
           updatedAt: updatedAt,
           createdAt: createdAt,
           formattedUpdatedAt: formattedUpdatedAt,
@@ -228,7 +225,7 @@ class FarmService {
           farmName: farmData.farmName,
           cropType: farmData.cropType,
           note: farmData.note ?? null,
-          image: farmData.image ?? null,
+          imageBytes: farmData.imageBytes ?? null,
           updatedAt: updatedAt.toISOString(),
         };
 
