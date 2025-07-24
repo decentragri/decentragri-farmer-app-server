@@ -95,21 +95,6 @@ class FarmService {
       }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     /**
      * Retrieves a list of farms owned by the authenticated user.
      * @param token - Auth token
@@ -152,19 +137,34 @@ class FarmService {
         });
         
         try {
+          const imageUrl = record.get('image');
+          let imageBytes: number[] | string = [];
+          
+          // Only fetch image bytes if image URL is not empty
+          if (imageUrl && imageUrl.trim() !== '') {
+            try {
+              imageBytes = Array.from(await plantService.fetchImageBytes(imageUrl));
+            } catch (error) {
+              console.error(`Error fetching image for farm ${record.get('id')}:`, error);
+              imageBytes = [];
+            }
+          } else {
+            imageBytes = [];
+          }
+          
           return {
             owner: record.get('owner'),
             farmName: record.get('farmName'),
             id: record.get('id'),
             cropType: record.get('cropType'),
             description: record.get('description'),
-            image: record.get('image'),
+            image: imageUrl,
             coordinates: record.get('coordinates'),
             updatedAt: updatedAt,
             createdAt: createdAt,
             formattedUpdatedAt: formattedUpdatedAt,
             formattedCreatedAt: formattedCreatedAt,
-            imageBytes: Array.from((await plantService.fetchImageBytes(record.get('image')))),
+            imageBytes: imageBytes,
             location: record.get('location')
           } as FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string };
         } catch (error) {
