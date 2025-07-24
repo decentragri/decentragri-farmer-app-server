@@ -12,8 +12,7 @@ export const createFarmCypher: string = `
       updatedAt: $updatedAt,
       image: $image,
       coordinates: $coordinates,
-      location: $location,
-
+      location: $location
     })
     MERGE (u)-[:OWNS]->(f)
     RETURN f
