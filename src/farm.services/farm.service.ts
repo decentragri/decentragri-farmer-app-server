@@ -18,7 +18,7 @@ import { getDriver } from '../db/memgraph';
 
 //**CYPHERS IMPORT */
 import { createFarmCypher, getFarmListCypher, getRecentFarmScansCypher } from './farm.cypher';
-import * as NodeGeocoder from 'node-geocoder';
+const NodeGeocoder = require('node-geocoder');
 import { serverWallet, transactionContract, uploadPicBuffer } from '../utils/utils.thirdweb';
 import { DECENTRAGRI_TOKEN, PLANT_SCAN_EDITION_ADDRESS } from '../utils/constants';
 import { getNFT, getNFTs, getOwnedNFTs, mintTo } from 'thirdweb/extensions/erc1155';
