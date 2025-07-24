@@ -48,4 +48,6 @@ export interface FarmList {
   cropType: string,
   updatedAt: Date,
   coordinates: FarmCoordinates
+  imageBytes: number[]
+
 }

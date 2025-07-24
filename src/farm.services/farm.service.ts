@@ -1,3 +1,5 @@
+//** GEOCODER
+const NodeGeocoder = require('node-geocoder');
 
 //** MEMGRAPH DRIVER
 import { Driver, ManagedTransaction, Session } from 'neo4j-driver-core'
@@ -12,17 +14,16 @@ import type { FarmScanResult } from '../plant.services/plantscan.interface';
 
 //**SERVICE IMPORT
 import TokenService from '../security.services/token.service';
+import PlantService from '../plant.services/plantscan.service';
 
 //** CONFIG IMPORT */
 import { getDriver } from '../db/memgraph';
 
 //**CYPHERS IMPORT */
 import { createFarmCypher, getFarmListCypher, getRecentFarmScansCypher } from './farm.cypher';
-const NodeGeocoder = require('node-geocoder');
-import { serverWallet, transactionContract, uploadPicBuffer } from '../utils/utils.thirdweb';
-import { DECENTRAGRI_TOKEN, PLANT_SCAN_EDITION_ADDRESS } from '../utils/constants';
-import { getNFT, getNFTs, getOwnedNFTs, mintTo } from 'thirdweb/extensions/erc1155';
-import { createListing } from 'thirdweb/extensions/marketplace';
+
+import { uploadPicBuffer } from '../utils/utils.thirdweb';
+
 
 // Initialize geocoder
 const geocoder = NodeGeocoder({
@@ -116,7 +117,9 @@ class FarmService {
      */
     public async getFarmList(token: string): Promise<Array<FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string }>> {
       const tokenService = new TokenService();
+      const plantService = new PlantService();
       const session = this.driver?.session();
+
       try {
       const username: string = await tokenService.verifyAccessToken(token);
       const result = await session?.executeRead((tx: ManagedTransaction) =>
@@ -128,7 +131,8 @@ class FarmService {
         return [];
       }
 
-      return result.records.map(record => {
+      // Process all records in parallel
+      const farmPromises = result.records.map(async (record) => {
         // Format updatedAt
         const rawUpdatedAt = record.get('updatedAt');
         const updatedAt = rawUpdatedAt instanceof Date ? rawUpdatedAt : new Date(rawUpdatedAt);
@@ -147,21 +151,35 @@ class FarmService {
           day: 'numeric'
         });
         
-        return {
-          owner: record.get('owner'),
-          farmName: record.get('farmName'),
-          id: record.get('id'),
-          cropType: record.get('cropType'),
-          description: record.get('description'),
-          image: record.get('image'),
-          coordinates: record.get('coordinates'),
-          updatedAt: updatedAt,
-          createdAt: createdAt,
-          formattedUpdatedAt: formattedUpdatedAt,
-          formattedCreatedAt: formattedCreatedAt,
-          location: record.get('location')
-        } as FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string };
+        try {
+          const imageBytes = await plantService.fetchImageBytes(record.get('image'));
+          return {
+            owner: record.get('owner'),
+            farmName: record.get('farmName'),
+            id: record.get('id'),
+            cropType: record.get('cropType'),
+            description: record.get('description'),
+            image: record.get('image'),
+            coordinates: record.get('coordinates'),
+            updatedAt: updatedAt,
+            createdAt: createdAt,
+            formattedUpdatedAt: formattedUpdatedAt,
+            formattedCreatedAt: formattedCreatedAt,
+            imageBytes: Array.from(imageBytes), // Convert Uint8Array to number[]
+            location: record.get('location')
+          } as FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string };
+        } catch (error) {
+          console.error(`Error processing farm ${record.get('id')}:`, error);
+          return null;
+        }
       });
+
+      const farms = await Promise.all(farmPromises);
+      // Filter out null values and ensure type safety
+      return farms.filter((farm): farm is FarmList & { 
+        formattedUpdatedAt: string; 
+        formattedCreatedAt: string; 
+      } => farm !== null);
       } catch (error) {
       console.error("Error fetching farm list:", error);
       throw error;

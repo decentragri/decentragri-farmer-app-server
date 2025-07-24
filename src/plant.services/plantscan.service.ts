@@ -44,7 +44,7 @@ class PlantData {
 	 * @param imageUri - IPFS URI
 	 * @returns Promise that resolves to Uint8Array of image bytes
 	 */
-	private async fetchImageBytes(imageUri: string): Promise<Uint8Array> {
+	public async fetchImageBytes(imageUri: string): Promise<Uint8Array> {
 		const url = this.buildIPFSUrl(imageUri);
 		const response = await fetch(url);
 		if (!response.ok) {
@@ -59,7 +59,7 @@ class PlantData {
 	 * @param imageUri - IPFS URI
 	 * @returns Full IPFS gateway URL
 	 */
-	private buildIPFSUrl(imageUri: string): string {
+	public buildIPFSUrl(imageUri: string): string {
 		const trimmed = imageUri.replace(/^ipfs:\/\/(.*)/, "$1");
 		return `https://${CLIENT_ID}.ipfscdn.io/ipfs/${trimmed}`;
 	}
@@ -69,7 +69,7 @@ class PlantData {
 	 * @param raw - Raw database record
 	 * @returns PlantScanResult object
 	 */
-	private async convertToPlantScanResult(raw: any): Promise<PlantScanResult> {
+	public async convertToPlantScanResult(raw: any): Promise<PlantScanResult> {
 		let parsedInterpretation: ParsedInterpretation;
 		try {
 			parsedInterpretation = JSON.parse(raw.interpretation);
