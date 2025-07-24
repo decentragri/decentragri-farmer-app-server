@@ -195,6 +195,7 @@ class FarmService {
      */
     public async getFarmData(token: string, id: string): Promise<CreatedFarm> {
       const tokenService = new TokenService();
+      const plantService = new PlantService();
       const session = this.driver?.session();
       try {
         const username: string = await tokenService.verifyAccessToken(token);
@@ -229,9 +230,23 @@ class FarmService {
           month: 'long',
           day: 'numeric'
         });
+
+        // Handle image bytes retrieval
+        let imageBytes: number[] = [];
+        const imageUrl = farmData.image;
+        
+        if (imageUrl && imageUrl.trim() !== '') {
+          try {
+            imageBytes = Array.from(await plantService.fetchImageBytes(imageUrl));
+          } catch (error) {
+            console.error(`Error fetching image for farm ${id}:`, error);
+            // Continue with empty imageBytes if there's an error
+          }
+        }
         
         return {
           ...farmData,
+          imageBytes,
           formattedUpdatedAt,
           formattedCreatedAt
         };

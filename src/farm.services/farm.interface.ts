@@ -24,6 +24,7 @@ export interface CreatedFarm {
   formattedUpdatedAt?: string;
   formattedCreatedAt?: string;
   owner: string; // Username of the farm owner
+  imageBytes?: number[];
   coordinates: FarmCoordinates;
   location: string;
 }
