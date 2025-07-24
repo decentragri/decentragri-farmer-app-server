@@ -7,13 +7,13 @@ export const createFarmCypher: string = `
       farmName: $farmName,
       cropType: $cropType,
       owner: $owner,
-      description: $description,
+      description: $note,
       createdAt: $createdAt,
       updatedAt: $updatedAt,
       image: $image,
       coordinates: $coordinates,
       location: $location,
-      
+
     })
     MERGE (u)-[:OWNS]->(f)
     RETURN f
