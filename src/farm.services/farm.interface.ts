@@ -1,18 +1,22 @@
 
-
+interface FarmCoordinates {
+  lat: number;
+  lng: number;
+}
 
 export interface FarmData {
   cropType: string;
   farmName: string;
   note?: string;
-  image?: string;
+  imageBytes: string;
+  coordinates: FarmCoordinates
 }
 
 export interface CreatedFarm {
   farmName: string;
   cropType: string; // List of crop types planted in the farm
   note?: string; // Optional description of the farm
-  image?: string; // URL or base64 encoded image of the farm
+  imageBytes?: string; // URL or base64 encoded image of the farm
   id: string; // Unique identifier for the farm
   createdAt?: Date; // Timestamp of farm creation
   updatedAt?: Date; // Timestamp of last update
@@ -20,9 +24,8 @@ export interface CreatedFarm {
   formattedUpdatedAt?: string;
   formattedCreatedAt?: string;
   owner: string; // Username of the farm owner
-  lat: number;
-  lng: number;
-
+  coordinates: FarmCoordinates;
+  location: string;
 }
 
 
@@ -43,8 +46,5 @@ export interface FarmList {
   id: string,
   cropType: string,
   updatedAt: Date,
-  
-  
-
-
+  coordinates: FarmCoordinates
 }

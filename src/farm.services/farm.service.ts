@@ -18,7 +18,7 @@ import { getDriver } from '../db/memgraph';
 
 //**CYPHERS IMPORT */
 import { createFarmCypher, getFarmListCypher, getRecentFarmScansCypher } from './farm.cypher';
-import { serverWallet, transactionContract } from '../utils/utils.thirdweb';
+import { serverWallet, transactionContract, uploadPicBuffer } from '../utils/utils.thirdweb';
 import { DECENTRAGRI_TOKEN, PLANT_SCAN_EDITION_ADDRESS } from '../utils/constants';
 import { getNFT, getNFTs, getOwnedNFTs, mintTo } from 'thirdweb/extensions/erc1155';
 import { createListing } from 'thirdweb/extensions/marketplace';
@@ -44,6 +44,11 @@ class FarmService {
         const id: string = nanoid();
         const createdAt: Date = new Date();
         const updatedAt: Date = createdAt;
+
+        const byteImage: number[] = JSON.parse(farmData.imageBytes);
+        const buffer: Buffer = Buffer.from(byteImage);
+
+
         const params = {
           username,
           id,
@@ -53,11 +58,10 @@ class FarmService {
           owner: username,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
-          image: farmData.image
+          image: await uploadPicBuffer(buffer, farmData.farmName)
         };
 
         
-
         await session?.executeWrite((tx: ManagedTransaction) =>
           tx.run(createFarmCypher, params)
         );
@@ -70,6 +74,21 @@ class FarmService {
         await session?.close();
       }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Retrieves a list of farms owned by the authenticated user.
@@ -110,17 +129,21 @@ class FarmService {
         });
         
         return {
+          owner: record.get('owner'),
           farmName: record.get('farmName'),
           id: record.get('id'),
           cropType: record.get('cropType'),
           description: record.get('description'),
           image: record.get('image'),
-          lat: record.get('lat'),
-          lng: record.get('lng'),
+          coordinates: {
+            lat: record.get('lat'),
+            lng: record.get('lng')
+          },
           updatedAt: updatedAt,
           createdAt: createdAt,
           formattedUpdatedAt: formattedUpdatedAt,
-          formattedCreatedAt: formattedCreatedAt
+          formattedCreatedAt: formattedCreatedAt,
+          location: record.get('location')
         } as FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string };
       });
       } catch (error) {

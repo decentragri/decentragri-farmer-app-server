@@ -9,6 +9,7 @@ import type { Chain } from 'thirdweb/chains';
 import { SECRET_KEY } from "./constants";
 import path from "path";
 import { baseSepolia } from "thirdweb/chains";
+import { t } from "elysia";
 
 
 //**THIRDWEB SDK CONFIGURATION */
@@ -60,9 +61,8 @@ export const uploadPicIPFS = async (filePath: string): Promise<string> => {
 	}
 };
 
-export const uploadPicBuffer = async (buffer: Buffer, fileName: string): Promise<string> => {
+export const uploadPicBuffer = async (buffer: Buffer | string, fileName: string): Promise<string> => {
 	try {
-
 
 		const file = new File([buffer], fileName, {
 			type: 'image/png'
@@ -97,5 +97,5 @@ export const serverWallet = async (walletAddress: string) => {
 
 export const transactionContract = (address: string, chain: Chain = baseSepolia) => {
   return getContract({ client, address, chain });
-};
+}
 

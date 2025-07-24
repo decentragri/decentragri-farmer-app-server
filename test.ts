@@ -67,7 +67,7 @@ const savePlantScanToNFT = async (data: PlantImageScanParams,
             throw new Error("Invalid image format. Expected URL, byte array, or JSON string of bytes.");
         }
     }
-
+    
     const contract = getContract({
         client,
         address: PLANT_SCAN_EDITION_ADDRESS,
@@ -103,7 +103,7 @@ const savePlantScanToNFT = async (data: PlantImageScanParams,
     };
 
     const transaction = mintTo({
-        contract,
+        contract: transactionContract,
         to: "0x2e57Ba619C916b56a73EEBE9fD92D898D080F788", // receiver smart wallet
         supply: 1n,
         nft: metadata,
