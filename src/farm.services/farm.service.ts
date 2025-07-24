@@ -152,7 +152,6 @@ class FarmService {
         });
         
         try {
-          const imageBytes = await plantService.fetchImageBytes(record.get('image'));
           return {
             owner: record.get('owner'),
             farmName: record.get('farmName'),
@@ -165,7 +164,7 @@ class FarmService {
             createdAt: createdAt,
             formattedUpdatedAt: formattedUpdatedAt,
             formattedCreatedAt: formattedCreatedAt,
-            imageBytes: Array.from(imageBytes), // Convert Uint8Array to number[]
+            imageBytes: Array.from((await plantService.fetchImageBytes(record.get('image')))),
             location: record.get('location')
           } as FarmList & { formattedUpdatedAt: string; formattedCreatedAt: string };
         } catch (error) {
