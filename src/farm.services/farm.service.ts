@@ -58,6 +58,8 @@ class FarmService {
           owner: username,
           createdAt: createdAt.toISOString(),
           updatedAt: updatedAt.toISOString(),
+          coordinates: farmData.coordinates,
+          
           image: await uploadPicBuffer(buffer, farmData.farmName)
         };
 
