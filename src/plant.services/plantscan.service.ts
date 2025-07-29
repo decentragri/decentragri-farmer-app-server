@@ -62,6 +62,7 @@ class PlantData {
 	public buildIPFSUrl(imageUri: string): string {
 		const trimmed = imageUri.replace(/^ipfs:\/\/(.*)/, "$1");
 		return `https://${CLIENT_ID}.ipfscdn.io/ipfs/${trimmed}`;
+	
 	}
 	
 	/**
@@ -293,6 +294,7 @@ class PlantData {
 					supply: "1"
 				}
 			};
+			//test update
 
 			await engine.erc1155.mintTo(CHAIN, PLANT_SCAN_EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, metadata);
 
