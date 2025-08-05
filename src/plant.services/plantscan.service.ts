@@ -16,6 +16,8 @@ import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./plantscan.interface";
 import { savePlantScanCypher } from "./plantscan.cypher";
 import { nanoid } from "nanoid";
+import { getAll } from "thirdweb/extensions/thirdweb";
+import { getAllListings } from "thirdweb/extensions/marketplace";
 
 class PlantData {
 
@@ -295,9 +297,9 @@ class PlantData {
 				}
 			};
 			//test update
-
+			
 			await engine.erc1155.mintTo(CHAIN, PLANT_SCAN_EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, metadata);
-
+			getAllListings
 			return imageUri;
 		} catch (error) {
 			console.error("Error minting plant scan NFT:", error);
