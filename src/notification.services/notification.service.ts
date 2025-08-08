@@ -156,11 +156,25 @@ export class NotificationService implements INotificationService {
         }
     }
 
-    public async getAllNotifications(userId: string, limit: number = 50, offset: number = 0): Promise<INotification[]> {
+    public async getAllNotifications(username: string, limit: number = 50, offset: number = 0): Promise<INotification[]> {
         try {
+            // Ensure limit and offset are integers
+            const limitInt = parseInt(limit.toString(), 10);
+            const offsetInt = parseInt(offset.toString(), 10);
+            
+            // Validate the parsed integers
+            if (isNaN(limitInt) || limitInt < 0) {
+                throw new Error('Limit must be a valid positive integer');
+            }
+            if (isNaN(offsetInt) || offsetInt < 0) {
+                throw new Error('Offset must be a valid non-negative integer');
+            }
+            
+            console.log(`Fetching notifications for user: ${username}, limit: ${limitInt}, offset: ${offsetInt}`);
+            
             const result: INotification[] = await this.executeQuery<INotification[]>(
                 NotificationQueries.GET_ALL, 
-                { userId, limit, offset }
+                { userId: username, limit: limitInt, offset: offsetInt }
             );
             return result.map(record => ({
                 ...record,

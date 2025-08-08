@@ -23,20 +23,36 @@ const NotificationRoutes = (app: Elysia) =>
             // Get all notifications for a user (paginated)
             .get('/', async ({ username, query: { limit = '50', offset = '0' } }) => {
                 try {
+                    // Convert string parameters to integers with proper validation
+                    const limitInt = parseInt(limit as string, 10);
+                    const offsetInt = parseInt(offset as string, 10);
+                    
+                    // Validate parameters
+                    if (isNaN(limitInt) || limitInt < 1 || limitInt > 1000) {
+                        throw new Error('Limit must be between 1 and 1000');
+                    }
+                    if (isNaN(offsetInt) || offsetInt < 0) {
+                        throw new Error('Offset must be a non-negative integer');
+                    }
+                    
+                    console.log(`Fetching notifications with limit: ${limitInt}, offset: ${offsetInt}`);
+                    
                     const notifications = await notificationService.getAllNotifications(
                         username, 
-                        parseInt(limit), 
-                        parseInt(offset)
+                        limitInt, 
+                        offsetInt
                     );
                     
                     return {
                         success: true,
                         data: notifications,
-                        total: notifications.length
+                        total: notifications.length,
+                        limit: limitInt,
+                        offset: offsetInt
                     };
                 } catch (error) {
                     console.error('Failed to fetch notifications:', error);
-                    throw new Error('Failed to fetch notifications');
+                    throw new Error(error instanceof Error ? error.message : 'Failed to fetch notifications');
                 }
             }, {
                 query: t.Object({
