@@ -42,8 +42,6 @@ export class NotificationService implements INotificationService {
         };
 
         try {
-            console.log(`Creating notification for user: ${newNotification.userId}`);
-            
             // First check if user exists
             const userCheck = await this.executeQuery(
                 NotificationQueries.CHECK_USER_EXISTS,
@@ -53,14 +51,6 @@ export class NotificationService implements INotificationService {
             if (!userCheck || userCheck.length === 0) {
                 throw new Error(`User with username '${newNotification.userId}' not found in database`);
             }
-            
-            console.log(`User exists: ${userCheck[0].username}`);
-            console.log(`Notification data:`, {
-                id: newNotification.id,
-                type: newNotification.type,
-                title: newNotification.title,
-                message: newNotification.message
-            });
 
             const result = await this.executeQuery(
                 NotificationQueries.SAVE,
@@ -80,7 +70,6 @@ export class NotificationService implements INotificationService {
             return newNotification;
         } catch (error) {
             console.error('Failed to save notification:', error);
-            console.error('Notification data that failed:', newNotification);
             throw new Error(`Failed to save notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
@@ -131,8 +120,7 @@ export class NotificationService implements INotificationService {
         try {
             const createdNotification = await this.createNotification({...notification, userId});
 
-            console.log(`[Notification Created] ${notification.title} - ${notification.message}`);
-            
+    
             return createdNotification;
         } catch (error) {
             console.error('Failed to create notification:', error);
@@ -158,37 +146,25 @@ export class NotificationService implements INotificationService {
 
     public async getAllNotifications(username: string, limit: number = 50, offset: number = 0): Promise<INotification[]> {
         try {
-            console.log('Raw parameters received:', { username, limit, offset, limitType: typeof limit, offsetType: typeof offset });
-            
             // Ensure limit and offset are integers
             const limitInt = parseInt(limit.toString(), 10);
             const offsetInt = parseInt(offset.toString(), 10);
             
-            console.log('Parsed parameters:', { limitInt, offsetInt, limitIntType: typeof limitInt, offsetIntType: typeof offsetInt });
-            
             // Validate the parsed integers
             if (isNaN(limitInt) || limitInt < 0) {
-                console.error('Invalid limit:', { limit, limitInt });
                 throw new Error('Limit must be a valid positive integer');
             }
             if (isNaN(offsetInt) || offsetInt < 0) {
-                console.error('Invalid offset:', { offset, offsetInt });
                 throw new Error('Offset must be a valid non-negative integer');
             }
             
-            console.log(`Fetching notifications for user: ${username}, limit: ${limitInt}, offset: ${offsetInt}`);
-            
-            // Log the actual parameters being sent to the query
-            const queryParams = { 
-                userId: username, 
-                limit: neo4j.int(limitInt), 
-                offset: neo4j.int(offsetInt) 
-            };
-            console.log('Query parameters with neo4j.int():', queryParams);
-            
             const result: INotification[] = await this.executeQuery<INotification[]>(
                 NotificationQueries.GET_ALL, 
-                queryParams
+                { 
+                    userId: username, 
+                    limit: neo4j.int(limitInt), 
+                    offset: neo4j.int(offsetInt) 
+                }
             );
             return result.map(record => ({
                 ...record,

@@ -21,51 +21,62 @@ const NotificationRoutes = (app: Elysia) =>
             })
             
             // Get all notifications for a user (paginated)
-            .get('/', async ({ username, query: { limit = '50', offset = '0' } }) => {
-                try {
-                    console.log('Route received query parameters:', { limit, offset, limitType: typeof limit, offsetType: typeof offset });
-                    
-                    // Convert string parameters to integers with proper validation
-                    const limitInt = parseInt(limit as string, 10);
-                    const offsetInt = parseInt(offset as string, 10);
-                    
-                    console.log('Route parsed parameters:', { limitInt, offsetInt, limitIntType: typeof limitInt, offsetIntType: typeof offsetInt });
-                    
-                    // Validate parameters
-                    if (isNaN(limitInt) || limitInt < 1 || limitInt > 1000) {
-                        throw new Error('Limit must be between 1 and 1000');
-                    }
-                    if (isNaN(offsetInt) || offsetInt < 0) {
-                        throw new Error('Offset must be a non-negative integer');
-                    }
-                    
-                    console.log(`Fetching notifications with limit: ${limitInt}, offset: ${offsetInt}`);
-                    
-                    const notifications = await notificationService.getAllNotifications(
-                        username, 
-                        limitInt, 
-                        offsetInt
-                    );
-                    
-                    return {
-                        success: true,
-                        data: notifications,
-                        total: notifications.length,
-                        limit: limitInt,
-                        offset: offsetInt
-                    };
-                } catch (error) {
-                    console.error('Failed to fetch notifications:', error);
-                    throw new Error(error instanceof Error ? error.message : 'Failed to fetch notifications');
+    .get('/api/notifications', async ({ headers, query }) => {
+        try {
+            const authHeader = headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return {
+                    success: false,
+                    message: 'Missing or invalid authorization header'
+                };
+            }
+
+            const token = authHeader.substring(7);
+            const tokenService = new TokenService();
+            const username = await tokenService.verifyAccessToken(token);
+            if (!username) {
+                return {
+                    success: false,
+                    message: 'Invalid or expired token'
+                };
+            }
+
+            const limit = parseInt(query.limit || '50', 10);
+            const offset = parseInt(query.offset || '0', 10);
+
+            if (isNaN(limit) || limit < 1 || limit > 100) {
+                return {
+                    success: false,
+                    message: 'Limit must be between 1 and 100'
+                };
+            }
+
+            if (isNaN(offset) || offset < 0) {
+                return {
+                    success: false,
+                    message: 'Offset must be a non-negative integer'
+                };
+            }
+
+            const notifications = await notificationService.getAllNotifications(username, limit, offset);
+
+            return {
+                success: true,
+                data: notifications,
+                meta: {
+                    limit,
+                    offset,
+                    count: notifications.length
                 }
-            }, {
-                query: t.Object({
-                    limit: t.Optional(t.String()),
-                    offset: t.Optional(t.String())
-                })
-            })
-            
-            // Get unread notifications for a user
+            };
+        } catch (error) {
+            console.error('Error in /api/notifications route:', error);
+            return {
+                success: false,
+                message: 'Failed to fetch notifications'
+            };
+        }
+    })            // Get unread notifications for a user
             .get('/unread', async ({ username }) => {
                 try {
                     const notifications = await notificationService.getUnreadNotifications(username);
