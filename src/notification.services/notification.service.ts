@@ -22,13 +22,13 @@ export class NotificationService implements INotificationService {
         // Handle Neo4j DateTime object
         if (timestamp && typeof timestamp === 'object' && timestamp.year) {
             return new Date(
-                timestamp.year,
-                timestamp.month - 1, // JavaScript months are 0-indexed
-                timestamp.day,
-                timestamp.hour,
-                timestamp.minute,
-                timestamp.second,
-                Math.floor(timestamp.nanosecond / 1000000) // Convert nanoseconds to milliseconds
+                Number(timestamp.year),
+                Number(timestamp.month) - 1, // JavaScript months are 0-indexed
+                Number(timestamp.day),
+                Number(timestamp.hour),
+                Number(timestamp.minute),
+                Number(timestamp.second),
+                Math.floor(Number(timestamp.nanosecond) / 1000000) // Convert nanoseconds to milliseconds
             );
         }
         
