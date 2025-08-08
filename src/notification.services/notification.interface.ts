@@ -23,6 +23,7 @@ export interface INotification {
     message: string;
     read: boolean;
     timestamp: Date;
+    timeAgo?: string; // Relative time format like "5m", "2h", "1d"
     metadata?: NotificationMetadata;
 }
 

@@ -16,6 +16,68 @@ export class NotificationService implements INotificationService {
         return NotificationService.instance;
     }
 
+    private convertTimestamp(timestamp: any): Date {
+        if (!timestamp) return new Date();
+        
+        // Handle Neo4j DateTime object
+        if (timestamp && typeof timestamp === 'object' && timestamp.year) {
+            return new Date(
+                timestamp.year,
+                timestamp.month - 1, // JavaScript months are 0-indexed
+                timestamp.day,
+                timestamp.hour,
+                timestamp.minute,
+                timestamp.second,
+                Math.floor(timestamp.nanosecond / 1000000) // Convert nanoseconds to milliseconds
+            );
+        }
+        
+        // Handle string timestamps
+        if (typeof timestamp === 'string') {
+            return new Date(timestamp);
+        }
+        
+        // Handle regular Date objects
+        if (timestamp instanceof Date) {
+            return timestamp;
+        }
+        
+        return new Date(timestamp.toString());
+    }
+
+    private formatRelativeTime(date: Date): string {
+        const now = new Date();
+        const diffInMs = now.getTime() - date.getTime();
+        const diffInSeconds = Math.floor(diffInMs / 1000);
+        
+        if (diffInSeconds < 60) {
+            return `${diffInSeconds}s`;
+        }
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) {
+            return `${diffInMinutes}m`;
+        }
+        
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) {
+            return `${diffInHours}h`;
+        }
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7) {
+            return `${diffInDays}d`;
+        }
+        
+        const diffInWeeks = Math.floor(diffInDays / 7);
+        if (diffInWeeks < 4) {
+            return `${diffInWeeks}w`;
+        }
+        
+        const diffInMonths = Math.floor(diffInDays / 30);
+        return `${diffInMonths}mo`;
+    }
+
     private async executeQuery<T = any>(query: string, params: Record<string, any>, readOnly: boolean = true): Promise<T> {
         const session = getDriver().session();
         try {
@@ -79,7 +141,8 @@ export class NotificationService implements INotificationService {
             const result: INotification[] = await this.executeQuery<INotification[]>(NotificationQueries.GET_UNREAD, { userId });
             return result.map(record => ({
                 ...record,
-                timestamp: new Date(record.timestamp.toString())
+                timestamp: this.convertTimestamp(record.timestamp),
+                timeAgo: this.formatRelativeTime(this.convertTimestamp(record.timestamp))
             }));
         } catch (error) {
             console.error('Failed to fetch unread notifications:', error);
@@ -105,7 +168,8 @@ export class NotificationService implements INotificationService {
             const notification = result[0];
             return {
                 ...notification,
-                timestamp: new Date(notification.timestamp.toString())
+                timestamp: this.convertTimestamp(notification.timestamp),
+                timeAgo: this.formatRelativeTime(this.convertTimestamp(notification.timestamp))
             };
         } catch (error) {
             console.error('Failed to fetch notification:', error);
@@ -136,7 +200,8 @@ export class NotificationService implements INotificationService {
             const notification = result[0];
             return {
                 ...notification,
-                timestamp: new Date(notification.timestamp.toString())
+                timestamp: this.convertTimestamp(notification.timestamp),
+                timeAgo: this.formatRelativeTime(this.convertTimestamp(notification.timestamp))
             };
         } catch (error) {
             console.error('Failed to fetch latest notification:', error);
@@ -168,7 +233,8 @@ export class NotificationService implements INotificationService {
             );
             return result.map(record => ({
                 ...record,
-                timestamp: new Date(record.timestamp.toString())
+                timestamp: this.convertTimestamp(record.timestamp),
+                timeAgo: this.formatRelativeTime(this.convertTimestamp(record.timestamp))
             }));
         } catch (error) {
             console.error('Failed to fetch notifications:', error);
