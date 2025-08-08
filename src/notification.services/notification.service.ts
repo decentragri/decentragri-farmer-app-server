@@ -42,7 +42,27 @@ export class NotificationService implements INotificationService {
         };
 
         try {
-            await this.executeQuery(
+            console.log(`Creating notification for user: ${newNotification.userId}`);
+            
+            // First check if user exists
+            const userCheck = await this.executeQuery(
+                NotificationQueries.CHECK_USER_EXISTS,
+                { userId: newNotification.userId }
+            );
+            
+            if (!userCheck || userCheck.length === 0) {
+                throw new Error(`User with username '${newNotification.userId}' not found in database`);
+            }
+            
+            console.log(`User exists: ${userCheck[0].username}`);
+            console.log(`Notification data:`, {
+                id: newNotification.id,
+                type: newNotification.type,
+                title: newNotification.title,
+                message: newNotification.message
+            });
+
+            const result = await this.executeQuery(
                 NotificationQueries.SAVE,
                 {
                     userId: newNotification.userId,
@@ -57,10 +77,12 @@ export class NotificationService implements INotificationService {
                 false
             );
             
+            console.log(`Notification saved successfully. Result:`, result);
             return newNotification;
         } catch (error) {
             console.error('Failed to save notification:', error);
-            throw new Error('Failed to save notification');
+            console.error('Notification data that failed:', newNotification);
+            throw new Error(`Failed to save notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
 

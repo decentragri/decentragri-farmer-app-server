@@ -4,7 +4,7 @@ export const NotificationQueries = {
      * Parameters: { userId, id, type, title, message, read, timestamp, metadata }
      */
     SAVE: `
-        MATCH (u:User {id: $userId})
+        MATCH (u:User {username: $userId})
         CREATE (n:Notification {
             id: $id,
             type: $type,
@@ -23,7 +23,7 @@ export const NotificationQueries = {
      * Parameters: { userId }
      */
     GET_UNREAD: `
-        MATCH (u:User {id: $userId})-[:RECEIVED]->(n:Notification)
+        MATCH (u:User {username: $userId})-[:RECEIVED]->(n:Notification)
         WHERE n.read = false
         RETURN n
         ORDER BY n.timestamp DESC
@@ -53,7 +53,7 @@ export const NotificationQueries = {
      * Parameters: { userId, limit, offset }
      */
     GET_ALL: `
-        MATCH (u:User {id: $userId})-[:RECEIVED]->(n:Notification)
+        MATCH (u:User {username: $userId})-[:RECEIVED]->(n:Notification)
         RETURN n
         ORDER BY n.timestamp DESC
         SKIP $offset
@@ -65,7 +65,7 @@ export const NotificationQueries = {
      * Parameters: { userId }
      */
     GET_UNREAD_COUNT: `
-        MATCH (u:User {id: $userId})-[:RECEIVED]->(n:Notification)
+        MATCH (u:User {username: $userId})-[:RECEIVED]->(n:Notification)
         WHERE n.read = false
         RETURN count(n) as count
     `,
@@ -75,9 +75,18 @@ export const NotificationQueries = {
      * Parameters: { userId }
      */
     GET_LATEST: `
-        MATCH (u:User {id: $userId})-[:RECEIVED]->(n:Notification)
+        MATCH (u:User {username: $userId})-[:RECEIVED]->(n:Notification)
         RETURN n
         ORDER BY n.timestamp DESC
         LIMIT 1
+    `,
+
+    /**
+     * Check if a user exists
+     * Parameters: { userId }
+     */
+    CHECK_USER_EXISTS: `
+        MATCH (u:User {username: $userId})
+        RETURN u.username as username
     `
 } as const;
