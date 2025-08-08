@@ -2,11 +2,13 @@
 import PlantImageTeam from './plant.ai.team';
 import TokenService from '../../security.services/token.service';
 import PlantData from '../../plant.services/plantscan.service';
+import { notificationService } from '../../notification.services/notification.service';
 
 //**TYPE IMPORTS */
 import type { SuccessMessage } from '../../onchain.services/onchain.interface';
 import type { AnalysisResult, PlantImageSessionParams } from "./plant.interface";
 import type { ParsedInterpretation } from "../../plant.services/plantscan.interface";
+import { NotificationType } from '../../notification.services/notification.interface';
 
 class PlantImageRunner {
     private tokenService = new TokenService();
@@ -44,6 +46,24 @@ class PlantImageRunner {
             // Check for error cases
             if (this.isInvalidPlantScan(resultStr)) {
                 console.warn("Not a valid plant scan. Skipping save.");
+                
+                // Create a notification for invalid plant scan
+                try {
+                    await notificationService.sendRealTimeNotification(username, {
+                        type: NotificationType.SYSTEM_ALERT,
+                        title: 'Plant Scan Failed',
+                        message: 'The uploaded image does not appear to contain a valid plant. Please try again with a clear image of a plant.',
+                        metadata: {
+                            farmName: params.farmName,
+                            cropType: params.cropType,
+                            analysisType: 'plant_scan',
+                            error: resultStr
+                        }
+                    });
+                } catch (notificationError) {
+                    console.error('Failed to send invalid scan notification:', notificationError);
+                }
+                
                 return { error: resultStr };
             }
             // Convert string to ParsedInterpretation object
@@ -74,6 +94,28 @@ class PlantImageRunner {
         };
 
         await this.plantData.savePlantScan(imageRecord, username);
+
+        // Create a notification for successful plant analysis
+        try {
+            await notificationService.sendRealTimeNotification(username, {
+                type: NotificationType.RECOMMENDATION,
+                title: 'Plant Analysis Complete',
+                message: `Your plant scan for ${params.farmName} has been analyzed successfully. Diagnosis: ${
+                    typeof interpretation === 'object' ? interpretation.Diagnosis : 'Analysis completed'
+                }`,
+                metadata: {
+                    farmName: params.farmName,
+                    cropType: params.cropType,
+                    analysisType: 'plant_scan',
+                    diagnosis: typeof interpretation === 'object' ? interpretation.Diagnosis : interpretation
+                }
+            });
+            console.log('Plant analysis notification sent successfully.');
+        } catch (notificationError) {
+            console.error('Failed to send plant analysis notification:', notificationError);
+            // Don't throw here as the main operation (saving the scan) was successful
+        }
+
         console.log('Plant image analysis complete.');
         return { success: "Plant image analysis complete" };
     }
@@ -105,6 +147,24 @@ class PlantImageRunner {
 
 			if (output.status !== 'FINISHED') {
 				console.warn('Plant AI Workflow blocked.');
+				
+				// Create a notification for workflow failure
+				try {
+					await notificationService.sendRealTimeNotification(username, {
+						type: NotificationType.SYSTEM_ALERT,
+						title: 'Plant Analysis Failed',
+						message: 'There was an issue processing your plant image. Please try again later.',
+						metadata: {
+							farmName: params.farmName,
+							cropType: params.cropType,
+							analysisType: 'plant_scan',
+							error: 'Workflow blocked during image analysis'
+						}
+					});
+				} catch (notificationError) {
+					console.error('Failed to send workflow failure notification:', notificationError);
+				}
+				
 				throw new Error('Workflow blocked during image analysis.');
 			}
 
@@ -112,6 +172,25 @@ class PlantImageRunner {
 
 		} catch (error: any) {
 			console.error('Error analyzing plant image:', error);
+			
+			// Create a notification for general analysis failure
+			try {
+				const username = await this.tokenService.verifyAccessToken(token);
+				await notificationService.sendRealTimeNotification(username, {
+					type: NotificationType.SYSTEM_ALERT,
+					title: 'Plant Analysis Error',
+					message: 'An unexpected error occurred while analyzing your plant image. Please try again.',
+					metadata: {
+						farmName: params.farmName,
+						cropType: params.cropType,
+						analysisType: 'plant_scan',
+						error: error.message || 'Unknown error'
+					}
+				});
+			} catch (notificationError) {
+				console.error('Failed to send general error notification:', notificationError);
+			}
+			
 			throw new Error('Failed to process plant image analysis.');
 		}
 	}
