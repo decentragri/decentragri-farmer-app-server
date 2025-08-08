@@ -98,7 +98,7 @@ class PlantImageRunner {
         // Create a notification for successful plant analysis
         try {
             await notificationService.sendRealTimeNotification(username, {
-                type: NotificationType.RECOMMENDATION,
+                type: NotificationType.PLANT_SCAN_COMPLETED,
                 title: 'Plant Analysis Complete',
                 message: `Your plant scan for ${params.farmName} has been analyzed successfully. Diagnosis: ${
                     typeof interpretation === 'object' ? interpretation.Diagnosis : 'Analysis completed'

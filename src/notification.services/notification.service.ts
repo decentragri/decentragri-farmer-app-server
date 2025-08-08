@@ -77,7 +77,6 @@ export class NotificationService implements INotificationService {
                 false
             );
             
-            console.log(`Notification saved successfully. Result:`, result);
             return newNotification;
         } catch (error) {
             console.error('Failed to save notification:', error);
