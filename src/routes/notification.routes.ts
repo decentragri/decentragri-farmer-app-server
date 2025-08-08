@@ -23,9 +23,13 @@ const NotificationRoutes = (app: Elysia) =>
             // Get all notifications for a user (paginated)
             .get('/', async ({ username, query: { limit = '50', offset = '0' } }) => {
                 try {
+                    console.log('Route received query parameters:', { limit, offset, limitType: typeof limit, offsetType: typeof offset });
+                    
                     // Convert string parameters to integers with proper validation
                     const limitInt = parseInt(limit as string, 10);
                     const offsetInt = parseInt(offset as string, 10);
+                    
+                    console.log('Route parsed parameters:', { limitInt, offsetInt, limitIntType: typeof limitInt, offsetIntType: typeof offsetInt });
                     
                     // Validate parameters
                     if (isNaN(limitInt) || limitInt < 1 || limitInt > 1000) {

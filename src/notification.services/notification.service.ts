@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { Driver, Session } from "neo4j-driver";
+import neo4j, { Driver, Session } from "neo4j-driver";
 import { getDriver } from "../db/memgraph";
 import { NotificationType } from "./notification.interface";
 import type { INotification, INotificationService } from "./notification.interface";
@@ -158,23 +158,37 @@ export class NotificationService implements INotificationService {
 
     public async getAllNotifications(username: string, limit: number = 50, offset: number = 0): Promise<INotification[]> {
         try {
+            console.log('Raw parameters received:', { username, limit, offset, limitType: typeof limit, offsetType: typeof offset });
+            
             // Ensure limit and offset are integers
             const limitInt = parseInt(limit.toString(), 10);
             const offsetInt = parseInt(offset.toString(), 10);
             
+            console.log('Parsed parameters:', { limitInt, offsetInt, limitIntType: typeof limitInt, offsetIntType: typeof offsetInt });
+            
             // Validate the parsed integers
             if (isNaN(limitInt) || limitInt < 0) {
+                console.error('Invalid limit:', { limit, limitInt });
                 throw new Error('Limit must be a valid positive integer');
             }
             if (isNaN(offsetInt) || offsetInt < 0) {
+                console.error('Invalid offset:', { offset, offsetInt });
                 throw new Error('Offset must be a valid non-negative integer');
             }
             
             console.log(`Fetching notifications for user: ${username}, limit: ${limitInt}, offset: ${offsetInt}`);
             
+            // Log the actual parameters being sent to the query
+            const queryParams = { 
+                userId: username, 
+                limit: neo4j.int(limitInt), 
+                offset: neo4j.int(offsetInt) 
+            };
+            console.log('Query parameters with neo4j.int():', queryParams);
+            
             const result: INotification[] = await this.executeQuery<INotification[]>(
                 NotificationQueries.GET_ALL, 
-                { userId: username, limit: limitInt, offset: offsetInt }
+                queryParams
             );
             return result.map(record => ({
                 ...record,
