@@ -21,26 +21,8 @@ const NotificationRoutes = (app: Elysia) =>
             })
             
             // Get all notifications for a user (paginated)
-    .get('/api/notifications', async ({ headers, query }) => {
+    .get('/', async ({ username, query }) => {
         try {
-            const authHeader = headers.authorization;
-            if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                return {
-                    success: false,
-                    message: 'Missing or invalid authorization header'
-                };
-            }
-
-            const token = authHeader.substring(7);
-            const tokenService = new TokenService();
-            const username = await tokenService.verifyAccessToken(token);
-            if (!username) {
-                return {
-                    success: false,
-                    message: 'Invalid or expired token'
-                };
-            }
-
             const limit = parseInt(query.limit || '50', 10);
             const offset = parseInt(query.offset || '0', 10);
 
