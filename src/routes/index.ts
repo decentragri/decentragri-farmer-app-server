@@ -7,7 +7,8 @@ import Weather from "./weather.routes";
 import PlantAI from "./plant-ai.routes";
 import Farmer from "./farm.routes";
 import Community from "./community.routes";
-import NotificationRoutes from "./websocket/notification.routes";
+import Notification from "./notification.routes";
+
 const routes = (app: any): void => {
     [
         Auth,
@@ -18,9 +19,7 @@ const routes = (app: any): void => {
         Weather,
         Farmer,
         Community,
-
-        //** WEBSOCKET ROUTES */
-        NotificationRoutes
+        Notification
     ].forEach(route => route(app));
 }
 

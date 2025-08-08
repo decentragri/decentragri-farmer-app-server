@@ -85,7 +85,7 @@ class WalletService {
         ethPrice,
         swellPrice
       ] = await Promise.all([
-        engine.backendWallet.getBalance("1", walletAddress),
+        engine.backendWallet.getBalance("8453", walletAddress),
         engine.backendWallet.getBalance(CHAIN, walletAddress),
         engine.erc20.balanceOf(walletAddress, CHAIN, DECENTRAGRI_TOKEN),
         engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),

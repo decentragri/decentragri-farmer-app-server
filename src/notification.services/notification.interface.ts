@@ -30,5 +30,8 @@ export interface INotificationService {
     getUnreadNotifications(userId: string): Promise<INotification[]>;
     getNotificationById(notificationId: string): Promise<INotification | null>;
     markAsRead(notificationId: string): Promise<boolean>;
-    sendRealTimeNotification(userId: string, notification: Omit<INotification, 'id' | 'timestamp' | 'read' | 'userId'>): Promise<void>;
+    sendRealTimeNotification(userId: string, notification: Omit<INotification, 'id' | 'timestamp' | 'read' | 'userId'>): Promise<INotification>;
+    getLatestNotification(userId: string): Promise<INotification | null>;
+    getAllNotifications(userId: string, limit?: number, offset?: number): Promise<INotification[]>;
+    getUnreadCount(userId: string): Promise<number>;
 }

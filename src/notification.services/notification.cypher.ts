@@ -68,5 +68,16 @@ export const NotificationQueries = {
         MATCH (u:User {id: $userId})-[:RECEIVED]->(n:Notification)
         WHERE n.read = false
         RETURN count(n) as count
+    `,
+
+    /**
+     * Gets the latest notification for a user
+     * Parameters: { userId }
+     */
+    GET_LATEST: `
+        MATCH (u:User {id: $userId})-[:RECEIVED]->(n:Notification)
+        RETURN n
+        ORDER BY n.timestamp DESC
+        LIMIT 1
     `
 } as const;

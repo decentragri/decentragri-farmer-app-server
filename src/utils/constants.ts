@@ -25,12 +25,13 @@ export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmet
 export const SECRET_KEY: string = process.env.SECRET_KEY || ""
 export const CLIENT_ID: string = process.env.CLIENT_ID || ""
 // Chain and Wallet Factory Configuration
-export const CHAIN: string  = process.env.CHAIN || "1923"; // SWELL CHAIN
+export const CHAIN: string  = process.env.CHAIN || "8453"; // SWELL CHAIN
 
 // Contract Addresses
-export const DECENTRAGRI_TOKEN: string = '0x10fB9F8c0D73140b8Ec250ec3B0eE5B79A4457e6';
-export const SCAN_EDITION_ADDRESS: string = '0x3Ac943b9509b7d9C9E0010a407c81dDC6011597c';
-export const PLANT_SCAN_EDITION_ADDRESS: string = '0xc2500A85296D23dC7EEF599EcEEE5F626A423cB7'
+export const DECENTRAGRI_TOKEN: string = '0xF21C7E1DC1dB0903C2A4BC015A9825081682D448';
+export const SCAN_EDITION_ADDRESS: string = '0x2845Ab5A649f128D45119B57F310655430bB2B5F';
+export const PLANT_SCAN_EDITION_ADDRESS: string = '0xff3d1bBe9D7FE776c20853Ecc6858c341913e51C'
+
 export const RSWETH_ADDRESS: string = "0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0"
 
 export const ENGINE_ACCESS_TOKEN: string = process.env.ENGINE_ACCESS_TOKEN || ""

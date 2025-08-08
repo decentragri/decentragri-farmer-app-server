@@ -106,17 +106,58 @@ export class NotificationService implements INotificationService {
     public async sendRealTimeNotification(
         userId: string, 
         notification: Omit<INotification, 'id' | 'timestamp' | 'read' | 'userId'>
-    ): Promise<void> {
+    ): Promise<INotification> {
         try {
-            await this.createNotification({...notification, userId});
+            const createdNotification = await this.createNotification({...notification, userId});
 
-            console.log(`[Real-time Notification] ${notification.title} - ${notification.message}`);
+            console.log(`[Notification Created] ${notification.title} - ${notification.message}`);
             
-            // In a real implementation, you would send this via WebSocket
-            // this.websocketServer.to(userId).emit('notification', fullNotification);
+            return createdNotification;
         } catch (error) {
-            console.error('Failed to send real-time notification:', error);
-            // Don't rethrow to prevent breaking the main operation
+            console.error('Failed to create notification:', error);
+            throw new Error('Failed to create notification');
+        }
+    }
+
+    public async getLatestNotification(userId: string): Promise<INotification | null> {
+        try {
+            const result: INotification[] = await this.executeQuery<INotification[]>(NotificationQueries.GET_LATEST, { userId });
+            if (result.length === 0) return null;
+            
+            const notification = result[0];
+            return {
+                ...notification,
+                timestamp: new Date(notification.timestamp.toString())
+            };
+        } catch (error) {
+            console.error('Failed to fetch latest notification:', error);
+            return null;
+        }
+    }
+
+    public async getAllNotifications(userId: string, limit: number = 50, offset: number = 0): Promise<INotification[]> {
+        try {
+            const result: INotification[] = await this.executeQuery<INotification[]>(
+                NotificationQueries.GET_ALL, 
+                { userId, limit, offset }
+            );
+            return result.map(record => ({
+                ...record,
+                timestamp: new Date(record.timestamp.toString())
+            }));
+        } catch (error) {
+            console.error('Failed to fetch notifications:', error);
+            return [];
+        }
+    }
+
+    public async getUnreadCount(userId: string): Promise<number> {
+        try {
+            const result = await this.executeQuery<{count: number}[]>(NotificationQueries.GET_UNREAD_COUNT, { userId });
+            return result[0]?.count || 0;
+        } catch (error) {
+            console.error('Failed to fetch unread count:', error);
+            return 0;
         }
     }
 }
