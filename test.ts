@@ -23,6 +23,19 @@ const STAKING_ABI = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "stake",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
     }
 ];
     export const getCurrentWeather = async (lat: number, lng: number): Promise<any> => {
@@ -227,6 +240,7 @@ const depositRewardTokens = async (amount: string): Promise<{ result: { queueId:
         const amountInWei = parseEther(amount).toString();
         console.log(`Converting ${amount} tokens to wei: ${amountInWei}`);
 
+
         // First, set allowance for the staking contract to spend tokens
         console.log("Setting allowance for staking contract...");
         await engine.erc20.setAllowance(CHAIN, DECENTRAGRI_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, {
@@ -254,12 +268,42 @@ const depositRewardTokens = async (amount: string): Promise<{ result: { queueId:
 
 
 
-await depositRewardTokens("10000000"); // Example amount - 10 million tokens
+// await depositRewardTokens("10000000"); // Example amount - 10 million tokens
 
 
 
 
 
+const stakeToken = async (amount: string): Promise<{ result: { queueId: string } }> => {
+    try {
+        // Convert amount to proper token units (assuming 18 decimals for DECENTRAGRI_TOKEN)
+        const amountInWei = parseEther(amount).toString();
+        console.log(`Converting ${amount} tokens to wei: ${amountInWei}`);
 
 
+        // First, set allowance for the staking contract to spend tokens
+        console.log("Setting allowance for staking contract...");
+        await engine.erc20.setAllowance(CHAIN, DECENTRAGRI_TOKEN, "0x11C580c4Cefe8FC03aF1B2Edaf6D5878dbd1B2F6", {
+            spenderAddress: STAKING_ADDRESS,
+            amount: amountInWei
+        });
 
+        console.log("Allowance set successfully, now staking tokens...");
+
+        // Call the stakeTokens function on the staking contract
+        const result = await engine.contract.write(CHAIN, STAKING_ADDRESS, "0x11C580c4Cefe8FC03aF1B2Edaf6D5878dbd1B2F6", {
+            functionName: "stake(uint256)",
+            args: [amountInWei],
+            abi: STAKING_ABI,
+        });
+
+        console.log("Stake successful:", result);
+        return result;
+
+    } catch (error) {
+        console.error("Error staking tokens:", error);
+        throw new Error(`Failed to stake tokens: ${error}`);
+    }
+};
+
+await stakeToken("5000000"); // Example amount - 5 million tokens

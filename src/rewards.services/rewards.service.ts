@@ -29,7 +29,7 @@ class RewardsService {
             await notificationService.sendRealTimeNotification(username, {
                 type: NotificationType.REWARD,
                 title: 'Plant Scan Reward',
-                message: `You have received a reward of ${amount} for your plant scan.`,
+                message: `You have received a reward of ${amount} FDAGRI for your plant scan.`,
                 metadata: {
                     farmName,
                     rewardAmount: amount
