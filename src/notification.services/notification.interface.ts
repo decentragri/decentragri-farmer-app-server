@@ -4,7 +4,8 @@ export enum NotificationType {
     NFT_MINTED = 'NFT_MINTED',
     FARM_UPDATE = 'FARM_UPDATE',
     SYSTEM_ALERT = 'SYSTEM_ALERT',
-    RECOMMENDATION = 'RECOMMENDATION'
+    RECOMMENDATION = 'RECOMMENDATION',
+    REWARD = 'REWARD'
 }
 
 export interface NotificationMetadata {

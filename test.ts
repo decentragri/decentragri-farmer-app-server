@@ -1,10 +1,30 @@
 import { createServerWallet } from "thirdweb/engine";
-import { CLIENT_ID, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY, WEATHER_API_KEY } from "./src/utils/constants";
+import { CHAIN, CLIENT_ID, DECENTRAGRI_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, SECRET_KEY, STAKING_ADDRESS, WEATHER_API_KEY } from "./src/utils/constants";
 import { createThirdwebClient, Engine, getContract } from "thirdweb"
 import { mintTo } from "thirdweb/extensions/erc1155";
 import type { PlantImageScanParams } from "./src/ai.services/plant.ai.team.service/plant.interface";
-import { arbitrumSepolia, base, baseSepolia, polygon } from "thirdweb/chains";
-import { transactionContract } from "./src/utils/utils.thirdweb";
+import { arbitrumSepolia } from "thirdweb/chains";
+
+import { engine } from "./src/wallet.services/wallet.service";
+import { parseEther } from "ethers";
+
+
+// Staking Contract ABI with depositRewardTokens function
+const STAKING_ABI = [
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "depositRewardTokens",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+];
     export const getCurrentWeather = async (lat: number, lng: number): Promise<any> => {
         const url: string = `http://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${lat},${lng}`;
         const response = await fetch(url);
@@ -137,7 +157,7 @@ const savePlantScanToNFT = async (data: PlantImageScanParams,image: string | num
         },
         attributes,
     };
-
+    
     const transaction = mintTo({
         contract,
         to: "0x17dE000e4E342a74E77EDf6C94aC211099BE4862",
@@ -158,13 +178,13 @@ const savePlantScanToNFT = async (data: PlantImageScanParams,image: string | num
     }
 }
 
-savePlantScanToNFT({
-    farmName: "Farm 1",
-    cropType: "Tomato",
-    note: "No additional notes",
-    interpretation: "Healthy plant",
-    imageBytes: "https://d391b93f5f62d9c15f67142e43841acc.ipfscdn.io/ipfs/QmdRtWRHQwEkKA7nciqRQmgW7y6yygT589aogfUYaoc3Ea/ChatGPT%20Image%20Apr%2021%2C%202025%2C%2012_14_42%20PM.png"
-}, "https://example.com/image.jpg");
+// savePlantScanToNFT({
+//     farmName: "Farm 1",
+//     cropType: "Tomato",
+//     note: "No additional notes",
+//     interpretation: "Healthy plant",
+//     imageBytes: "https://d391b93f5f62d9c15f67142e43841acc.ipfscdn.io/ipfs/QmdRtWRHQwEkKA7nciqRQmgW7y6yygT589aogfUYaoc3Ea/ChatGPT%20Image%20Apr%2021%2C%202025%2C%2012_14_42%20PM.png"
+// }, "https://example.com/image.jpg");
 
 
 
@@ -195,5 +215,51 @@ const byteArrayParams: PlantImageScanParams = {
 // Uncomment to run the example with byte array
 // savePlantScanToNFT(byteArrayParams, byteArrayExample, "username");
 */
+
+
+
+
+
+
+const depositRewardTokens = async (amount: string): Promise<{ result: { queueId: string } }> => {
+    try {
+        // Convert amount to proper token units (assuming 18 decimals for DECENTRAGRI_TOKEN)
+        const amountInWei = parseEther(amount).toString();
+        console.log(`Converting ${amount} tokens to wei: ${amountInWei}`);
+
+        // First, set allowance for the staking contract to spend tokens
+        console.log("Setting allowance for staking contract...");
+        await engine.erc20.setAllowance(CHAIN, DECENTRAGRI_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, {
+            spenderAddress: STAKING_ADDRESS, 
+            amount: amountInWei
+        });
+
+        console.log("Allowance set successfully, now depositing reward tokens...");
+
+        // Call the depositRewardTokens function on the staking contract
+        const result = await engine.contract.write(CHAIN, STAKING_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, {
+            functionName: "depositRewardTokens(uint256)",
+            args: [amountInWei],
+            abi: STAKING_ABI,
+        });
+
+        console.log("Deposit successful:", result);
+        return result;
+
+    } catch (error) {
+        console.error("Error depositing reward tokens:", error);
+        throw new Error(`Failed to deposit reward tokens: ${error}`);
+    }
+};
+
+
+
+await depositRewardTokens("10000000"); // Example amount - 10 million tokens
+
+
+
+
+
+
 
 

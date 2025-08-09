@@ -9,6 +9,7 @@ import type { SuccessMessage } from '../../onchain.services/onchain.interface';
 import type { AnalysisResult, PlantImageSessionParams } from "./plant.interface";
 import type { ParsedInterpretation } from "../../plant.services/plantscan.interface";
 import { NotificationType } from '../../notification.services/notification.interface';
+import RewardsService from '../../rewards.services/rewards.service';
 
 class PlantImageRunner {
     private tokenService = new TokenService();
@@ -139,17 +140,23 @@ class PlantImageRunner {
      * @returns SuccessMessage containing client-generated id
      */
 	public async analyzeFromApi(token: string, params: PlantImageSessionParams): Promise<SuccessMessage> {
+        const rewardService = new RewardsService();
 		try {
 			const username = await this.tokenService.verifyAccessToken(token);
 			console.log('API Request: Analyzing uploaded plant image...');
 
 			const output = await this.plantImageTeam.start(params);
+            await rewardService.sendPlantScanRewards('10', username, params.farmName);
 
 			if (output.status !== 'FINISHED') {
 				console.warn('Plant AI Workflow blocked.');
 				
 				// Create a notification for workflow failure
 				try {
+                    
+
+
+
 					await notificationService.sendRealTimeNotification(username, {
 						type: NotificationType.SYSTEM_ALERT,
 						title: 'Plant Analysis Failed',

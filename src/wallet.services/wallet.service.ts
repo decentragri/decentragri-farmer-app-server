@@ -16,7 +16,7 @@ import TokenService from "../security.services/token.service";
 
 
 export const engine: Engine = new Engine({
-  url: ENGINE_URI,
+  url: "https://engine.decentragri.com",
   accessToken: ENGINE_ACCESS_TOKEN,
   
 });
