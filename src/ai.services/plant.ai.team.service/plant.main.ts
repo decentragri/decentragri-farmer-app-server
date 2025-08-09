@@ -146,17 +146,13 @@ class PlantImageRunner {
 			console.log('API Request: Analyzing uploaded plant image...');
 
 			const output = await this.plantImageTeam.start(params);
-            await rewardService.sendPlantScanRewards('10', username, params.farmName);
+            
 
 			if (output.status !== 'FINISHED') {
 				console.warn('Plant AI Workflow blocked.');
 				
 				// Create a notification for workflow failure
 				try {
-                    
-
-
-
 					await notificationService.sendRealTimeNotification(username, {
 						type: NotificationType.SYSTEM_ALERT,
 						title: 'Plant Analysis Failed',
@@ -174,7 +170,7 @@ class PlantImageRunner {
 				
 				throw new Error('Workflow blocked during image analysis.');
 			}
-
+            await rewardService.sendPlantScanRewards('10', username, params.farmName);
 			return await this.handleAnalysisResult(output, params, username);
 
 		} catch (error: any) {
