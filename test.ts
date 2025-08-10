@@ -471,3 +471,32 @@ const getStakeInfo = async (address: string): Promise<any> => {
 };
 
 await getStakeInfo("0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e")
+
+const getStakers = async (address: string): Promise<any> => {
+    try {
+        const stakerData = await engine.contract.read("stakers", CHAIN, STAKING_ADDRESS, address, STAKING_ABI)
+
+        console.log(`Stakers information for ${address}: ${stakerData.result}`);
+        
+        const [timeOfLastUpdate, conditionIdOflastUpdate, amountStaked, unclaimedRewards] = stakerData.result as string[];
+        
+        console.log(`Time of last update: ${timeOfLastUpdate}`);
+        console.log(`Condition ID of last update: ${conditionIdOflastUpdate}`);
+        console.log(`Amount staked (wei): ${amountStaked}`);
+        console.log(`Unclaimed rewards (wei): ${unclaimedRewards}`);
+        
+        // Convert to human readable format
+        const amountStakedFormatted = parseFloat(amountStaked) / Math.pow(10, 18);
+        const unclaimedRewardsFormatted = parseFloat(unclaimedRewards) / Math.pow(10, 18);
+        
+        console.log(`Amount staked (formatted): ${amountStakedFormatted} tokens`);
+        console.log(`Unclaimed rewards (formatted): ${unclaimedRewardsFormatted} tokens`);
+        
+        return stakerData.result;
+    } catch (error) {
+        console.error("Error getting staker information:", error);
+        throw new Error(`Failed to get staker information: ${error}`);
+    }
+};
+
+await getStakers("0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e")
