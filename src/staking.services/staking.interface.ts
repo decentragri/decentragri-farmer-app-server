@@ -3,6 +3,7 @@ export interface StakeInfo {
     rewardAmountAccrued: string;  // Raw wei amount
     stakeAmountFormatted: string; // Human-readable amount (e.g., "10.5")
     rewardAmountFormattedAccrued: string; // Human-readable amount (e.g., "381.111")
+    releaseTimeFrame: ReleaseTimeFrame; // Release time frame information
 }
 
 export interface StakerInfo {

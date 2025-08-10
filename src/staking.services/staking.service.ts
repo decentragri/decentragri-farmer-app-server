@@ -2,14 +2,7 @@
 import { getDriver } from "../db/memgraph";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import TokenService from "../security.services/token.service";
-import { 
-    STAKE_ABI, 
-    GET_STAKE_INFO_ABI, 
-    STAKERS_ABI, 
-    CLAIM_REWARDS_ABI, 
-    WITHDRAW_ABI, 
-    GET_TIME_UNIT_ABI 
-} from "../utils/staking-abi-fragments";
+import { STAKE_ABI, GET_STAKE_INFO_ABI, STAKERS_ABI, CLAIM_REWARDS_ABI, WITHDRAW_ABI, GET_TIME_UNIT_ABI } from "../utils/staking-abi-fragments";
 import { CHAIN, FARMER_CREDIT_TOKEN, STAKING_ADDRESS } from "../utils/constants";
 
 //** ENGINE IMPORT */
@@ -74,11 +67,15 @@ class StakingService {
             const stakeAmountFormatted = formatEther(stakeAmount);
             const rewardAmountFormattedAccrued = formatEther(rewardAmountAccrued);
 
+            // Get release time frame information
+            const releaseTimeFrame = await this.getReleaseTimeFrame(token);
+
             return { 
                 stakeAmount, 
                 rewardAmountAccrued,
                 stakeAmountFormatted,
-                rewardAmountFormattedAccrued
+                rewardAmountFormattedAccrued,
+                releaseTimeFrame
             };
         } catch (error) {
             console.error("Error getting stake information:", error);

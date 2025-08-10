@@ -17,82 +17,8 @@ import {
     STAKERS_ABI, 
     GET_TIME_UNIT_ABI 
 } from "./src/utils/staking-abi-fragments";
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    // Additional common reward functions
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            }
-        ],
-        "name": "earned",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "account",
-                "type": "address"
-            }
-        ],
-        "name": "rewardOf",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "totalRewards",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "rewardRate",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
-    export const getCurrentWeather = async (lat: number, lng: number): Promise<any> => {
+
+export const getCurrentWeather = async (lat: number, lng: number): Promise<any> => {
         const url: string = `http://api.weatherapi.com/v1/current.json?key=${WEATHER_API_KEY}&q=${lat},${lng}`;
         const response = await fetch(url);
         if (!response.ok) {
@@ -308,7 +234,7 @@ const depositRewardTokens = async (amount: string): Promise<{ result: { queueId:
         const result = await engine.contract.write(CHAIN, STAKING_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, {
             functionName: "depositRewardTokens(uint256)",
             args: [amountInWei],
-            abi: STAKING_ABI,
+            abi: DEPOSIT_REWARD_TOKENS_ABI,
         });
 
         console.log("Deposit successful:", result);
@@ -348,7 +274,7 @@ const stakeToken = async (amount: string): Promise<{ result: { queueId: string }
         const result = await engine.contract.write(CHAIN, STAKING_ADDRESS, "0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e", {
             functionName: "stake(uint256)",
             args: [amountInWei],
-            abi: STAKING_ABI,
+            abi: STAKE_ABI,
         });
 
         console.log("Stake successful:", result);
@@ -423,7 +349,7 @@ const stakeToken = async (amount: string): Promise<{ result: { queueId: string }
 
 const getRewardTokenBalance = async (address: string): Promise<any> => {
     try {
-        const balance = await engine.contract.read("getRewardTokenBalance()", CHAIN, STAKING_ADDRESS, "", STAKING_ABI)
+        const balance = await engine.contract.read("getRewardTokenBalance()", CHAIN, STAKING_ADDRESS, "", GET_REWARD_TOKEN_BALANCE_ABI)
 
         console.log(`Reward token balance for ${address}: ${balance}`);
         return balance;
@@ -436,7 +362,7 @@ const getRewardTokenBalance = async (address: string): Promise<any> => {
 
 const getStakeInfo = async (address: string): Promise<any> => {
     try {
-        const stakeInfo = await engine.contract.read("getStakeInfo", CHAIN, STAKING_ADDRESS, address, STAKING_ABI)
+        const stakeInfo = await engine.contract.read("getStakeInfo", CHAIN, STAKING_ADDRESS, address, GET_STAKE_INFO_ABI)
 
         console.log(`Stake information for ${address}: ${stakeInfo}`);
         return stakeInfo;
@@ -450,7 +376,7 @@ await getStakeInfo("0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e")
 
 const getStakers = async (address: string): Promise<any> => {
     try {
-        const stakerData = await engine.contract.read("stakers", CHAIN, STAKING_ADDRESS, address, STAKING_ABI)
+        const stakerData = await engine.contract.read("stakers", CHAIN, STAKING_ADDRESS, address, STAKERS_ABI)
 
         console.log(`Stakers information for ${address}: ${stakerData.result}`);
         
@@ -479,7 +405,7 @@ await getStakers("0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e")
 
 const getReleaseTimeFrame = async (address: string): Promise<any> => {
     try {
-        const timeUnitData = await engine.contract.read("getTimeUnit", CHAIN, STAKING_ADDRESS, "", STAKING_ABI)
+        const timeUnitData = await engine.contract.read("getTimeUnit", CHAIN, STAKING_ADDRESS, "", GET_TIME_UNIT_ABI)
 
         console.log(`Time unit data: ${timeUnitData.result}`);
         
