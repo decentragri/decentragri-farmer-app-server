@@ -49,3 +49,34 @@ export const ANDROID_APP_HASH: string = process.env.ANDROID_APP_HASH || ""
 export const WEATHER_API_KEY: string = process.env.WEATHER_API_KEY || ""
 export const SEAWEED_MASTER: string = "http://decentragri-seaweed-master:9333"
 export const SEAWEED_VOLUME: string = "http://decentragri-seaweed-volume:8081"
+
+
+// Staking Contract ABI with depositRewardTokens function
+export const STAKING_ABI = [
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "depositRewardTokens",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "stake",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+];

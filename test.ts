@@ -1,5 +1,5 @@
 import { createServerWallet } from "thirdweb/engine";
-import { CHAIN, CLIENT_ID, DECENTRAGRI_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, SECRET_KEY, STAKING_ADDRESS, WEATHER_API_KEY } from "./src/utils/constants";
+import { CHAIN, CLIENT_ID, DECENTRAGRI_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, FARMER_CREDIT_TOKEN, SECRET_KEY, STAKING_ADDRESS, WEATHER_API_KEY } from "./src/utils/constants";
 import { createThirdwebClient, Engine, getContract } from "thirdweb"
 import { mintTo } from "thirdweb/extensions/erc1155";
 import type { PlantImageScanParams } from "./src/ai.services/plant.ai.team.service/plant.interface";
@@ -35,6 +35,84 @@ const STAKING_ABI = [
         "name": "stake",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "getRewardTokenBalance",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    // Additional common reward functions
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "earned",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "rewardOf",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalRewards",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "rewardRate",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     }
 ];
@@ -283,7 +361,7 @@ const stakeToken = async (amount: string): Promise<{ result: { queueId: string }
 
         // First, set allowance for the staking contract to spend tokens
         console.log("Setting allowance for staking contract...");
-        await engine.erc20.setAllowance(CHAIN, DECENTRAGRI_TOKEN, "0x11C580c4Cefe8FC03aF1B2Edaf6D5878dbd1B2F6", {
+        await engine.erc20.setAllowance(CHAIN, FARMER_CREDIT_TOKEN, "0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e", {
             spenderAddress: STAKING_ADDRESS,
             amount: amountInWei
         });
@@ -291,7 +369,7 @@ const stakeToken = async (amount: string): Promise<{ result: { queueId: string }
         console.log("Allowance set successfully, now staking tokens...");
 
         // Call the stakeTokens function on the staking contract
-        const result = await engine.contract.write(CHAIN, STAKING_ADDRESS, "0x11C580c4Cefe8FC03aF1B2Edaf6D5878dbd1B2F6", {
+        const result = await engine.contract.write(CHAIN, STAKING_ADDRESS, "0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e", {
             functionName: "stake(uint256)",
             args: [amountInWei],
             abi: STAKING_ABI,
@@ -306,4 +384,90 @@ const stakeToken = async (amount: string): Promise<{ result: { queueId: string }
     }
 };
 
-await stakeToken("5000000"); // Example amount - 5 million tokens
+// Function to check all available reward information
+// const checkRewardInfo = async (userAddress?: string): Promise<void> => {
+//     try {
+//         console.log("\n🔍 CHECKING REWARD INFORMATION...\n");
+
+//         // 1. Check total reward token balance in the contract
+//         try {
+//             const rewardBalance = await engine.contract.read("getRewardTokenBalance", CHAIN, STAKING_ADDRESS, undefined, STAKING_ABI);
+//             console.log("📊 Total Reward Token Balance:", rewardBalance.result);
+//         } catch (error: any) {
+//             console.log("❌ getRewardTokenBalance not available:", error?.message || error);
+//         }
+
+//         // 2. Check total rewards deposited
+//         try {
+//             const totalRewards = await engine.contract.read("totalRewards", CHAIN, STAKING_ADDRESS, undefined, STAKING_ABI);
+//             console.log("💰 Total Rewards:", totalRewards.result);
+//         } catch (error: any) {
+//             console.log("❌ totalRewards not available:", error?.message || error);
+//         }
+
+//         // 3. Check reward rate
+//         try {
+//             const rewardRate = await engine.contract.read("rewardRate", CHAIN, STAKING_ADDRESS, undefined, STAKING_ABI);
+//             console.log("⚡ Reward Rate:", rewardRate.result);
+//         } catch (error: any) {
+//             console.log("❌ rewardRate not available:", error?.message || error);
+//         }
+
+//         // 4. If user address provided, check user-specific rewards
+//         if (userAddress) {
+//             console.log(`\n👤 Checking rewards for address: ${userAddress}`);
+            
+//             // Check earned rewards
+//             try {
+//                 const earned = await engine.contract.read("earned", CHAIN, STAKING_ADDRESS, userAddress, STAKING_ABI);
+//                 console.log("🎁 Earned Rewards:", earned.result);
+//             } catch (error: any) {
+//                 console.log("❌ earned function not available:", error?.message || error);
+//             }
+
+//             // Check rewardOf
+//             try {
+//                 const rewardOf = await engine.contract.read("rewardOf", CHAIN, STAKING_ADDRESS, userAddress, STAKING_ABI);
+//                 console.log("💎 RewardOf:", rewardOf.result);
+//             } catch (error: any) {
+//                 console.log("❌ rewardOf function not available:", error?.message || error);
+//             }
+//         }
+
+//         console.log("\n✅ Reward check completed!\n");
+
+//     } catch (error: any) {
+//         console.error("❌ Error checking reward info:", error?.message || error);
+//     }
+// };
+
+// await checkRewardInfo("0x8049566097B6163C7c61d9085076C2dAaa4C41Bf"); // Check rewards for a specific address
+
+
+
+const getRewardTokenBalance = async (address: string): Promise<any> => {
+    try {
+        const balance = await engine.contract.read("getRewardTokenBalance()", CHAIN, STAKING_ADDRESS, "", STAKING_ABI)
+
+        console.log(`Reward token balance for ${address}: ${balance}`);
+        return balance;
+    } catch (error) {
+        console.error("Error getting reward token balance:", error);
+        throw new Error(`Failed to get reward token balance: ${error}`);
+    }
+};
+
+
+const getStakeInfo = async (address: string): Promise<any> => {
+    try {
+        const stakeInfo = await engine.contract.read("getStakeInfo", CHAIN, STAKING_ADDRESS, address, STAKING_ABI)
+
+        console.log(`Stake information for ${address}: ${stakeInfo}`);
+        return stakeInfo;
+    } catch (error) {
+        console.error("Error getting stake information:", error);
+        throw new Error(`Failed to get stake information: ${error}`);
+    }
+};
+
+await getStakeInfo("0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e")
