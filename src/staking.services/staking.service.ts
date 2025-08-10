@@ -2,7 +2,14 @@
 import { getDriver } from "../db/memgraph";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import TokenService from "../security.services/token.service";
-import { STAKING_ABI } from "../utils/abi";
+import { 
+    STAKE_ABI, 
+    GET_STAKE_INFO_ABI, 
+    STAKERS_ABI, 
+    CLAIM_REWARDS_ABI, 
+    WITHDRAW_ABI, 
+    GET_TIME_UNIT_ABI 
+} from "../utils/staking-abi-fragments";
 import { CHAIN, FARMER_CREDIT_TOKEN, STAKING_ADDRESS } from "../utils/constants";
 
 //** ENGINE IMPORT */
@@ -38,7 +45,7 @@ class StakingService {
             await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
                 functionName: "stake(uint256 amount)",
                 args: [amountInWei],
-                abi: STAKING_ABI,
+                abi: STAKE_ABI,
             });
 
         } catch (error: any) {
@@ -59,7 +66,7 @@ class StakingService {
                 "getStakeInfo", 
                 CHAIN, STAKING_ADDRESS, 
                 walletAddress, 
-                STAKING_ABI)).result as string[]
+                GET_STAKE_INFO_ABI)).result as string[]
 
             const [stakeAmount, rewardAmountAccrued] = stakeInfo;
 
@@ -91,7 +98,7 @@ class StakingService {
             await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
                 functionName: "claimRewards()",
                 args: [],
-                abi: STAKING_ABI,
+                abi: CLAIM_REWARDS_ABI,
             });
 
         } catch (error: any) {
@@ -114,7 +121,7 @@ class StakingService {
             await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
                 functionName: "withdraw(uint256)",
                 args: [amountInWei],
-                abi: STAKING_ABI,
+                abi: WITHDRAW_ABI,
             });
 
 
@@ -140,7 +147,7 @@ class StakingService {
                 "stakers", 
                 CHAIN, STAKING_ADDRESS, 
                 walletAddress, 
-                STAKING_ABI)).result as string[]
+                STAKERS_ABI)).result as string[]
 
             const [timeOfLastUpdate, conditionIdOflastUpdate, amountStaked, unclaimedRewards] = stakerData;
 
@@ -175,7 +182,7 @@ class StakingService {
                 "getTimeUnit", 
                 CHAIN, STAKING_ADDRESS, 
                 "", 
-                STAKING_ABI)).result as string;
+                GET_TIME_UNIT_ABI)).result as string;
 
             const timeUnit = timeUnitData;
 

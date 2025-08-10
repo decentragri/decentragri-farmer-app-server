@@ -8,39 +8,15 @@ import { arbitrumSepolia } from "thirdweb/chains";
 import { engine } from "./src/wallet.services/wallet.service";
 import { parseEther } from "ethers";
 
-
-// Staking Contract ABI with depositRewardTokens function
-const STAKING_ABI = [
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "depositRewardTokens",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "_amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "stake",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "getRewardTokenBalance",
-        "outputs": [
+// Import specific ABI fragments
+import { 
+    DEPOSIT_REWARD_TOKENS_ABI, 
+    STAKE_ABI, 
+    GET_REWARD_TOKEN_BALANCE_ABI, 
+    GET_STAKE_INFO_ABI, 
+    STAKERS_ABI, 
+    GET_TIME_UNIT_ABI 
+} from "./src/utils/staking-abi-fragments";
             {
                 "internalType": "uint256",
                 "name": "",
