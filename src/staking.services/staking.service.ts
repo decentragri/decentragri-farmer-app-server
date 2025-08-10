@@ -187,16 +187,31 @@ class StakingService {
             const timeUnitSeconds = parseInt(timeUnit);
             let timeUnitFormatted = `${timeUnitSeconds} seconds`;
             
-            // Add more readable format
+            // Add more readable format with proper calculations
             if (timeUnitSeconds >= 86400) {
                 const days = Math.floor(timeUnitSeconds / 86400);
-                timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''})`;
+                const remainingHours = Math.floor((timeUnitSeconds % 86400) / 3600);
+                if (remainingHours > 0) {
+                    timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''})`;
+                } else {
+                    timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''})`;
+                }
             } else if (timeUnitSeconds >= 3600) {
                 const hours = Math.floor(timeUnitSeconds / 3600);
-                timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''})`;
+                const remainingMinutes = Math.floor((timeUnitSeconds % 3600) / 60);
+                if (remainingMinutes > 0) {
+                    timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''})`;
+                } else {
+                    timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''})`;
+                }
             } else if (timeUnitSeconds >= 60) {
                 const minutes = Math.floor(timeUnitSeconds / 60);
-                timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
+                const remainingSeconds = timeUnitSeconds % 60;
+                if (remainingSeconds > 0) {
+                    timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds > 1 ? 's' : ''})`;
+                } else {
+                    timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
+                }
             }
 
             return { 
