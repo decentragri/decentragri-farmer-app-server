@@ -17,7 +17,7 @@ import type { StakeInfo, StakerInfo, ReleaseTimeFrame } from "./staking.interfac
 
 class StakingService {
 
-    public async stakeToken(token: string, stakeData: { amount: string }): Promise<void> {
+    public async stakeToken(token: string, stakeData: { amount: string }): Promise<SuccessMessage> {
         const driver = getDriver()
         const tokenService = new TokenService();
         const walletService = new WalletService(driver);
@@ -35,11 +35,22 @@ class StakingService {
             console.log("Allowance set successfully, now staking tokens...");
     
             // Call the stakeTokens function on the staking contract
-            await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
+            const tx = await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
                 functionName: "stake(uint256 amount)",
                 args: [amountInWei],
                 abi: STAKE_ABI,
             });
+
+
+            
+
+            await walletService.ensureTransactionMined(tx.result.queueId);
+            const txResult = (await engine.transaction.status(tx.result.queueId)).result;
+            if (txResult.status === "mined") {
+                return { success: "Tokens staked successfully" };
+            }
+
+            return { error: "Failed to stake tokens" };
 
         } catch (error: any) {
             console.error("Error staking tokens:", error);
@@ -83,6 +94,7 @@ class StakingService {
         }
     }
 
+
     public async claimRewards(token: string): Promise<void> {
         const driver = getDriver()
         const tokenService = new TokenService();
@@ -103,6 +115,7 @@ class StakingService {
             throw new Error("Failed to claim rewards");
         }
     }
+
 
     public async withdraw(token: string, stakeData:  { amount: string}): Promise<SuccessMessage> {
         const driver = getDriver()
