@@ -14,13 +14,42 @@ import { parseEther, formatEther } from "ethers";
 //** INTERFACE IMPORT */
 import type { StakeInfo, StakerInfo, ReleaseTimeFrame } from "./staking.interface";
 
+//** NOTIFICATION IMPORT */
+import { NotificationService } from "../notification.services/notification.service";
+import { NotificationType } from "../notification.services/notification.interface";
+
+//** CACHE IMPORT */
+import CacheService from "../utils/redis.service";
+
 
 class StakingService {
+    private cache: CacheService;
+
+    constructor() {
+        this.cache = CacheService.getInstance();
+    }
+
+    private getCacheKey(method: string, userId: string): string {
+        return `staking:${method}:${userId}`;
+    }
+
+    private getGlobalCacheKey(method: string): string {
+        return `staking:global:${method}`;
+    }
+
+    private async invalidateUserCache(userId: string): Promise<void> {
+        await this.cache.delPattern(`staking:*:${userId}`);
+    }
+
+    public getCacheStatus(): { type: string; connected: boolean; itemCount: number } {
+        return this.cache.getCacheStatus();
+    }
 
     public async stakeToken(token: string, stakeData: { amount: string }): Promise<SuccessMessage> {
         const driver = getDriver()
         const tokenService = new TokenService();
         const walletService = new WalletService(driver);
+        const notificationService = NotificationService.getInstance();
         try {
             const username: string = await tokenService.verifyAccessToken(token);
             const walletAddress: string = await walletService.getSmartWalletAddress(username);
@@ -41,12 +70,24 @@ class StakingService {
                 abi: STAKE_ABI,
             });
 
-
-            
-
             await walletService.ensureTransactionMined(tx.result.queueId);
             const txResult = (await engine.transaction.status(tx.result.queueId)).result;
             if (txResult.status === "mined") {
+                // Invalidate user's cache after successful staking
+                await this.invalidateUserCache(username);
+
+                // Create notification for successful staking
+                await notificationService.createNotification({
+                    userId: username,
+                    type: NotificationType.REWARD,
+                    title: "Tokens Staked Successfully",
+                    message: `Successfully staked ${stakeData.amount} FDAGRI tokens. You will start earning rewards now!`,
+                    metadata: {
+                        amount: stakeData.amount,
+                        transactionHash: txResult.transactionHash
+                    }
+                });
+
                 return { success: "Tokens staked successfully" };
             }
 
@@ -65,29 +106,34 @@ class StakingService {
         const walletService = new WalletService(driver);
         try {
             const username: string = await tokenService.verifyAccessToken(token);
-            const walletAddress: string = await walletService.getSmartWalletAddress(username);
-            const stakeInfo = await (await engine.contract.read(
-                "getStakeInfo", 
-                CHAIN, STAKING_ADDRESS, 
-                walletAddress, 
-                GET_STAKE_INFO_ABI)).result as string[]
+            const cacheKey = this.getCacheKey('getStakeInfo', username);
 
-            const [stakeAmount, rewardAmountAccrued] = stakeInfo;
+            // Try to get from cache first (cache for 30 seconds since stake info changes frequently)
+            return await this.cache.getOrSet(cacheKey, async () => {
+                const walletAddress: string = await walletService.getSmartWalletAddress(username);
+                const stakeInfo = await (await engine.contract.read(
+                    "getStakeInfo", 
+                    CHAIN, STAKING_ADDRESS, 
+                    walletAddress, 
+                    GET_STAKE_INFO_ABI)).result as string[]
 
-            //18 decimals
-            const stakeAmountFormatted = formatEther(stakeAmount);
-            const rewardAmountFormattedAccrued = formatEther(rewardAmountAccrued);
+                const [stakeAmount, rewardAmountAccrued] = stakeInfo;
 
-            // Get release time frame information
-            const releaseTimeFrame = await this.getReleaseTimeFrame(token);
+                //18 decimals
+                const stakeAmountFormatted = formatEther(stakeAmount);
+                const rewardAmountFormattedAccrued = formatEther(rewardAmountAccrued);
 
-            return { 
-                stakeAmount, 
-                rewardAmountAccrued,
-                stakeAmountFormatted,
-                rewardAmountFormattedAccrued,
-                releaseTimeFrame
-            };
+                // Get release time frame information (this will also be cached)
+                const releaseTimeFrame = await this.getReleaseTimeFrame(token);
+
+                return { 
+                    stakeAmount, 
+                    rewardAmountAccrued,
+                    stakeAmountFormatted,
+                    rewardAmountFormattedAccrued,
+                    releaseTimeFrame
+                };
+            }, 30); // Cache for 30 seconds
         } catch (error) {
             console.error("Error getting stake information:", error);
             throw new Error(`Failed to get stake information: ${error}`);
@@ -99,16 +145,36 @@ class StakingService {
         const driver = getDriver()
         const tokenService = new TokenService();
         const walletService = new WalletService(driver);
+        const notificationService = NotificationService.getInstance();
         try {
             const username: string = await tokenService.verifyAccessToken(token);
             const walletAddress: string = await walletService.getSmartWalletAddress(username);
 
             // Call the claimRewards function on the staking contract
-            await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
+            const tx = await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
                 functionName: "claimRewards()",
                 args: [],
                 abi: CLAIM_REWARDS_ABI,
             });
+
+            await walletService.ensureTransactionMined(tx.result.queueId);
+            const txResult = (await engine.transaction.status(tx.result.queueId)).result;
+            
+            if (txResult.status === "mined") {
+                // Invalidate user's cache after successful reward claim
+                await this.invalidateUserCache(username);
+
+                // Create notification for successful reward claim
+                await notificationService.createNotification({
+                    userId: username,
+                    type: NotificationType.REWARD,
+                    title: "Rewards Claimed Successfully",
+                    message: "Your staking rewards have been successfully claimed and transferred to your wallet!",
+                    metadata: {
+                        transactionHash: txResult.transactionHash
+                    }
+                });
+            }
 
         } catch (error: any) {
             console.error("Error claiming rewards:", error);
@@ -120,6 +186,7 @@ class StakingService {
     public async withdraw(token: string, stakeData:  { amount: string}): Promise<SuccessMessage> {
         const driver = getDriver()
         const tokenService = new TokenService();
+        const notificationService = NotificationService.getInstance();
         try {
             const username: string = await tokenService.verifyAccessToken(token);
             const walletService = new WalletService(driver);
@@ -128,12 +195,31 @@ class StakingService {
             const amountInWei = parseEther(stakeData.amount).toString();
 
             // Call the withdraw function on the staking contract
-            await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
+            const tx = await engine.contract.write(CHAIN, STAKING_ADDRESS, walletAddress, {
                 functionName: "withdraw(uint256)",
                 args: [amountInWei],
                 abi: WITHDRAW_ABI,
             });
 
+            await walletService.ensureTransactionMined(tx.result.queueId);
+            const txResult = (await engine.transaction.status(tx.result.queueId)).result;
+            
+            if (txResult.status === "mined") {
+                // Invalidate user's cache after successful withdrawal
+                await this.invalidateUserCache(username);
+
+                // Create notification for successful withdrawal
+                await notificationService.createNotification({
+                    userId: username,
+                    type: NotificationType.REWARD,
+                    title: "Tokens Withdrawn Successfully",
+                    message: `Successfully withdrawn ${stakeData.amount} FDAGRI tokens from staking. Tokens have been transferred to your wallet.`,
+                    metadata: {
+                        amount: stakeData.amount,
+                        transactionHash: txResult.transactionHash
+                    }
+                });
+            }
 
             return { success: `Successfully withdrew ${stakeData.amount} tokens`};
 
@@ -150,29 +236,34 @@ class StakingService {
         const walletService = new WalletService(driver);
         try {
             const username: string = await tokenService.verifyAccessToken(token);
-            const walletAddress: string = await walletService.getSmartWalletAddress(username);
-            
-            // Call the stakers function with the wallet address as parameter
-            const stakerData = await (await engine.contract.read(
-                "stakers", 
-                CHAIN, STAKING_ADDRESS, 
-                walletAddress, 
-                STAKERS_ABI)).result as string[]
+            const cacheKey = this.getCacheKey('getStakers', username);
 
-            const [timeOfLastUpdate, conditionIdOflastUpdate, amountStaked, unclaimedRewards] = stakerData;
+            // Try to get from cache first (cache for 30 seconds)
+            return await this.cache.getOrSet(cacheKey, async () => {
+                const walletAddress: string = await walletService.getSmartWalletAddress(username);
+                
+                // Call the stakers function with the wallet address as parameter
+                const stakerData = await (await engine.contract.read(
+                    "stakers", 
+                    CHAIN, STAKING_ADDRESS, 
+                    walletAddress, 
+                    STAKERS_ABI)).result as string[]
 
-            // Format amounts from wei to human-readable (18 decimals)
-            const amountStakedFormatted = formatEther(amountStaked);
-            const unclaimedRewardsFormatted = formatEther(unclaimedRewards);
+                const [timeOfLastUpdate, conditionIdOflastUpdate, amountStaked, unclaimedRewards] = stakerData;
 
-            return { 
-                timeOfLastUpdate,
-                conditionIdOflastUpdate,
-                amountStaked, 
-                unclaimedRewards,
-                amountStakedFormatted,
-                unclaimedRewardsFormatted
-            };
+                // Format amounts from wei to human-readable (18 decimals)
+                const amountStakedFormatted = formatEther(amountStaked);
+                const unclaimedRewardsFormatted = formatEther(unclaimedRewards);
+
+                return { 
+                    timeOfLastUpdate,
+                    conditionIdOflastUpdate,
+                    amountStaked, 
+                    unclaimedRewards,
+                    amountStakedFormatted,
+                    unclaimedRewardsFormatted
+                };
+            }, 30); // Cache for 30 seconds
         } catch (error) {
             console.error("Error getting staker information:", error);
             throw new Error(`Failed to get staker information: ${error}`);
@@ -185,52 +276,57 @@ class StakingService {
         const walletService = new WalletService(driver);
         try {
             const username: string = await tokenService.verifyAccessToken(token);
-            const walletAddress: string = await walletService.getSmartWalletAddress(username);
-            
-            // Call the getTimeUnit function (no parameters needed)
-            const timeUnitData = await (await engine.contract.read(
-                "getTimeUnit", 
-                CHAIN, STAKING_ADDRESS, 
-                "", 
-                GET_TIME_UNIT_ABI)).result as string;
+            const cacheKey = this.getGlobalCacheKey('getReleaseTimeFrame');
 
-            const timeUnit = timeUnitData;
+            // Time unit rarely changes, cache for 1 hour
+            return await this.cache.getOrSet(cacheKey, async () => {
+                const walletAddress: string = await walletService.getSmartWalletAddress(username);
+                
+                // Call the getTimeUnit function (no parameters needed)
+                const timeUnitData = await (await engine.contract.read(
+                    "getTimeUnit", 
+                    CHAIN, STAKING_ADDRESS, 
+                    "", 
+                    GET_TIME_UNIT_ABI)).result as string;
 
-            // Format time unit to human-readable format
-            const timeUnitSeconds = parseInt(timeUnit);
-            let timeUnitFormatted = `${timeUnitSeconds} seconds`;
-            
-            // Add more readable format with proper calculations
-            if (timeUnitSeconds >= 86400) {
-                const days = Math.floor(timeUnitSeconds / 86400);
-                const remainingHours = Math.floor((timeUnitSeconds % 86400) / 3600);
-                if (remainingHours > 0) {
-                    timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''})`;
-                } else {
-                    timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''})`;
-                }
-            } else if (timeUnitSeconds >= 3600) {
-                const hours = Math.floor(timeUnitSeconds / 3600);
-                const remainingMinutes = Math.floor((timeUnitSeconds % 3600) / 60);
-                if (remainingMinutes > 0) {
-                    timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''})`;
-                } else {
-                    timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''})`;
-                }
-            } else if (timeUnitSeconds >= 60) {
-                const minutes = Math.floor(timeUnitSeconds / 60);
-                const remainingSeconds = timeUnitSeconds % 60;
-                if (remainingSeconds > 0) {
-                    timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds > 1 ? 's' : ''})`;
-                } else {
-                    timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
-                }
-            }
+                const timeUnit = timeUnitData;
 
-            return { 
-                timeUnit,
-                timeUnitFormatted
-            };
+                // Format time unit to human-readable format
+                const timeUnitSeconds = parseInt(timeUnit);
+                let timeUnitFormatted = `${timeUnitSeconds} seconds`;
+                
+                // Add more readable format with proper calculations
+                if (timeUnitSeconds >= 86400) {
+                    const days = Math.floor(timeUnitSeconds / 86400);
+                    const remainingHours = Math.floor((timeUnitSeconds % 86400) / 3600);
+                    if (remainingHours > 0) {
+                        timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''} ${remainingHours} hour${remainingHours > 1 ? 's' : ''})`;
+                    } else {
+                        timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''})`;
+                    }
+                } else if (timeUnitSeconds >= 3600) {
+                    const hours = Math.floor(timeUnitSeconds / 3600);
+                    const remainingMinutes = Math.floor((timeUnitSeconds % 3600) / 60);
+                    if (remainingMinutes > 0) {
+                        timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''})`;
+                    } else {
+                        timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''})`;
+                    }
+                } else if (timeUnitSeconds >= 60) {
+                    const minutes = Math.floor(timeUnitSeconds / 60);
+                    const remainingSeconds = timeUnitSeconds % 60;
+                    if (remainingSeconds > 0) {
+                        timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds > 1 ? 's' : ''})`;
+                    } else {
+                        timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
+                    }
+                }
+
+                return { 
+                    timeUnit,
+                    timeUnitFormatted
+                };
+            }, 3600); // Cache for 1 hour (3600 seconds)
         } catch (error) {
             console.error("Error getting release time frame:", error);
             throw new Error(`Failed to get release time frame: ${error}`);
