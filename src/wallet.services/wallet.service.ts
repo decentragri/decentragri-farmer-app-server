@@ -2,7 +2,7 @@
 import { Engine } from "@thirdweb-dev/engine";
 
 //** CONFIG IMPORT
-import { ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, DECENTRAGRI_TOKEN, RSWETH_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS } from "../utils/constants";
+import { ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, DECENTRAGRI_TOKEN, RSWETH_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, FARMER_CREDIT_TOKEN } from "../utils/constants";
 
 //**  TYPE INTERFACE
 import { type TokenTransferData, type WalletData } from "./wallet.interface";
@@ -81,6 +81,7 @@ class WalletService {
         swellToken,
         dagriToken,
         rsWETH,
+        farmerCreditToken,
         dagriPrice,
         ethPrice,
         swellPrice
@@ -89,6 +90,7 @@ class WalletService {
         engine.backendWallet.getBalance(CHAIN, walletAddress),
         engine.erc20.balanceOf(walletAddress, CHAIN, DECENTRAGRI_TOKEN),
         engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),
+        engine.erc20.balanceOf(walletAddress, CHAIN, FARMER_CREDIT_TOKEN),
         safeGetPrice(parseInt(CHAIN), DECENTRAGRI_TOKEN), // may fallback to 0
         safeGetPrice(1), // ETH
         safeGetPrice(1, "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676") // SWELL
@@ -101,6 +103,7 @@ class WalletService {
         ethBalance: ethToken.result.displayValue,
         swellBalance: swellToken.result.displayValue,
         rsWETHBalance: rsWETH.result.displayValue,
+        farmerCreditTokenBalance: farmerCreditToken.result.displayValue,
         dagriBalance: dagriToken.result.displayValue,
         nativeBalance: swellToken.result.displayValue,
 

@@ -21,6 +21,7 @@
     // Balances
     dagriBalance: string;
     rsWETHBalance: string;
+    farmerCreditTokenBalance: string;
     ethBalance: string;
     swellBalance: string;
     nativeBalance: string;
