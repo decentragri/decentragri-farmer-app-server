@@ -12,7 +12,7 @@ import WalletService, { engine } from "../wallet.services/wallet.service";
 import { parseEther, formatEther } from "ethers";
 
 //** INTERFACE IMPORT */
-import type { StakeInfo, StakerInfo } from "./staking.interface";
+import type { StakeInfo, StakerInfo, ReleaseTimeFrame } from "./staking.interface";
 
 
 class StakingService {
@@ -161,6 +161,50 @@ class StakingService {
             throw new Error(`Failed to get staker information: ${error}`);
         }
     }
+
+    public async getReleaseTimeFrame(token: string): Promise<ReleaseTimeFrame> {
+        const driver = getDriver()
+        const tokenService = new TokenService();
+        const walletService = new WalletService(driver);
+        try {
+            const username: string = await tokenService.verifyAccessToken(token);
+            const walletAddress: string = await walletService.getSmartWalletAddress(username);
+            
+            // Call the getTimeUnit function (no parameters needed)
+            const timeUnitData = await (await engine.contract.read(
+                "getTimeUnit", 
+                CHAIN, STAKING_ADDRESS, 
+                "", 
+                STAKING_ABI)).result as string;
+
+            const timeUnit = timeUnitData;
+
+            // Format time unit to human-readable format
+            const timeUnitSeconds = parseInt(timeUnit);
+            let timeUnitFormatted = `${timeUnitSeconds} seconds`;
+            
+            // Add more readable format
+            if (timeUnitSeconds >= 86400) {
+                const days = Math.floor(timeUnitSeconds / 86400);
+                timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''})`;
+            } else if (timeUnitSeconds >= 3600) {
+                const hours = Math.floor(timeUnitSeconds / 3600);
+                timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''})`;
+            } else if (timeUnitSeconds >= 60) {
+                const minutes = Math.floor(timeUnitSeconds / 60);
+                timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
+            }
+
+            return { 
+                timeUnit,
+                timeUnitFormatted
+            };
+        } catch (error) {
+            console.error("Error getting release time frame:", error);
+            throw new Error(`Failed to get release time frame: ${error}`);
+        }
+    }
+
     // public async withdrawRewardTokens(token: string, amount: string): Promise<SuccessMessage> {
     //     const driver = getDriver()
     //     const tokenService = new TokenService();

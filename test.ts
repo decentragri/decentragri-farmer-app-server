@@ -500,3 +500,38 @@ const getStakers = async (address: string): Promise<any> => {
 };
 
 await getStakers("0xa23A9a2b962d387E9816A4FE1959dFE1cb2EF50e")
+
+const getReleaseTimeFrame = async (address: string): Promise<any> => {
+    try {
+        const timeUnitData = await engine.contract.read("getTimeUnit", CHAIN, STAKING_ADDRESS, "", STAKING_ABI)
+
+        console.log(`Time unit data: ${timeUnitData.result}`);
+        
+        const timeUnit = timeUnitData.result as string;
+        const timeUnitSeconds = parseInt(timeUnit);
+        
+        let timeUnitFormatted = `${timeUnitSeconds} seconds`;
+        
+        // Add more readable format
+        if (timeUnitSeconds >= 86400) {
+            const days = Math.floor(timeUnitSeconds / 86400);
+            timeUnitFormatted += ` (${days} day${days > 1 ? 's' : ''})`;
+        } else if (timeUnitSeconds >= 3600) {
+            const hours = Math.floor(timeUnitSeconds / 3600);
+            timeUnitFormatted += ` (${hours} hour${hours > 1 ? 's' : ''})`;
+        } else if (timeUnitSeconds >= 60) {
+            const minutes = Math.floor(timeUnitSeconds / 60);
+            timeUnitFormatted += ` (${minutes} minute${minutes > 1 ? 's' : ''})`;
+        }
+        
+        console.log(`Time unit (raw): ${timeUnit}`);
+        console.log(`Time unit (formatted): ${timeUnitFormatted}`);
+        
+        return timeUnitData.result;
+    } catch (error) {
+        console.error("Error getting release time frame:", error);
+        throw new Error(`Failed to get release time frame: ${error}`);
+    }
+};
+
+await getReleaseTimeFrame("")

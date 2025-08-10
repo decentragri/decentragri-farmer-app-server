@@ -6,7 +6,7 @@ import type Elysia from "elysia";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import type { StakeInfo, StakerInfo } from "../staking.services/staking.interface";
+import type { StakeInfo, StakerInfo, ReleaseTimeFrame } from "../staking.services/staking.interface";
 import { stakeTokenSchema, getStakeInfoSchema, withdrawTokenSchema, claimRewardsSchema } from "../staking.services/staking.schema";
 
 
@@ -100,7 +100,25 @@ const Staking = (app: Elysia) => {
             console.error("Error in withdraw tokens route:", error);
             throw error;
         }
-    }, withdrawTokenSchema);
+    }, withdrawTokenSchema)
+
+    .get('/api/stake/timeframe', async ({ headers }): Promise<ReleaseTimeFrame> => {
+        try {
+            const authorizationHeader: string = headers.authorization;
+            if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
+                throw new Error('Bearer token not found in Authorization header');
+            }
+            const jwtToken: string = authorizationHeader.substring(7);
+            
+            const stakingService = new StakingService();
+            const timeFrame = await stakingService.getReleaseTimeFrame(jwtToken);
+            
+            return timeFrame;
+        } catch (error: any) {
+            console.error("Error in get release time frame route:", error);
+            throw error;
+        }
+    }, getStakeInfoSchema);
 
     return app;
 };

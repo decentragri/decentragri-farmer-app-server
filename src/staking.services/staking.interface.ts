@@ -13,3 +13,8 @@ export interface StakerInfo {
     amountStakedFormatted: string;      // Human-readable amount (e.g., "10.5")
     unclaimedRewardsFormatted: string;  // Human-readable amount (e.g., "381.111")
 }
+
+export interface ReleaseTimeFrame {
+    timeUnit: string;           // Raw uint80 as string (time unit in seconds)
+    timeUnitFormatted: string;  // Human-readable format (e.g., "3600 seconds (1 hour)")
+}
