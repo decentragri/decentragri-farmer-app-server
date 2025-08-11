@@ -265,6 +265,10 @@ class WalletService {
 					chainId = CHAIN;
 					contractAddress = DECENTRAGRI_TOKEN;
 					break;
+        case "FDAGRI":
+					chainId = CHAIN;
+					contractAddress = FARMER_CREDIT_TOKEN;
+					break;
 
 				default:
 					throw new Error(`Unrecognized token name: ${tokenName}`);
