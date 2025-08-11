@@ -36,7 +36,7 @@ import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, SCAN_EDITION_ADDRESS } from "../uti
 
 //**SERVICE IMPORTS */
 import TokenService from "../security.services/token.service";
-import { getSensorDataByFarmCypher, saveSensorDataCypher } from "../soilanalysis.services/soilanalysisdata.cypher";
+import { getSensorDataByFarmCypher, saveSensorDataCypher, getRecentSoilReadingsCypher, getLastSoilReadingInterpretationCypher, getSoilReadingsByDateRangeCypher } from "../soilanalysis.services/soilanalysisdata.cypher";
 
 
 
@@ -306,7 +306,188 @@ class SoilAnalysisService {
     }
     
 
-    
+    /**
+	 * Retrieve recent soil readings for RAG context
+	 * @param username - User's username
+	 * @param farmName - Farm name
+	 * @param cropType - Crop type to match
+	 * @param limit - Number of recent readings to retrieve (default: 5)
+	 * @returns Promise<SensorReadingsWithInterpretation[]>
+	 */
+	public async getRecentSoilReadingsForRAG(
+		username: string, 
+		farmName: string, 
+		cropType: string, 
+		limit: number = 5
+	): Promise<SensorReadingsWithInterpretation[]> {
+		const driver = getDriver();
+		const session = driver?.session();
+
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+
+		try {
+			const result = await session.executeRead(tx =>
+				tx.run(getRecentSoilReadingsCypher, { username, farmName, cropType, limit })
+			);
+
+			const readings: SensorReadingsWithInterpretation[] = [];
+			
+			for (const record of result.records) {
+				const reading = record.get("r").properties;
+				const interpretation = record.get("interpretation");
+				
+				// Parse interpretation if it's a JSON string
+				let parsedInterpretation: any;
+				try {
+					parsedInterpretation = typeof interpretation === 'string' ? JSON.parse(interpretation) : interpretation;
+				} catch {
+					parsedInterpretation = {
+						evaluation: "Unknown",
+						fertility: "No data",
+						moisture: "No data",
+						ph: "No data",
+						temperature: "No data",
+						sunlight: "No data",
+						humidity: "No data"
+					};
+				}
+
+				readings.push({
+					...reading,
+					formattedCreatedAt: formatDate(reading.createdAt),
+					formattedSubmittedAt: formatDate(reading.submittedAt),
+					interpretation: parsedInterpretation
+				});
+			}
+
+			return readings;
+		} catch (error) {
+			console.error("Error fetching recent soil readings for RAG:", error);
+			return []; // Return empty array instead of throwing to not break AI analysis
+		} finally {
+			await session.close();
+		}
+	}
+
+	/**
+	 * Get the most recent soil reading for similarity comparison
+	 * @param username - User's username
+	 * @param farmName - Farm name
+	 * @param cropType - Crop type to match
+	 * @returns Promise with sensor values and interpretation
+	 */
+	public async getLastSoilReadingForComparison(
+		username: string, 
+		farmName: string, 
+		cropType: string
+	): Promise<{
+		fertility: number;
+		moisture: number;
+		ph: number;
+		temperature: number;
+		sunlight: number;
+		humidity: number;
+		interpretation: string;
+		createdAt: string;
+	} | null> {
+		const driver = getDriver();
+		const session = driver?.session();
+
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+
+		try {
+			const result = await session.executeRead(tx =>
+				tx.run(getLastSoilReadingInterpretationCypher, { username, farmName, cropType })
+			);
+
+			if (result.records.length === 0) {
+				return null;
+			}
+
+			const record = result.records[0];
+			return {
+				fertility: record.get("r.fertility"),
+				moisture: record.get("r.moisture"),
+				ph: record.get("r.ph"),
+				temperature: record.get("r.temperature"),
+				sunlight: record.get("r.sunlight"),
+				humidity: record.get("r.humidity"),
+				interpretation: record.get("interpretation") || "No interpretation available",
+				createdAt: record.get("r.createdAt")
+			};
+		} catch (error) {
+			console.error("Error fetching last soil reading:", error);
+			return null;
+		} finally {
+			await session.close();
+		}
+	}
+
+	/**
+	 * Generate RAG context summary from historical soil readings
+	 * @param username - User's username
+	 * @param farmName - Farm name
+	 * @param cropType - Crop type to match
+	 * @returns String summary of historical context
+	 */
+	public async generateSoilRAGContext(
+		username: string, 
+		farmName: string, 
+		cropType: string
+	): Promise<string> {
+		try {
+			const recentReadings = await this.getRecentSoilReadingsForRAG(username, farmName, cropType, 3);
+			
+			if (recentReadings.length === 0) {
+				return "No previous soil readings found for this crop type and farm. This is the first soil analysis.";
+			}
+
+			let context = `Historical Soil Analysis Context (Last ${recentReadings.length} readings for ${cropType} at ${farmName}):\n\n`;
+			
+			recentReadings.forEach((reading, index) => {
+				const readingDate = new Date(reading.createdAt);
+				const daysAgo = Math.floor((Date.now() - readingDate.getTime()) / (1000 * 60 * 60 * 24));
+				
+				context += `Reading ${index + 1} (${daysAgo} days ago):\n`;
+				context += `- Date: ${reading.formattedCreatedAt}\n`;
+				context += `- Sensor Values:\n`;
+				context += `  * Fertility: ${reading.fertility} µS/cm\n`;
+				context += `  * Moisture: ${reading.moisture}%\n`;
+				context += `  * pH: ${reading.ph}\n`;
+				context += `  * Temperature: ${reading.temperature}°C\n`;
+				context += `  * Sunlight: ${reading.sunlight} lux\n`;
+				context += `  * Humidity: ${reading.humidity}%\n`;
+				
+				if (reading.interpretation) {
+					context += `- Previous Analysis:\n`;
+					context += `  * Overall Evaluation: ${reading.interpretation.evaluation || 'N/A'}\n`;
+					if (reading.interpretation.fertility) context += `  * Fertility: ${reading.interpretation.fertility}\n`;
+					if (reading.interpretation.moisture) context += `  * Moisture: ${reading.interpretation.moisture}\n`;
+					if (reading.interpretation.ph) context += `  * pH: ${reading.interpretation.ph}\n`;
+					if (reading.interpretation.temperature) context += `  * Temperature: ${reading.interpretation.temperature}\n`;
+					if (reading.interpretation.sunlight) context += `  * Sunlight: ${reading.interpretation.sunlight}\n`;
+					if (reading.interpretation.humidity) context += `  * Humidity: ${reading.interpretation.humidity}\n`;
+				}
+				context += `\n`;
+			});
+
+			context += `Please consider this historical context when analyzing the current soil readings. Look for:\n`;
+			context += `- Trends in soil conditions over time\n`;
+			context += `- Seasonal variations in readings\n`;
+			context += `- Consistency or changes in soil health patterns\n`;
+			context += `- Effectiveness of previous recommendations\n`;
+			context += `- Progressive improvements or deteriorations\n`;
+
+			return context;
+		} catch (error) {
+			console.error("Error generating soil RAG context:", error);
+			return "Unable to retrieve historical soil analysis context.";
+		}
+	}
 
 
 

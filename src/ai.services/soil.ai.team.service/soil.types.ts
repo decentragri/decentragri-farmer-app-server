@@ -57,8 +57,8 @@ export interface Interpretation {
 	sunlight: string;
 	/** Human-readable interpretation of humidity level */
 	humidity: string;
-
-
+	/** Optional historical comparison analysis */
+	historicalComparison?: string;
 }
 	
 
@@ -75,11 +75,14 @@ export interface SensorReadingsWithInterpretation extends SensorReadings {
 
 /**
  * Parameters required for initializing a sensor data processing session.
- * Contains the raw sensor data to be analyzed.
+ * Contains the raw sensor data to be analyzed and user context for RAG.
  */
 export interface SensorSessionParams {
 	/** Raw sensor data to be processed */
 	sensorData: SensorReadings;
-
+	/** Username for retrieving historical context */
+	username?: string;
+	/** Farm name for retrieving historical context */
+	farmName?: string;
 };
 

@@ -1,7 +1,8 @@
 export interface PlantImageSessionParams {
 	imageBytes: string;       // Stringified PackedByteArray from Godot (e.g., "[137,80,78,...]")
 	cropType: string;
-    farmName: string;    
+    farmName: string;
+	username: string;         // Added for RAG context retrieval
 	note?: string;
 }
 
@@ -17,7 +18,8 @@ export interface AnalysisResult {
 export interface PlantImageScanParams {
     imageBytes: string;  
 	cropType: string;
-    farmName: string;    
+    farmName: string;
+	username: string;         // Added for RAG context retrieval
 	note?: string;
 	interpretation: string | ParsedInterpretation; // Can be either string or parsed interpretation object
 }

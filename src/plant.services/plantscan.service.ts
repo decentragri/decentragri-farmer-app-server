@@ -12,7 +12,7 @@ import WalletService, { engine } from "../wallet.services/wallet.service";
 import { CHAIN, CLIENT_ID, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS, SECRET_KEY } from "../utils/constants";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 import type { PlantScanResult, ParsedInterpretation } from "./plantscan.interface";
-import { savePlantScanCypher } from "./plantscan.cypher";
+import { savePlantScanCypher, getRecentPlantScansCypher, getLastPlantScanInterpretationCypher, getPlantScansByDateRangeCypher } from "./plantscan.cypher";
 import { nanoid } from "nanoid";
 import { getAll } from "thirdweb/extensions/thirdweb";
 import { getAllListings } from "thirdweb/extensions/marketplace";
@@ -265,7 +265,7 @@ class PlantData {
 			//test update
 			
 			await engine.erc1155.mintTo(CHAIN, PLANT_SCAN_EDITION_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, metadata);
-			getAllListings
+			
 			return imageUri;
 		} catch (error) {
 			console.error("Error minting plant scan NFT:", error);
@@ -273,82 +273,136 @@ class PlantData {
 		}
 	}
 
+	/**
+	 * Retrieve recent plant scans for RAG context
+	 * @param username - User's username
+	 * @param farmName - Farm name
+	 * @param cropType - Crop type to match
+	 * @param limit - Number of recent scans to retrieve (default: 5)
+	 * @returns Promise<PlantScanResult[]>
+	 */
+	public async getRecentPlantScansForRAG(username: string, farmName: string, cropType: string, limit: number = 5): Promise<PlantScanResult[]> {
+		const driver = getDriver();
+		const session = driver?.session();
 
-	// private async savePlantScanToNFT(
-	// 	data: PlantImageScanParams,
-	// 	image: string,
-	// 	username: string
-	// ): Promise<void> {
-	// 	const client = createThirdwebClient({
-	// 		secretKey: SECRET_KEY,
-	// 	});
-	
-	// 	const serverWallet = Engine.serverWallet({
-	// 		client,
-	// 		address: "0xDCec5A8Fa6e26A04Ed94967475C7b13E9Ff56dE5", // your admin wallet address
-	// 		vaultAccessToken: process.env.VAULT_ACCESS_TOKEN!,
-	// 	});
-	
-	// 	const byteImage: number[] = JSON.parse(image);
-	// 	const buffer: Buffer = Buffer.from(byteImage);
-	// 	const imageFile: File = new File([buffer], "plant-scan.png", {
-	// 		type: "image/png",
-	// 	});
-	
-	// 	const contract = getContract({
-	// 		client,
-	// 		address: PLANT_SCAN_EDITION_ADDRESS,
-	// 		chain: polygon, // or "mumbai", or any chain you configured
-	// 	});
-	
-	// 	const attributes = [
-	// 		{
-	// 			trait_type: "AI Evaluation",
-	// 			value: data.interpretation,
-	// 		},
-	// 		{
-	// 			trait_type: "Crop Type",
-	// 			value: data.cropType,
-	// 		},
-	// 	];
-	
-	// 	const metadata = {
-	// 		name: "Plant Health NFT",
-	// 		description: "Visual health check of crop using AI analysis.",
-	// 		image: imageFile,
-	// 		external_url: "https://decentragri.com/plant-scans",
-	// 		background_color: "#E0FFE0",
-	// 		properties: {
-	// 			image: "Uploaded via buffer", // fallback text
-	// 			cropType: data.cropType,
-	// 			timestamp: new Date().toISOString(),
-	// 			username,
-	// 			note: data.note ?? "No additional notes",
-	// 			interpretation: data.interpretation,
-	// 		},
-	// 		attributes,
-	// 	};
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
 
-	// 	const transaction = mintTo({
-	// 		contract,
-	// 		to: serverWallet.address, // receiver smart wallet
-	// 		supply: 1n,
-	// 		nft: metadata,
-	// 	});
-	
-	// 	try {
+		try {
+			const result = await session.executeRead(tx =>
+				tx.run(getRecentPlantScansCypher, { username, farmName, cropType, limit })
+			);
 
-	// 		const { transactionId } = await serverWallet.enqueueTransaction({
-	// 			transaction,
-	// 		  })
+			const rawRecords = result.records.map(record => record.get("p").properties);
+			return Promise.all(rawRecords.map(raw => this.convertToPlantScanResult(raw)));
+		} catch (error) {
+			console.error("Error fetching recent plant scans for RAG:", error);
+			return []; // Return empty array instead of throwing to not break AI analysis
+		} finally {
+			await session.close();
+		}
+	}
+
+	/**
+	 * Get the most recent plant scan interpretation for similarity comparison
+	 * @param username - User's username
+	 * @param farmName - Farm name
+	 * @param cropType - Crop type to match
+	 * @returns Promise with interpretation, date, and note
+	 */
+	public async getLastPlantScanInterpretation(username: string, farmName: string, cropType: string): Promise<{ interpretation: string; date: string; note?: string } | null> {
+		const driver = getDriver();
+		const session = driver?.session();
+
+		if (!session) {
+			throw new Error("Unable to create database session.");
+		}
+
+		try {
+			const result = await session.executeRead(tx =>
+				tx.run(getLastPlantScanInterpretationCypher, { username, farmName, cropType })
+			);
+
+			if (result.records.length === 0) {
+				return null;
+			}
+
+			const record = result.records[0];
+			return {
+				interpretation: record.get("p.interpretation"),
+				date: record.get("p.date"),
+				note: record.get("p.note")
+			};
+		} catch (error) {
+			console.error("Error fetching last plant scan interpretation:", error);
+			return null;
+		} finally {
+			await session.close();
+		}
+	}
+
+	/**
+	 * Generate RAG context summary from historical plant scans
+	 * @param username - User's username
+	 * @param farmName - Farm name
+	 * @param cropType - Crop type to match
+	 * @returns String summary of historical context
+	 */
+	public async generateRAGContext(username: string, farmName: string, cropType: string ): Promise<string> {
+		try {
+			const recentScans = await this.getRecentPlantScansForRAG(username, farmName, cropType, 3);
 			
+			if (recentScans.length === 0) {
+				return "No previous plant scans found for this crop type and farm. This is the first scan.";
+			}
 
+			let context = `Historical Context (Last ${recentScans.length} scans for ${cropType} at ${farmName}):\n\n`;
+			
+			recentScans.forEach((scan, index) => {
+				const scanDate = new Date(scan.createdAt);
+				const daysAgo = Math.floor((Date.now() - scanDate.getTime()) / (1000 * 60 * 60 * 24));
+				
+				context += `Scan ${index + 1} (${daysAgo} days ago):\n`;
+				context += `- Date: ${scan.formattedCreatedAt}\n`;
+				
+				// Parse interpretation if it's a JSON string
+				let interpretation: string;
+				if (typeof scan.interpretation === 'string') {
+					try {
+						const parsed = JSON.parse(scan.interpretation);
+						if (parsed.Diagnosis) {
+							interpretation = `Diagnosis: ${parsed.Diagnosis}. Reason: ${parsed.Reason}. Recommendations: ${parsed.Recommendations?.join(', ') || 'None'}`;
+						} else {
+							interpretation = scan.interpretation;
+						}
+					} catch {
+						interpretation = scan.interpretation;
+					}
+				} else {
+					// It's already a ParsedInterpretation object
+					interpretation = `Diagnosis: ${scan.interpretation.Diagnosis}. Reason: ${scan.interpretation.Reason}. Recommendations: ${scan.interpretation.Recommendations?.join(', ') || 'None'}`;
+				}
+				
+				context += `- Analysis: ${interpretation}\n`;
+				if (scan.note) {
+					context += `- Notes: ${scan.note}\n`;
+				}
+				context += `\n`;
+			});
 
-	// 	} catch (error) {
-	// 		console.error("Error minting plant scan NFT:", error);
-	// 		throw new Error("Failed to mint plant scan NFT");
-	// 	}
-	// }
+			context += `Please consider this historical context when analyzing the current scan. Look for:\n`;
+			context += `- Consistency in health patterns\n`;
+			context += `- Progression or improvement of previously identified issues\n`;
+			context += `- Seasonal or time-based changes\n`;
+			context += `- Effectiveness of previous recommendations\n`;
+
+			return context;
+		} catch (error) {
+			console.error("Error generating RAG context:", error);
+			return "Unable to retrieve historical context for analysis.";
+		}
+	}
 
 }
 

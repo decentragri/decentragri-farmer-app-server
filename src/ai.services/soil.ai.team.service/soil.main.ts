@@ -18,6 +18,7 @@ type ParsedAdvice = {
 	sunlight: string;
 	humidity: string;
 	evaluation: string;
+	historicalComparison?: string;
 };
 
 class SoilSensorRunner {
@@ -100,7 +101,14 @@ class SoilSensorRunner {
 			const username: string = await tokenService.verifyAccessToken(token);
 			console.log('🌱 API Request: Analyzing provided sensor data...');
 
-			const output = await soilSensorTeam.start(params);
+			// Add username and farmName to params for RAG context
+			const enhancedParams: SensorSessionParams = {
+				...params,
+				username: username,
+				farmName: params.sensorData.farmName
+			};
+
+			const output = await soilSensorTeam.start(enhancedParams);
 
 			if (output.status !== 'FINISHED') {
 				console.warn('⚠️ Workflow blocked.');
@@ -120,7 +128,8 @@ class SoilSensorRunner {
 					temperature: parsedInterpretation.temperature || '',
 					sunlight: parsedInterpretation.sunlight || '',
 					humidity: parsedInterpretation.humidity || '',
-					evaluation: parsedInterpretation.evaluation || ''
+					evaluation: parsedInterpretation.evaluation || '',
+					historicalComparison: parsedInterpretation.historicalComparison
 				},
 				submittedAt: new Date().toISOString(),
 				createdAt: new Date().toISOString()
@@ -156,7 +165,8 @@ function parseAdviceToObject(raw: string): ParsedAdvice {
             temperature: parsed.Temperature || '',
             sunlight: parsed.Sunlight || '',
             humidity: parsed.Humidity || '',
-            evaluation: parsed.Evaluation || ''
+            evaluation: parsed.Evaluation || '',
+            historicalComparison: parsed.HistoricalComparison || undefined
         };
     } catch (e) {
         // Fallback to the old format if JSON parsing fails
@@ -170,7 +180,8 @@ function parseAdviceToObject(raw: string): ParsedAdvice {
             temperature: getLineText(3),
             sunlight: getLineText(4),
             humidity: getLineText(5),
-            evaluation: getLineText(6).replace(/^Overall Evaluation:\s*/i, '').trim()
+            evaluation: getLineText(6).replace(/^Overall Evaluation:\s*/i, '').trim(),
+            historicalComparison: getLineText(7)?.replace(/^Historical Comparison:\s*/i, '').trim() || undefined
         };
     }
 }

@@ -16,17 +16,6 @@ class PlantImageRunner {
     private plantImageTeam = new PlantImageTeam();
     private plantData = new PlantData();
 
-    /**
-     * Format the analysis result into a readable string
-     * @param result - The analysis result object
-     * @returns Formatted string interpretation
-     */
-    private formatAnalysisResult(result: AnalysisResult): string {
-        return `Diagnosis: ${result.Diagnosis}\n` +
-            `Reason: ${result.Reason}\n\n` +
-            'Recommendations:\n' +
-            result.Recommendations.map((rec: string, i: number) => `${i + 1}. ${rec}`).join('\n');
-    }
 
     /**
      * Handle the analysis result and save the plant scan

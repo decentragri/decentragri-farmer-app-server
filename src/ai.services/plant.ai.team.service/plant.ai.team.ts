@@ -2,6 +2,7 @@
 import OpenAI from "openai";
 import { Agent, Task, Team } from "kaibanjs";
 import type { PlantImageSessionParams } from "./plant.interface";
+import PlantData from "../../plant.services/plantscan.service";
 
 
 
@@ -10,8 +11,10 @@ class PlantImageTeam {
 	private imageAnalyzer: Agent;
 	private responseFormatter: Agent;
 	private openai: OpenAI;
+	private plantDataService: PlantData;
 
 	constructor() {
+		this.plantDataService = new PlantData();
 		// Agent 1: Specialized in image analysis
 		this.imageAnalyzer = new Agent({
 			name: "Ian",
@@ -60,7 +63,11 @@ class PlantImageTeam {
 		}
 	}
 
-    private async classifyImageWithOpenAI(base64: string, cropType: string): Promise<string> {
+    private async classifyImageWithOpenAI(base64: string, cropType: string, historicalContext?: string): Promise<string> {
+        const contextPrompt = historicalContext 
+            ? `\n\nHISTORICAL CONTEXT:\n${historicalContext}\n\nConsider this historical information when analyzing the current image.`
+            : '';
+
         const response = await this.openai.chat.completions.create({
             model: "gpt-4.1-mini",
             messages: [
@@ -87,6 +94,7 @@ class PlantImageTeam {
                             - Diagnosis (Healthy or Infested, and the reason)
                             - Evidence (e.g. yellowing, spots, dryness)
                             - Recommendations (2–3 steps to improve plant health)
+                            ${contextPrompt}
 
                             Only one of the outputs should appear depending on the scenario above.`
                         },
@@ -105,12 +113,17 @@ class PlantImageTeam {
 
     public async start(params: PlantImageSessionParams) {
         try {
-            const { imageBytes, cropType } = params;
+            const { imageBytes, cropType, farmName, username } = params;
             const base64 = this.convertPackedBytesToBase64(imageBytes);
             if (!base64) throw new Error("Invalid image byte data.");
 
-            // Step 1: Get initial image analysis
-            const visualClassification: string = await this.classifyImageWithOpenAI(base64, cropType);
+            // Step 1: Retrieve RAG context from historical scans
+            console.log("🔍 Retrieving historical context for RAG...");
+            const historicalContext: string = await this.plantDataService.generateRAGContext(username, farmName, cropType);
+            console.log(" RAG Context:", historicalContext);
+
+            // Step 2: Get initial image analysis with RAG context
+            const visualClassification: string = await this.classifyImageWithOpenAI(base64, cropType, historicalContext);
             console.log("Initial image analysis:", visualClassification);
 
             // Check for invalid plant images
@@ -122,41 +135,49 @@ class PlantImageTeam {
                 };
             }
 
-            // Step 2: Create analysis task for the image analyzer
+            // Step 3: Create analysis task for the image analyzer with RAG context
             const analysisTask = new Task({
                 id: 'analysis',
-                title: "Analyze Plant Health",
-                description: `Analyze this plant image and describe any health issues you observe.
+                title: "Analyze Plant Health with Historical Context",
+                description: `Analyze this plant image and describe any health issues you observe, considering the historical context.
                 
                 Image Analysis: ${visualClassification}
                 Crop Type: ${cropType}
+                Farm: ${farmName}
+                
+                ${historicalContext}
                 
                 Focus on:
                 - Visible diseases or pests
                 - Signs of nutrient deficiencies
                 - Overall plant health
+                - Comparison with previous scans (if any)
+                - Progression or improvement from historical data
+                - Effectiveness of previous recommendations
                 - Any other notable observations`,
-                expectedOutput: "A detailed description of the plant's health status and any visible issues.",
+                expectedOutput: "A detailed description of the plant's health status considering historical context and any visible issues.",
                 agent: this.imageAnalyzer
             });
 
-            // Step 3: Create formatting task for the response formatter
+            // Step 4: Create formatting task for the response formatter
             const formatTask = new Task({
                 id: 'formatting',
-                title: "Format Analysis Results",
-                description: `Convert the plant health analysis into a structured JSON format.
+                title: "Format Analysis Results with Context",
+                description: `Convert the plant health analysis into a structured JSON format, incorporating historical insights.
                 
                 Analysis: ${visualClassification}
+                Historical Context: ${historicalContext}
                 
                 Required JSON structure:
                 {
                     "Diagnosis": "Healthy" or "Infested" or "Malnourished",
-                    "Reason": "Brief explanation of the diagnosis",
+                    "Reason": "Brief explanation of the diagnosis, referencing historical patterns if relevant",
                     "Recommendations": [
                         "First recommendation",
-                        "Second recommendation",
+                        "Second recommendation", 
                         "Third recommendation"
-                    ]
+                    ],
+                    "HistoricalComparison": "Brief comparison with previous scans (if any historical data exists)"
                 }`,
                 expectedOutput: "A valid JSON object with the specified structure, no additional text.",
                 agent: this.responseFormatter,
@@ -165,7 +186,7 @@ class PlantImageTeam {
 
             // Create the team with both agents and tasks
             const team = new Team({
-                name: "Plant Health Analysis Pipeline",
+                name: "Plant Health Analysis Pipeline with RAG",
                 agents: [this.imageAnalyzer, this.responseFormatter],
                 tasks: [analysisTask, formatTask],
                 inputs: { analysis: visualClassification }, // Pass the initial analysis to the formatter
@@ -189,7 +210,8 @@ class PlantImageTeam {
                             Recommendations: [
                                 'Review the plant health manually',
                                 'Check for visible signs of disease or pests'
-                            ]
+                            ],
+                            HistoricalComparison: 'Unable to compare with historical data'
                         }
                     };
                 }
@@ -201,7 +223,7 @@ class PlantImageTeam {
             if (typeof formattedResult === 'string') {
                 try {
                     formattedResult = JSON.parse(formattedResult);
-                } catch (e) {
+                } catch (error: any) {
                     console.error("Failed to parse result as JSON:", formattedResult);
                     // Return a structured error response
                     return {

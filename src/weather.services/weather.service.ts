@@ -69,11 +69,11 @@ class WeatherService {
             // Try to get from cache first
             const cachedForecast = await cache.get(cacheKey);
             if (cachedForecast) {
-                console.log(`📦 Cache hit for weather forecast: ${location}`);
+                console.log(` Cache hit for weather forecast: ${location}`);
                 return JSON.parse(cachedForecast);
             }
 
-            console.log(`🌤️ Cache miss for weather forecast: ${location} - fetching from API`);
+            console.log(` Cache miss for weather forecast: ${location} - fetching from API`);
             const url = `https://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${location}&days=7&aqi=no&alerts=no`;
     
             try {
@@ -98,7 +98,7 @@ class WeatherService {
                 // Cache the forecast for 6 hours (21600 seconds)
                 // Weather forecasts don't change very frequently, especially for weekly data
                 await cache.set(cacheKey, JSON.stringify(data), 21600);
-                console.log(`💾 Cached weather forecast for: ${location}`);
+                console.log(` Cached weather forecast for: ${location}`);
 
                 return data;
             } catch (error) {

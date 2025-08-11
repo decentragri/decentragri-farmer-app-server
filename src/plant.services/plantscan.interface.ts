@@ -18,6 +18,7 @@ export interface ParsedInterpretation {
 	Diagnosis: string;
 	Reason: string;
 	Recommendations: string[];
+	HistoricalComparison?: string; // Optional field for RAG-enhanced analysis
 }
 
 export interface FarmScanResult {

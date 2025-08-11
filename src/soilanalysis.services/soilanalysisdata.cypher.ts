@@ -83,3 +83,55 @@ export const getSensorDataByFarmCypher: string = `
     RETURN f.farmName AS farmName, s.sensorId AS sensorId, r AS reading, i.value AS interpretation, r.createdAt AS createdAt, r.submittedAt AS submittedAt, r.id AS id  
     ORDER BY r.createdAt DESC
 	`
+
+/**
+ * Retrieves the most recent soil sensor readings for a specific user, farm, and crop type
+ * Used for RAG (Retrieval-Augmented Generation) to provide historical context
+ * 
+ * @param {string} $username - The username of the user
+ * @param {string} $farmName - The name of the farm
+ * @param {string} $cropType - The type of crop to filter by
+ * @param {number} $limit - Maximum number of readings to retrieve (default: 5)
+ */
+export const getRecentSoilReadingsCypher: string = `
+    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_SENSOR]->(s:Sensor)
+    MATCH (s)-[:HAS_READING]->(r:Reading {cropType: $cropType})
+    OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
+    RETURN r, i.value AS interpretation
+    ORDER BY r.createdAt DESC
+    LIMIT $limit
+`;
+
+/**
+ * Retrieves soil readings within a specific date range for context analysis
+ * 
+ * @param {string} $username - The username of the user
+ * @param {string} $farmName - The name of the farm
+ * @param {string} $cropType - The type of crop to filter by
+ * @param {string} $startDate - Start date for the range (ISO format)
+ * @param {string} $endDate - End date for the range (ISO format)
+ */
+export const getSoilReadingsByDateRangeCypher: string = `
+    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_SENSOR]->(s:Sensor)
+    MATCH (s)-[:HAS_READING]->(r:Reading {cropType: $cropType})
+    OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
+    WHERE r.createdAt >= $startDate AND r.createdAt <= $endDate
+    RETURN r, i.value AS interpretation
+    ORDER BY r.createdAt DESC
+`;
+
+/**
+ * Gets the most recent soil reading interpretation for similarity analysis
+ * 
+ * @param {string} $username - The username of the user
+ * @param {string} $farmName - The name of the farm
+ * @param {string} $cropType - The type of crop to filter by
+ */
+export const getLastSoilReadingInterpretationCypher: string = `
+    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {farmName: $farmName})-[:HAS_SENSOR]->(s:Sensor)
+    MATCH (s)-[:HAS_READING]->(r:Reading {cropType: $cropType})
+    OPTIONAL MATCH (r)-[:INTERPRETED_AS]->(i:Interpretation)
+    RETURN r.fertility, r.moisture, r.ph, r.temperature, r.sunlight, r.humidity, i.value AS interpretation, r.createdAt
+    ORDER BY r.createdAt DESC
+    LIMIT 1
+`;
