@@ -270,7 +270,7 @@ class WalletService {
 
 			switch (tokenName.toUpperCase()) {
 				case "ETH":
-					chainId = "1";
+					chainId = CHAIN;
 					contractAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"; // Native ETH representation
 					break;
 
