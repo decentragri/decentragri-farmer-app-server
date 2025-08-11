@@ -202,11 +202,10 @@ class WalletService {
         await this.ensureTransactionMined(nativeTransferTx.result.queueId);
         console.log("Native ETH transaction mined:", nativeTransferTx.result.queueId);
       } else {
+
+        console.log("address: ", smartWalletAddress)
         // Case: ERC-20 token transfer (with allowance)
-        const allowanceTx = await engine.erc20.setAllowance(
-          chainId,
-          contractAddress,
-          smartWalletAddress,
+        const allowanceTx = await engine.erc20.setAllowance(chainId, contractAddress, smartWalletAddress,
           {
             spenderAddress: smartWalletAddress,
             amount
