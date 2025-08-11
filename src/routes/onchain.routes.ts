@@ -8,6 +8,7 @@ import { authBearerSchema } from "../auth.services/auth.schema";
 import { stakeETHSchema } from "../onchain.services/onchain.schema";
 import { tokenTransferSchema } from "../wallet.services/wallet.schema";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
+import { getDriver } from "../db/memgraph";
 
 
 
@@ -100,7 +101,8 @@ const OnChain = (app: Elysia) => {
             }
             const jwtToken: string = authorizationHeader.substring(7);
 
-            const walletService = new WalletService();
+            const driver = getDriver();
+            const walletService = new WalletService(driver);
             const output: SuccessMessage = await walletService.transferToken(jwtToken, body);
             return output;
         } catch (error: any) {
