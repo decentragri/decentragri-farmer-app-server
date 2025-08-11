@@ -5,7 +5,8 @@ export enum NotificationType {
     FARM_UPDATE = 'FARM_UPDATE',
     SYSTEM_ALERT = 'SYSTEM_ALERT',
     RECOMMENDATION = 'RECOMMENDATION',
-    REWARD = 'REWARD'
+    REWARD = 'REWARD',
+    TOKEN_TRANSFER = 'TOKEN_TRANSFER'
 }
 
 export interface NotificationMetadata {

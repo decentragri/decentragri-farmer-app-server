@@ -12,6 +12,8 @@ import type { QueryResult } from "neo4j-driver";
 import { Driver, Session } from "neo4j-driver-core";
 import { InsightService } from "../insight.services/insight";
 import TokenService from "../security.services/token.service";
+import { NotificationService } from "../notification.services/notification.service";
+import { NotificationType } from "../notification.services/notification.interface";
 
 
 
@@ -169,12 +171,14 @@ class WalletService {
    * @returns A promise that resolves to an object indicating the success of the transfer.
    * @throws Will throw an error if the transfer fails at any step.
    */
+
   public async transferToken(token: string, tokenTransferData: TokenTransferData): Promise<{ success: string }> {
     const tokenService = new TokenService();
     const username: string = await tokenService.verifyAccessToken(token);
     const smartWalletAddress: string = await this.getSmartWalletAddress(username);
     const { receiver, tokenName, amount } = tokenTransferData;
     const { chainId, contractAddress } = await this.getTokenChainAndAddress(tokenName);
+    const notificationService = NotificationService.getInstance();
 
     try {
       // Case: Native ETH transfer (no allowance needed)
@@ -224,6 +228,25 @@ class WalletService {
         await this.ensureTransactionMined(transferTx.result.queueId);
         console.log("ERC20 transfer transaction mined:", transferTx.result.queueId);
       }
+
+      // Send notification to sender
+
+      await notificationService.createNotification({
+            userId: username,
+      type: NotificationType.TOKEN_TRANSFER,
+            title: "Token Transfer Successful",
+            message: `You have successfully transferred ${amount} ${tokenName} to ${receiver}.`,
+            metadata: { amount, tokenName, receiver }
+          });
+
+      // Send notification to receiver
+      await notificationService.createNotification({
+            userId: receiver,
+      type: NotificationType.TOKEN_TRANSFER,
+            title: "Token Received",
+            message: `You have received ${amount} ${tokenName} from ${username}.`,
+            metadata: { amount, tokenName, sender: username }
+          });
 
       return { success: "Token transferred successfully." };
     } catch (error: any) {
