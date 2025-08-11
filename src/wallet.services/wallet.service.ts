@@ -158,6 +158,35 @@ class WalletService {
     }
   }
 
+  /**
+   * Retrieves the username associated with a given wallet address.
+   *
+   * @param walletAddress - The wallet address to look up.
+   * @returns A promise that resolves to the username or null if not found.
+   */
+  public async getUsernameByWalletAddress(walletAddress: string): Promise<string | null> {
+    try {
+        const session: Session | undefined = this.driver?.session();
+        
+        // Find the user node by wallet address
+        const result: QueryResult | undefined = await session?.executeRead(tx =>
+            tx.run('MATCH (u:User {walletAddress: $walletAddress}) RETURN u.username AS username', { walletAddress })
+        );
+
+        await session?.close();
+        
+        // Return username if found, null otherwise
+        if (result?.records.length === 0) {
+            return null;
+        }
+
+        return result?.records[0].get('username');
+    } catch (error: any) {
+        console.log('Error finding username by wallet address:', error);
+        return null;
+    }
+  }
+
 
   /**
    * Transfers a token (either native ETH or ERC-20) from the user's smart wallet to a specified receiver.
@@ -229,23 +258,29 @@ class WalletService {
       }
 
       // Send notification to sender
-
+      const receiverUsername = await this.getUsernameByWalletAddress(receiver);
+      const receiverDisplay = receiverUsername || `...${receiver.slice(-4)}`;
+      
       await notificationService.createNotification({
-            userId: username,
-      type: NotificationType.TOKEN_TRANSFER,
-            title: "Token Transfer Successful",
-            message: `You have successfully transferred ${amount} ${tokenName} to ${receiver}.`,
-            metadata: { amount, tokenName, receiver }
-          });
+        userId: username,
+        type: NotificationType.TOKEN_TRANSFER,
+        title: "Token Transfer Successful",
+        message: `You have successfully transferred ${amount} ${tokenName} to ${receiverDisplay}.`,
+        metadata: { amount, tokenName, receiver, receiverUsername }
+      });
 
-      // Send notification to receiver
-      await notificationService.createNotification({
-            userId: receiver,
-      type: NotificationType.TOKEN_TRANSFER,
-            title: "Token Received",
-            message: `You have received ${amount} ${tokenName} from ${username}.`,
-            metadata: { amount, tokenName, sender: username }
-          });
+      // Send notification to receiver (only if receiver is a registered user)
+      if (receiverUsername) {
+        await notificationService.createNotification({
+          userId: receiverUsername,
+          type: NotificationType.TOKEN_TRANSFER,
+          title: "Token Received",
+          message: `You have received ${amount} ${tokenName} from ${username}.`,
+          metadata: { amount, tokenName, sender: username, senderWallet: smartWalletAddress }
+        });
+      } else {
+        console.log(`Receiver ${receiver} is not a registered user - notification sent with address ${receiverDisplay}`);
+      }
 
       return { success: "Token transferred successfully." };
     } catch (error: any) {
