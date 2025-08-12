@@ -130,7 +130,7 @@ class SoilSensorTeam {
 			"sunlight": number,
 			"humidity": number
 			}`,
-						expectedOutput: `{
+			expectedOutput: `{
 			"fertility": number,
 			"moisture": number,
 			"ph": number,

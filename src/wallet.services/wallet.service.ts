@@ -80,39 +80,42 @@ class WalletService {
     try {
       const [
         ethToken,
-        swellToken,
+        // swellToken,
         dagriToken,
-        rsWETH,
+        // rsWETH,
         farmerCreditToken,
         dagriPrice,
         ethPrice,
-        swellPrice
+        // swellPrice
       ] = await Promise.all([
         engine.backendWallet.getBalance("8453", walletAddress),
-        engine.backendWallet.getBalance(CHAIN, walletAddress),
+        // engine.backendWallet.getBalance(CHAIN, walletAddress),
         engine.erc20.balanceOf(walletAddress, CHAIN, DECENTRAGRI_TOKEN),
-        engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),
+        // engine.erc20.balanceOf(walletAddress, "1", RSWETH_ADDRESS),
         engine.erc20.balanceOf(walletAddress, CHAIN, FARMER_CREDIT_TOKEN),
         safeGetPrice(parseInt(CHAIN), DECENTRAGRI_TOKEN), // may fallback to 0
         safeGetPrice(1), // ETH
-        safeGetPrice(1, "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676") // SWELL
+        // safeGetPrice(1, "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676") // SWELL
       ]);
 
       return {
         smartWalletAddress: walletAddress,
-
         // Balances
         ethBalance: ethToken.result.displayValue,
-        swellBalance: swellToken.result.displayValue,
-        rsWETHBalance: rsWETH.result.displayValue,
+        // swellBalance: swellToken.result.displayValue,
+        // rsWETHBalance: rsWETH.result.displayValue,
+        swellBalance: "0", // Commented out - not currently necessary
+        rsWETHBalance: "0", // Commented out - not currently necessary
         farmerCreditTokenBalance: farmerCreditToken.result.displayValue,
         dagriBalance: dagriToken.result.displayValue,
-        nativeBalance: swellToken.result.displayValue,
+        // nativeBalance: swellToken.result.displayValue,
+        nativeBalance: "0", // Commented out - not currently necessary
 
         // Prices
         dagriPriceUSD: dagriPrice,
         ethPriceUSD: ethPrice,
-        swellPriceUSD: swellPrice
+        // swellPriceUSD: swellPrice
+        swellPriceUSD: 0 // Commented out - not currently necessary
       };
     } catch (error: any) {
       console.error("Error fetching wallet balance and prices:", error);
