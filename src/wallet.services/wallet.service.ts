@@ -80,9 +80,9 @@ class WalletService {
     try {
       const [
         ethToken,
-        // swellToken,
+     
         dagriToken,
-        // rsWETH,
+   
         farmerCreditToken,
         dagriPrice,
         ethPrice,
@@ -309,16 +309,6 @@ class WalletService {
 				case "ETH":
 					chainId = CHAIN;
 					contractAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"; // Native ETH representation
-					break;
-
-				case "SWELL":
-					chainId = "1";
-					contractAddress = "0x0a6E7Ba5042B38349e437ec6Db6214AEC7B35676"; // Replace with correct SWELL address if different
-					break;
-
-				case "RSWETH":
-					chainId = "1";
-					contractAddress = RSWETH_ADDRESS;
 					break;
 
 				case "DAGRI":
