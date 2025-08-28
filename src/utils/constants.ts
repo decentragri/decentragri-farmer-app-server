@@ -25,10 +25,10 @@ export const ENGINE_URI: string = process.env.ENGINE_URI || "https://docker.gmet
 export const SECRET_KEY: string = process.env.SECRET_KEY || ""
 export const CLIENT_ID: string = process.env.CLIENT_ID || ""
 // Chain and Wallet Factory Configuration
-export const CHAIN: string  = process.env.CHAIN || "8453"; // BASE CHAIN
+export const CHAIN: string  = process.env.CHAIN || "421614"; // Arb Sepolia CHAIN
 
 // Contract Addresses
-export const DECENTRAGRI_TOKEN: string = '0xF21C7E1DC1dB0903C2A4BC015A9825081682D448';
+export const DECENTRAGRI_TOKEN: string = '0xC16512472E334DbB7D896ee09bBe70fa4464F90E';
 export const FARMER_CREDIT_TOKEN: string = '0xdBED1E3b937Fbe1Ca7ea3671319beDcb3059f4C0';
 export const SCAN_EDITION_ADDRESS: string = '0x2845Ab5A649f128D45119B57F310655430bB2B5F';
 export const PLANT_SCAN_EDITION_ADDRESS: string = '0xff3d1bBe9D7FE776c20853Ecc6858c341913e51C'
