@@ -17,4 +17,19 @@ export const pestRiskForecastParamsSchema = {
     }),
 };
 
+export const pestReportSchema = {
+    headers: t.Object({
+        authorization: t.String(),
+    }),
+
+    body: t.Object({
+        pestType: t.String(),
+        cropAffected: t.String(),
+        severityLevel: t.Union([t.Literal(0), t.Literal(1), t.Literal(2), t.Literal(4), t.Literal(5)]),
+        location: t.String(),
+        dateTime: t.String(),
+        image: t.Array(t.Number())
+    }),
+};
+
 
