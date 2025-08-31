@@ -2,7 +2,7 @@
 import { Engine } from "@thirdweb-dev/engine";
 
 //** CONFIG IMPORT
-import { ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, DECENTRAGRI_TOKEN, RSWETH_ADDRESS, ENGINE_ADMIN_WALLET_ADDRESS, FARMER_CREDIT_TOKEN } from "../utils/constants";
+import { ENGINE_ACCESS_TOKEN, ENGINE_URI, CHAIN, DECENTRAGRI_TOKEN, ENGINE_ADMIN_WALLET_ADDRESS, FARMER_CREDIT_TOKEN } from "../utils/constants";
 
 //**  TYPE INTERFACE
 import { type TokenTransferData, type WalletData } from "./wallet.interface";
