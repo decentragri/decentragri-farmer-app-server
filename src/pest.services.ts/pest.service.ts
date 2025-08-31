@@ -11,8 +11,9 @@ import { uploadPicBuffer } from "../utils/utils.thirdweb";
 
 //** CONSTANTS */
 import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
+import type { PestScanResult } from "../ai.services/pest.ai.team.service/pest.interface";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
-import type { PestData } from "./pest.interface";
+import type { PestData, PestReportResponse } from "./pest.interface";
 
 
 export interface Attribute {
@@ -22,60 +23,6 @@ export interface Attribute {
 
 
 class PestService {
-
-    /**
- * Get pest scans for a given user and farm.
- * @param token - JWT token for authentication
- * @param farmName - Name of the farm to fetch pest scans for
- * @returns Array of pest scan records
- */
-    public async getPestScans(token: string, farmName: string): Promise<Array<Record<string, any>>> {
-        const tokenService = new TokenService();
-        const driver: Driver = getDriver();
-        const session: Session | undefined = driver?.session();
-
-        if (!session) throw new Error("Unable to create database session.");
-
-        try {
-            // Authenticate user
-            const username = await tokenService.verifyAccessToken(token);
-            console.log(`Fetching pest scans for user: ${username}, farm: ${farmName}`);
-
-            // Query pest scans
-            const result = await session.executeRead((tx: ManagedTransaction) =>
-                tx.run(
-                    `
-                    MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})
-                    MATCH (f)-[:HAS_PEST_SCAN]->(ps:PestScan)
-                    RETURN ps
-                    ORDER BY ps.createdAt DESC
-                    `,
-                    { username, farmName }
-                )
-            );
-
-            // Parse and return
-            const pestScans = result.records.map(record => {
-                const node = record.get('ps');
-                return {
-                    cropType: node.properties.cropType,
-                    note: node.properties.note,
-                    lat: node.properties.lat,
-                    lng: node.properties.lng,
-                    interpretation: node.properties.interpretation,
-                    createdAt: node.properties.createdAt
-                };
-            });
-
-            return pestScans;
-
-        } catch (err: any) {
-            console.error("Error fetching pest scans:", err.message || err);
-            throw new Error("Failed to fetch pest scan data.");
-        } finally {
-            await session.close();
-        }
-    }
 
 
     /**
@@ -94,7 +41,18 @@ class PestService {
             const username: string = await tokenService.verifyAccessToken(token);
             
             // Upload image to IPFS
-            const buffer: Buffer = Buffer.from(pestData.image);
+            let byteImage: number[];
+            try {
+                byteImage = JSON.parse(pestData.imageBytes);
+                if (!Array.isArray(byteImage)) {
+                    throw new Error("Parsed imageBytes is not an array");
+                }
+            } catch (parseError) {
+                console.error("Error parsing imageBytes:", parseError);
+                throw new Error("Invalid imageBytes format. Expected stringified number array.");
+            }
+            
+            const buffer: Buffer = Buffer.from(byteImage);
             const imageUri = await uploadPicBuffer(buffer, pestData.pestType);
             
             // Save pest report to database
@@ -105,7 +63,8 @@ class PestService {
                         pestType: $pestType,
                         cropAffected: $cropAffected,
                         severityLevel: $severityLevel,
-                        location: $location,
+                        lat: $lat,
+                        lng: $lng,
                         dateTime: $dateTime,
                         imageUri: $imageUri,
                         reportedBy: $username,
@@ -118,7 +77,8 @@ class PestService {
                         pestType: pestData.pestType,
                         cropAffected: pestData.cropAffected,
                         severityLevel: pestData.severityLevel,
-                        location: pestData.location,
+                        lat: pestData.coordinates.lat,
+                        lng: pestData.coordinates.lng,
                         dateTime: pestData.dateTime,
                         imageUri: imageUri,
                         createdAt: new Date().toISOString()
@@ -144,7 +104,7 @@ class PestService {
      * @param token - JWT token for authentication
      * @returns Array of pest report records
      */
-    public async getPestReports(token: string): Promise<Array<Record<string, any>>> {
+    public async getPestReport(token: string): Promise<PestReportResponse[]> {
         const tokenService = new TokenService();
         const driver: Driver = getDriver();
         const session: Session | undefined = driver?.session();
@@ -169,13 +129,14 @@ class PestService {
             );
 
             // Parse and return
-            const pestReports = result.records.map(record => {
+            const pestReports: PestReportResponse[] = result.records.map(record => {
                 const node = record.get('pr');
                 return {
                     pestType: node.properties.pestType,
                     cropAffected: node.properties.cropAffected,
                     severityLevel: node.properties.severityLevel,
-                    location: node.properties.location,
+                    lat: node.properties.lat,
+                    lng: node.properties.lng,
                     dateTime: node.properties.dateTime,
                     imageUri: node.properties.imageUri,
                     reportedBy: node.properties.reportedBy,
@@ -205,11 +166,11 @@ class PestService {
         const smartWalletAddress: string = await walletService.getSmartWalletAddress(username);
         
         try {
-            const attributes: Attribute[] = [
+            const attributes = [
                 { trait_type: "Pest Type", value: data.pestType },
                 { trait_type: "Crop Affected", value: data.cropAffected },
                 { trait_type: "Severity Level", value: data.severityLevel.toString() },
-                { trait_type: "Location", value: data.location }
+                { trait_type: "Location", value: `(${data.coordinates.lat.toFixed(4)}, ${data.coordinates.lng.toFixed(4)})` }
             ];
             
             const metadata = {
@@ -225,7 +186,8 @@ class PestService {
                             pestType: data.pestType,
                             cropAffected: data.cropAffected,
                             severityLevel: data.severityLevel,
-                            location: data.location,
+                            lat: data.coordinates.lat,
+                            lng: data.coordinates.lng,
                             dateTime: data.dateTime,
                             imageUri: imageUri,
                             timestamp: new Date().toISOString()

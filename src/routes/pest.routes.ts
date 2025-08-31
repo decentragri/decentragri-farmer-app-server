@@ -1,7 +1,7 @@
 //**SERVICE IMPORTS */
 import PestRiskForecastRunner from "../ai.services/pest.ai.team.service/pest.main";
 import PestService from "../pest.services.ts/pest.service";
-import type { PestData } from "../pest.services.ts/pest.interface";
+import type { PestData, PestReportResponse } from "../pest.services.ts/pest.interface";
 
 //** SCHEMA & INTERFACE IMPORTS */
 import type Elysia from "elysia";
@@ -49,7 +49,7 @@ const PestAI = (app: Elysia) => {
         }
     }, pestReportSchema
    )
-   .get('api/get-pest-reports', async ({ headers }) => {
+   .get('api/get-pest-report', async ({ headers }) => {
         try {
             const authorizationHeader = headers.authorization;
             if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
@@ -58,7 +58,7 @@ const PestAI = (app: Elysia) => {
             const jwtToken: string = authorizationHeader.substring(7);
             
             const pestService = new PestService();
-            const output = await pestService.getPestReports(jwtToken);
+            const output = await pestService.getPestReport(jwtToken);
             
             return output;
         } catch (error: any) {

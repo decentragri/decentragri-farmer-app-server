@@ -26,9 +26,12 @@ export const pestReportSchema = {
         pestType: t.String(),
         cropAffected: t.String(),
         severityLevel: t.Union([t.Literal(0), t.Literal(1), t.Literal(2), t.Literal(4), t.Literal(5)]),
-        location: t.String(),
+        coordinates: t.Object({
+            lat: t.Number(),
+            lng: t.Number(),
+        }),
         dateTime: t.String(),
-        image: t.Array(t.Number())
+        imageBytes: t.String()
     }),
 };
 
