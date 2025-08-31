@@ -18,6 +18,7 @@ export interface PestReportResponse {
     lng: number
     dateTime: string
     imageUri: string
+    imageBytes: number[]
     reportedBy: string
     createdAt: string
 }

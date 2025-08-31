@@ -10,7 +10,7 @@ import WalletService, { engine } from "../wallet.services/wallet.service";
 import { uploadPicBuffer } from "../utils/utils.thirdweb";
 
 //** CONSTANTS */
-import { CHAIN, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
+import { CHAIN, CLIENT_ID, ENGINE_ADMIN_WALLET_ADDRESS, PLANT_SCAN_EDITION_ADDRESS } from "../utils/constants";
 import type { PestScanResult } from "../ai.services/pest.ai.team.service/pest.interface";
 import type { SuccessMessage } from "../onchain.services/onchain.interface";
 import type { PestData, PestReportResponse } from "./pest.interface";
@@ -24,6 +24,30 @@ export interface Attribute {
 
 class PestService {
 
+    /**
+     * Fetch and convert PNG image from IPFS
+     * @param imageUri - IPFS URI
+     * @returns Promise that resolves to Uint8Array of image bytes
+     */
+    public async fetchImageBytes(imageUri: string): Promise<Uint8Array> {
+        const url = this.buildIPFSUrl(imageUri);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image from IPFS: ${url}`);
+        }
+        const buf = await response.arrayBuffer();
+        return new Uint8Array(buf);
+    }
+
+    /**
+     * Build proper IPFS URL from URI
+     * @param imageUri - IPFS URI
+     * @returns Full IPFS gateway URL
+     */
+    public buildIPFSUrl(imageUri: string): string {
+        const trimmed = imageUri.replace(/^ipfs:\/\/(.*)/, "$1");
+        return `https://${CLIENT_ID}.ipfscdn.io/ipfs/${trimmed}`;
+    }
 
     /**
      * Save a pest report from farmer to the database
@@ -128,21 +152,30 @@ class PestService {
                 )
             );
 
-            // Parse and return
-            const pestReports: PestReportResponse[] = result.records.map(record => {
-                const node = record.get('pr');
-                return {
-                    pestType: node.properties.pestType,
-                    cropAffected: node.properties.cropAffected,
-                    severityLevel: node.properties.severityLevel,
-                    lat: node.properties.lat,
-                    lng: node.properties.lng,
-                    dateTime: node.properties.dateTime,
-                    imageUri: node.properties.imageUri,
-                    reportedBy: node.properties.reportedBy,
-                    createdAt: node.properties.createdAt
-                };
-            });
+            // Parse and return - fetch image bytes for each report
+            const pestReports: PestReportResponse[] = await Promise.all(
+                result.records.map(async record => {
+                    const node = record.get('pr');
+                    const imageUri = node.properties.imageUri;
+                    
+                    // Fetch image bytes from IPFS
+                    const imageBytes = await this.fetchImageBytes(imageUri);
+                    const imageBytesArray = Array.from(imageBytes);
+                    
+                    return {
+                        pestType: node.properties.pestType,
+                        cropAffected: node.properties.cropAffected,
+                        severityLevel: node.properties.severityLevel,
+                        lat: node.properties.lat,
+                        lng: node.properties.lng,
+                        dateTime: node.properties.dateTime,
+                        imageUri: imageUri,
+                        imageBytes: imageBytesArray,
+                        reportedBy: node.properties.reportedBy,
+                        createdAt: node.properties.createdAt
+                    };
+                })
+            );
 
             return pestReports;
 
