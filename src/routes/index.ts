@@ -9,6 +9,7 @@ import Farmer from "./farm.routes";
 import Community from "./community.routes";
 import Notification from "./notification.routes";
 import Staking from "./staking.routes";
+import YieldPrediction from "./yield-prediction.routes";
 
 const routes = (app: any): void => {
     [
@@ -21,7 +22,8 @@ const routes = (app: any): void => {
         Farmer,
         Community,
         Notification,
-        Staking
+        Staking,
+        YieldPrediction
     ].forEach(route => route(app));
 }
 

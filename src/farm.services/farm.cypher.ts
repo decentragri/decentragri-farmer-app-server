@@ -37,7 +37,7 @@ export const createFarmCypher: string = `
  */
 export const getRecentFarmScansCypher: string = `
     MATCH (u:User {username: $username})-[:OWNS]->(f:Farm {name: $farmName})
-    OPTIONAL MATCH (f)-[:HAS_SOIL_READING]->(soil:Reading)
+    OPTIONAL MATCH (f)-[:HAS_READING]->(soil:Reading)
         WHERE soil.createdAt >= datetime($cutoff)
     OPTIONAL MATCH (f)-[:HAS_PLANT_SCAN]->(PlantScan:PlantScan)
         WHERE PlantScan.date >= datetime($cutoff)
