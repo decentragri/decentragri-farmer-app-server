@@ -83,7 +83,10 @@ export class CacheService {
     private cleanupExpired(): void {
         const now = Date.now();
         let cleanedCount = 0;
-        for (const [key, item] of this.memoryCache.entries()) {
+        
+        // Convert entries to array to avoid iterator issues
+        const entries = Array.from(this.memoryCache.entries());
+        for (const [key, item] of entries) {
             if (item.expiry < now) {
                 this.memoryCache.delete(key);
                 cleanedCount++;
@@ -197,7 +200,9 @@ export class CacheService {
                 const regex = new RegExp(pattern.replace('*', '.*'));
                 const keysToDelete: string[] = [];
                 
-                for (const key of this.memoryCache.keys()) {
+                // Convert keys to array to avoid iterator issues
+                const keys = Array.from(this.memoryCache.keys());
+                for (const key of keys) {
                     if (regex.test(key)) {
                         keysToDelete.push(key);
                     }
