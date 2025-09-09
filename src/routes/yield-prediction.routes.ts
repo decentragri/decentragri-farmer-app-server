@@ -3,33 +3,10 @@ import Elysia from 'elysia';
 
 //** SERVICE IMPORTS */
 import YieldPredictionRunner from "../ai.services/yield.prediction.service/yield.main";
-import { authBearerSchema } from '../auth.services/auth.schema';
 import type { YieldPredictionParams } from "../ai.services/yield.prediction.service/yield.interface";
+import { getYieldPredictionsSchema, yieldPredictionSchema } from '../ai.services/yield.prediction.service/yield.schema';
 
-//** SCHEMA IMPORTS */
-import { t } from "elysia";
 
-const yieldPredictionSchema = {
-    body: t.Object({
-        farmName: t.String({ minLength: 1 }),
-        cropType: t.String({ minLength: 1 }),
-        expectedHarvestDate: t.Optional(t.String()),
-        farmSize: t.Optional(t.Number({ minimum: 0.1 })),
-        plantingDate: t.Optional(t.String())
-    }),
-    headers: t.Object({ authorization: t.String() })
-};
-
-const getYieldPredictionsSchema = {
-    params: t.Object({
-        farmName: t.String({ minLength: 1 }),
-        cropType: t.String({ minLength: 1 })
-    }),
-    query: t.Object({
-        limit: t.Optional(t.String())
-    }),
-    headers: t.Object({ authorization: t.String() })
-};
 
 const YieldPrediction = (app: Elysia) => {
     app.post("/api/predict-yield", async ({ headers, body }) => {

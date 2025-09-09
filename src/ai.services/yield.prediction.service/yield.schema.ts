@@ -1,3 +1,7 @@
+
+//** SCHEMA IMPORTS */
+import { t } from "elysia";
+
 export const YIELD_PREDICTION_PROMPT = `
 You are an expert agricultural AI that predicts crop yields based on comprehensive farm data analysis. Analyze the provided data and generate accurate yield predictions.
 
@@ -104,4 +108,27 @@ export const CROP_YIELD_STANDARDS = {
   carrot: { unit: "kg", avgYieldPerHectare: 35000, premium: 45000, belowAverage: 25000 },
   onion: { unit: "kg", avgYieldPerHectare: 30000, premium: 40000, belowAverage: 22000 },
   pepper: { unit: "kg", avgYieldPerHectare: 20000, premium: 28000, belowAverage: 15000 }
+};
+
+
+export const yieldPredictionSchema = {
+    body: t.Object({
+        farmName: t.String({ minLength: 1 }),
+        cropType: t.String({ minLength: 1 }),
+        expectedHarvestDate: t.Optional(t.String()),
+        farmSize: t.Optional(t.Number({ minimum: 0.1 })),
+        plantingDate: t.Optional(t.String())
+    }),
+    headers: t.Object({ authorization: t.String() })
+};
+
+export const getYieldPredictionsSchema = {
+    params: t.Object({
+        farmName: t.String({ minLength: 1 }),
+        cropType: t.String({ minLength: 1 })
+    }),
+    query: t.Object({
+        limit: t.Optional(t.String())
+    }),
+    headers: t.Object({ authorization: t.String() })
 };
