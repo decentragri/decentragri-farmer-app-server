@@ -88,6 +88,100 @@ const NotificationRoutes = (app: Elysia) =>
                     throw new Error('Failed to fetch unread count');
                 }
             })
+
+            // 🔔 LEGACY BADGE ENDPOINT (marks all as read - incorrect UX)
+            .get('/badge', async ({ username }) => {
+                try {
+                    const badgeData = await notificationService.getBadgeData(username);
+                    
+                    return {
+                        success: true,
+                        ...badgeData
+                    };
+                } catch (error) {
+                    console.error('Failed to fetch badge data:', error);
+                    throw new Error('Failed to fetch badge data');
+                }
+            })
+
+            // 🔔 CORRECT BELL ICON BEHAVIOR (like YouTube/Facebook)
+            .get('/badge-correct', async ({ username }) => {
+                try {
+                    const badgeData = await notificationService.getBadgeDataCorrect(username);
+                    
+                    return {
+                        success: true,
+                        showBadge: badgeData.showBadge,
+                        count: badgeData.newSinceLastView, // Only NEW notifications count
+                        totalUnread: badgeData.totalUnread, // Total unread for info
+                        lastViewedAt: badgeData.lastViewedAt
+                    };
+                } catch (error) {
+                    console.error('Failed to fetch correct badge data:', error);
+                    throw new Error('Failed to fetch badge data');
+                }
+            })
+
+            // 🔔 MARK PANEL AS VIEWED - Correct bell click behavior
+            .patch('/panel-viewed', async ({ username }) => {
+                try {
+                    const success = await notificationService.markPanelAsViewed(username);
+                    
+                    return {
+                        success,
+                        message: 'Notification panel marked as viewed (badge hidden)',
+                        note: 'Individual notifications remain unread until clicked'
+                    };
+                } catch (error) {
+                    console.error('Failed to mark panel as viewed:', error);
+                    throw new Error('Failed to mark panel as viewed');
+                }
+            })
+
+            // 🔔 MARK ALL AS READ - When user clicks bell icon
+            .patch('/mark-all-read', async ({ username }) => {
+                try {
+                    const markedCount = await notificationService.markAllAsRead(username);
+                    
+                    return {
+                        success: true,
+                        message: `Marked ${markedCount} notifications as read`,
+                        markedCount
+                    };
+                } catch (error) {
+                    console.error('Failed to mark all as read:', error);
+                    throw new Error('Failed to mark all notifications as read');
+                }
+            })
+
+            // 🔔 MARK MULTIPLE AS READ - For selective marking
+            .patch('/mark-multiple-read', async ({ body }) => {
+                try {
+                    const { notificationIds } = body as { notificationIds: string[] };
+                    
+                    if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
+                        return {
+                            success: false,
+                            message: 'Invalid notification IDs provided'
+                        };
+                    }
+
+                    const markedCount = await notificationService.markMultipleAsRead(notificationIds);
+                    
+                    return {
+                        success: true,
+                        message: `Marked ${markedCount} notifications as read`,
+                        markedCount
+                    };
+                } catch (error) {
+                    console.error('Failed to mark multiple as read:', error);
+                    throw new Error('Failed to mark notifications as read');
+                }
+            }, {
+                body: t.Object({
+                    notificationIds: t.Array(t.String())
+                })
+            })
             
             // Get latest notification for a user (for polling)
             .get('/latest', async ({ username }) => {
@@ -153,7 +247,14 @@ const NotificationRoutes = (app: Elysia) =>
             // Create a new notification (for testing or admin purposes)
             .post('/', async ({ username, body }) => {
                 try {
-                    const notification = await notificationService.sendRealTimeNotification(username, body);
+                    const notificationData = body as {
+                        type: NotificationType;
+                        title: string;
+                        message: string;
+                        metadata?: any;
+                    };
+                    
+                    const notification = await notificationService.sendRealTimeNotification(username, notificationData);
                     
                     return {
                         success: true,

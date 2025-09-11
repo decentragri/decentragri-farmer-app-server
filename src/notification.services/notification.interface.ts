@@ -34,8 +34,21 @@ export interface INotificationService {
     getUnreadNotifications(userId: string): Promise<INotification[]>;
     getNotificationById(notificationId: string): Promise<INotification | null>;
     markAsRead(notificationId: string): Promise<boolean>;
+    markAllAsRead(userId: string): Promise<number>;
+    markMultipleAsRead(notificationIds: string[]): Promise<number>;
     sendRealTimeNotification(userId: string, notification: Omit<INotification, 'id' | 'timestamp' | 'read' | 'userId'>): Promise<INotification>;
     getLatestNotification(userId: string): Promise<INotification | null>;
     getAllNotifications(userId: string, limit?: number, offset?: number): Promise<INotification[]>;
     getUnreadCount(userId: string): Promise<number>;
+    getBadgeData(userId: string): Promise<{ count: number; hasUnread: boolean; lastUpdated: string }>;
+    
+    // NEW: Correct bell icon behavior (like YouTube/Facebook)
+    markPanelAsViewed(userId: string): Promise<boolean>;
+    getUnreadCountSinceLastView(userId: string): Promise<number>;
+    getBadgeDataCorrect(userId: string): Promise<{
+        totalUnread: number;
+        newSinceLastView: number;
+        showBadge: boolean;
+        lastViewedAt: string | null;
+    }>;
 }

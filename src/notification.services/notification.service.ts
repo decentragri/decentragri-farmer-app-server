@@ -251,6 +251,124 @@ export class NotificationService implements INotificationService {
             return 0;
         }
     }
+
+    /**
+     * Mark all notifications as read for a user - Perfect for bell icon click
+     */
+    public async markAllAsRead(userId: string): Promise<number> {
+        try {
+            const result = await this.executeQuery<{markedCount: number}[]>(NotificationQueries.MARK_ALL_AS_READ, { userId });
+            return result[0]?.markedCount || 0;
+        } catch (error) {
+            console.error('Failed to mark all notifications as read:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Mark multiple specific notifications as read
+     */
+    public async markMultipleAsRead(notificationIds: string[]): Promise<number> {
+        try {
+            const result = await this.executeQuery<{markedCount: number}[]>(NotificationQueries.MARK_MULTIPLE_AS_READ, { notificationIds });
+            return result[0]?.markedCount || 0;
+        } catch (error) {
+            console.error('Failed to mark multiple notifications as read:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Get badge data - optimized for frequent frontend calls (LEGACY - use getBadgeDataCorrect)
+     */
+    public async getBadgeData(userId: string): Promise<{ count: number; hasUnread: boolean; lastUpdated: string }> {
+        try {
+            const result = await this.executeQuery<{count: number}[]>(NotificationQueries.GET_UNREAD_COUNT, { userId });
+            const count = result[0]?.count || 0;
+            
+            return {
+                count,
+                hasUnread: count > 0,
+                lastUpdated: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Failed to fetch badge data:', error);
+            return {
+                count: 0,
+                hasUnread: false,
+                lastUpdated: new Date().toISOString()
+            };
+        }
+    }
+
+    /**
+     * Mark notification panel as viewed (bell click) - CORRECT UX PATTERN
+     * This doesn't mark notifications as read, just hides the badge
+     */
+    public async markPanelAsViewed(userId: string): Promise<boolean> {
+        try {
+            const result = await this.executeQuery<{lastViewedAt: any}[]>(
+                NotificationQueries.MARK_PANEL_AS_VIEWED, 
+                { userId }
+            );
+            return result.length > 0;
+        } catch (error) {
+            console.error('Failed to mark panel as viewed:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Get count of unread notifications since last panel view
+     */
+    public async getUnreadCountSinceLastView(userId: string): Promise<number> {
+        try {
+            const result = await this.executeQuery<{count: number}[]>(
+                NotificationQueries.GET_UNREAD_COUNT_SINCE_LAST_VIEW, 
+                { userId }
+            );
+            return result[0]?.count || 0;
+        } catch (error) {
+            console.error('Failed to fetch unread count since last view:', error);
+            return 0;
+        }
+    }
+
+    /**
+     * Get correct badge data (like YouTube/Facebook)
+     * Badge shows only NEW notifications since last bell click
+     */
+    public async getBadgeDataCorrect(userId: string): Promise<{
+        totalUnread: number;
+        newSinceLastView: number;
+        showBadge: boolean;
+        lastViewedAt: string | null;
+    }> {
+        try {
+            const result = await this.executeQuery<{
+                totalCount: number;
+                newCount: number;
+                lastViewedAt: any;
+            }[]>(NotificationQueries.GET_BADGE_DATA_WITH_PANEL_VIEW, { userId });
+            
+            const data = result[0] || { totalCount: 0, newCount: 0, lastViewedAt: null };
+            
+            return {
+                totalUnread: data.totalCount || 0,
+                newSinceLastView: data.newCount || 0,
+                showBadge: (data.newCount || 0) > 0, // Only show badge for NEW notifications
+                lastViewedAt: data.lastViewedAt ? this.convertTimestamp(data.lastViewedAt).toISOString() : null
+            };
+        } catch (error) {
+            console.error('Failed to fetch correct badge data:', error);
+            return {
+                totalUnread: 0,
+                newSinceLastView: 0,
+                showBadge: false,
+                lastViewedAt: null
+            };
+        }
+    }
 }
 
 export const notificationService = NotificationService.getInstance();

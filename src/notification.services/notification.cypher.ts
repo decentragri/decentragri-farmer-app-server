@@ -71,6 +71,69 @@ export const NotificationQueries = {
     `,
 
     /**
+     * Mark all notifications as read for a user
+     * Parameters: { userId }
+     */
+    MARK_ALL_AS_READ: `
+        MATCH (u:User {username: $userId})-[:RECEIVED]->(n:Notification)
+        WHERE n.read = false
+        SET n.read = true
+        RETURN count(n) as markedCount
+    `,
+
+    /**
+     * Mark multiple notifications as read
+     * Parameters: { notificationIds }
+     */
+    MARK_MULTIPLE_AS_READ: `
+        MATCH (n:Notification)
+        WHERE n.id IN $notificationIds
+        SET n.read = true
+        RETURN count(n) as markedCount
+    `,
+
+    /**
+     * Mark notification panel as viewed (bell click) - doesn't mark notifications as read
+     * Parameters: { userId }
+     */
+    MARK_PANEL_AS_VIEWED: `
+        MERGE (u:User {username: $userId})
+        MERGE (u)-[:HAS_PANEL_VIEW]->(pv:NotificationPanelView)
+        SET pv.lastViewedAt = datetime(),
+            pv.updatedAt = datetime()
+        RETURN pv.lastViewedAt as lastViewedAt
+    `,
+
+    /**
+     * Get unread notifications that arrived AFTER last panel view
+     * Parameters: { userId }
+     */
+    GET_UNREAD_COUNT_SINCE_LAST_VIEW: `
+        MATCH (u:User {username: $userId})
+        OPTIONAL MATCH (u)-[:HAS_PANEL_VIEW]->(pv:NotificationPanelView)
+        MATCH (u)-[:RECEIVED]->(n:Notification)
+        WHERE n.read = false 
+        AND (pv IS NULL OR n.timestamp > pv.lastViewedAt)
+        RETURN count(n) as count
+    `,
+
+    /**
+     * Get badge data with panel view consideration
+     * Parameters: { userId }
+     */
+    GET_BADGE_DATA_WITH_PANEL_VIEW: `
+        MATCH (u:User {username: $userId})
+        OPTIONAL MATCH (u)-[:HAS_PANEL_VIEW]->(pv:NotificationPanelView)
+        OPTIONAL MATCH (u)-[:RECEIVED]->(n:Notification)
+        WHERE n.read = false
+        WITH u, pv, count(n) as totalUnread,
+             count(CASE WHEN pv IS NULL OR n.timestamp > pv.lastViewedAt THEN 1 END) as newSinceView
+        RETURN totalUnread as totalCount,
+               newSinceView as newCount,
+               pv.lastViewedAt as lastViewedAt
+    `,
+
+    /**
      * Gets the latest notification for a user
      * Parameters: { userId }
      */
