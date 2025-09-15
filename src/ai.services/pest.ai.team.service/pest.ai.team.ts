@@ -6,7 +6,7 @@ import FarmService from "../../farm.services/farm.service";
 import WeatherService from "../../weather.services/weather.service";
 
 //** TYPE INTERFACE */
-import type { FarmScanResult } from "../../data.services/data.interface";
+import type { FarmScanResult } from "../../plant.services/plantscan.interface";
 import type { PestRiskForecastParams } from "./pest.interface";
 import type { WeatherData } from "../../weather.services/weather.interface";
 

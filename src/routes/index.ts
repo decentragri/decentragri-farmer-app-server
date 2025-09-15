@@ -12,6 +12,7 @@ import Staking from "./staking.routes";
 import YieldPrediction from "./yield-prediction.routes";
 import FarmReport from "./farm-report.routes";
 import CropPlanning from "./crop-planning.routes";
+import Financial from "../financial.services/financial.routes";
 
 const routes = (app: any): void => {
     [
@@ -27,7 +28,8 @@ const routes = (app: any): void => {
         Staking,
         YieldPrediction,
         FarmReport,
-        CropPlanning
+        CropPlanning,
+        Financial
     ].forEach(route => route(app));
 }
 

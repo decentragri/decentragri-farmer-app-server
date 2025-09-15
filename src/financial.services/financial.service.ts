@@ -431,6 +431,43 @@ class FinancialService {
   }
 
   /**
+   * Get a specific income record by ID
+   */
+  public async getIncomeById(token: string, farmName: string, incomeId: string): Promise<FinancialResponse> {
+    const session: Session | undefined = this.driver?.session();
+    if (!session) throw new Error("Unable to create database session.");
+
+    try {
+      const username = await this.tokenService.verifyAccessToken(token);
+
+      const result = await session.executeRead((tx: ManagedTransaction) =>
+        tx.run(GET_INCOME_BY_ID, {
+          incomeId,
+          username,
+          farmName
+        })
+      );
+
+      if (result.records.length === 0) {
+        return { error: "Income record not found" };
+      }
+
+      const income = result.records[0].get('income');
+
+      return {
+        success: "Income record retrieved successfully",
+        data: income
+      };
+
+    } catch (error: any) {
+      console.error("Error retrieving income record:", error);
+      return { error: `Failed to retrieve income record: ${error.message}` };
+    } finally {
+      await session?.close();
+    }
+  }
+
+  /**
    * Get income records with filtering and pagination
    */
   public async getIncome(token: string, farmName: string, queryParams: any): Promise<IncomeListResponse> {

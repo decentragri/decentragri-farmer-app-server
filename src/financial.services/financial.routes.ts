@@ -48,7 +48,7 @@ import type {
  * Financial Services API Routes
  * Comprehensive REST endpoints for agricultural financial management
  */
-export function createFinancialRoutes(app: Elysia) {
+const Financial = (app: Elysia) => {
   const financialService = new FinancialService();
 
   return app
@@ -501,3 +501,5 @@ export function createFinancialRoutes(app: Elysia) {
         })
     );
 }
+
+export default Financial;

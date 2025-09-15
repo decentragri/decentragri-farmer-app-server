@@ -1,13 +1,13 @@
 // CLASS IMPORTS
 import PestTeam from './pest.ai.team';
 import TokenService from '../../security.services/token.service';
+import PestService from '../../pest.services.ts/pest.service';
 import { getDriver } from '../../db/memgraph';
 
 // TYPE IMPORTS
 import type { Driver, Session, ManagedTransaction } from 'neo4j-driver';
 import type { SuccessMessage } from '../../onchain.services/onchain.interface';
 import type { PestRiskForecastParams, PestScanResult } from './pest.interface';
-import PestData from '../../data.services/pest.data';
 
 class PestRiskForecastRunner {
 	/**
@@ -72,7 +72,7 @@ class PestRiskForecastRunner {
 	private static async savePestScan( data: PestScanResult, username: string): Promise<void> {
 		const driver: Driver = getDriver();
 		const session: Session | undefined = driver?.session();
-        const pestData = new PestData();
+        const pestService = new PestService();
 
 		if (!session) throw new Error("Unable to create database session.");
 
@@ -125,9 +125,9 @@ class PestRiskForecastRunner {
 				)
 			);
 
-
-
-            await pestData.savePestScanToNFT(data, username);
+            // TODO: Implement savePestScanToNFT method in PestService
+            // await pestService.savePestScanToNFT(data, username);
+            console.log("Pest scan saved to database:", data);
             
 		} catch (err) {
 			console.error("Error saving pest scan:", err);
